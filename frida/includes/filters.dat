@@ -1,0 +1,16 @@
+#Units in micras
+Name,Code,Transmission,cut-on,cut-off,lambda_center
+"Z","Z","cold_z.dat",0.970,1.070,1.020,20
+"J","J","cold_j.dat",1.170,1.330,1.25,20
+"H","H","cold_h.dat",1.490,1.780,1.635,5
+"Ks","Ks","cold_ks.dat",1.990,2.310,2.145,5
+"[FeII]1.26","NB1.26","cold_fe2_1p26.dat",1.250,1.264,1.257,60
+"Pa-beta","NB1.28","cold_pab.dat",1.272,1.292,1.282,60
+"[FeII]1.64","NB1.64","cold_fe2_1p64.dat",1.631,1.656,60
+"Hl_cont [1.71 mic]","NB1.71","cold_hc.dat",1.697,1.723,1.71,60
+"Kcont","NB2.09","cold_kc.dat",2.078,2.108,2.09,20
+"H2 1-0 S(1) [2.12]","NB2.12","cold_H2v10.dat",2.106,2.138,2.12,20
+"Br-gamma","NB2.17","cold_br.dat",2.150,2.182,2.166,20
+"Km cont [2.27 mic]","NB2.27","cold_km_cont.dat",2.253,2.280,2.267,20
+"Kl cont [2.42 mic]","NB2.42","cold_kl_cont.dat",2.390,2.450,2.420,20
+"[Si VII] [2.48 mic]","NB2.48","cold_si7.dat",2.450,2.510, 2.480,30

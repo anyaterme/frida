@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module compute_flux</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>compute_flux</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/JoseAcosta/FRIDA/ETC/python/shidix/iac/frida/compute_flux.py">/Users/JoseAcosta/FRIDA/ETC/python/shidix/iac/frida/compute_flux.py</a></font></td></tr></table>
+    <p></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-bbody"><strong>bbody</strong></a>(lamb, T)</dt><dd><tt>Blackbody&nbsp;as&nbsp;a&nbsp;function&nbsp;of&nbsp;wavelength&nbsp;([lamb]=micron)&nbsp;and&nbsp;temperature&nbsp;([T]=K).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[h]&nbsp;=&nbsp;J&nbsp;s<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[k]&nbsp;=&nbsp;J&nbsp;K^-1<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[c]&nbsp;=&nbsp;m&nbsp;s^-1<br>
+returns&nbsp;units&nbsp;of&nbsp;J&nbsp;s^-1&nbsp;m^-3&nbsp;-&nbsp;J&nbsp;s^-1&nbsp;m^-2&nbsp;*&nbsp;10^-6&nbsp;micron^-1&nbsp;&nbsp;&nbsp;&nbsp;/s/cm^2/cm/Steradian</tt></dd></dl>
+ <dl><dt><a name="-powl"><strong>powl</strong></a>(lamb, alpha, band_norm='J')</dt><dd><tt>Power&nbsp;law&nbsp;as&nbsp;a&nbsp;function&nbsp;of&nbsp;wavelength&nbsp;([lamb]=micron)&nbsp;and&nbsp;alpha&nbsp;index&nbsp;.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;F_nu&nbsp;~&nbsp;nu^-alpha&nbsp;&nbsp;==&gt;&nbsp;F_lamb&nbsp;~&nbsp;lambda&nbsp;^&nbsp;(alpha-2)<br>
+returns&nbsp;units&nbsp;of&nbsp;J&nbsp;s^-1&nbsp;m^-3&nbsp;-&nbsp;J&nbsp;s^-1&nbsp;m^-2&nbsp;*&nbsp;10^-6&nbsp;micron^-1&nbsp;&nbsp;&nbsp;&nbsp;/s/cm^2/cm/Steradian</tt></dd></dl>
+ <dl><dt><a name="-scale_to_vega"><strong>scale_to_vega</strong></a>(band_ref, mag_ref, normflux_ref)</dt><dd><tt>INPUTS:&nbsp;the&nbsp;magnitude&nbsp;at&nbsp;a&nbsp;reference&nbsp;band</tt></dd></dl>
+ <dl><dt><a name="-stellar_template"><strong>stellar_template</strong></a>(lamb, spectype)</dt></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>phot_zp</strong> = {'  Photometric zero points, first value is the re...difference between magnitudes m_AB - m_Vega<font color="#c040c0">\n</font>    B': [0.438, 0.09, -7.1938, -0.09], 'H': [1.63, 0.29, -8.9586, 1.39], 'I': [0.798, 0.15, -8.0273, 0.45], 'J': [1.22, 0.26, -8.5157, 0.91], 'K': [2.19, 0.41, -9.4179, 1.85], 'R': [0.641, 0.15, -7.7167, 0.21], 'V': [0.545, 0.085, -7.4353, 0.02]}</td></tr></table>
+</body></html>

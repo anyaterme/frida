@@ -1,0 +1,25 @@
+./ 
+
+Files which are different (Dec16)
+-aux_functions.py [added convolve2gauss]
+-calculator.py: added comments; changed Radius by radius; changed Calculator_Spect
+-gtcao.py: added right calculation of isoplanatic angle, compute_ee modified to include spaxel 
+-set_config.py: added wave_array to generate wavelength array, compute_skyrad modified to do Gaussiang convolution
+-views.py: 
+
+
+Files which do not change (Dec16)
+-compute_flux.py [NOT CHANGED] 
+
+-admin.py [NOT CHANGED]
+-models.py [NOT CHANGED] [Not relevant for us]
+-urls.py [NOT CHANGED] [define url para diferentes views]
+-tests.py [NOT CHANGED] [Not relevant for us]
+
+################################################
+
+templates [plantillas html]
+
+
+includes 
+ gratings.dat [list of gratings and specs updated with FRIDA optical design]

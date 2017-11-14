@@ -1,0 +1,167 @@
+{#{% load i18n frida_tags %}#}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="IAC Frida">
+        <meta name="keywords" content="IAC Frida" />
+        <meta name="author" content="IAC Frida" />
+        <title>IAC - Calculadora Frida</title>
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+
+		<link rel="stylesheet" href="/static/css/frida.css">
+
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+		<script src="/static/js/checkHTML5.js"></script>
+
+		<script>
+			function change_grating_value()
+			{
+				lcenter = $('#grating option:selected').attr('aux');
+				$('#rating_value').val(lcenter);
+			}
+			function check_extended_source()
+			{
+				if ($('input:radio[name=source_type]:checked').val() == 'point')
+				{
+					$('#extended_source input').attr("disabled", true);
+					$('#extended_source select').attr("disabled", true);
+					$('#extended_source span').addClass('text-muted');
+					$('#extended_source').addClass('collapse');
+					$('#point_source input').attr("disabled", false);
+					$('#point_source select').attr("disabled", false);
+					$('#point_source').removeClass('text-muted');
+					$('#point_source').removeClass('collapse');
+					$('#point_source').parent().addClass('panel-primary');
+					$('#extended_source').parent().removeClass('panel-primary');
+					$('#image_quality').removeClass('collapse');
+				}
+				else
+				{
+					$('#extended_source input').attr("disabled", false);
+					$('#extended_source select').attr("disabled", false);
+					$('#extended_source span').removeClass('text-muted');
+					$('#extended_source').removeClass('collapse');
+					$('#point_source input').attr("disabled", true);
+					$('#point_source select').attr("disabled", true);
+					$('#point_source').addClass('text-muted');
+					$('#point_source').addClass('collapse');
+					$('#point_source').parent().removeClass('panel-primary');
+					$('#extended_source').parent().addClass('panel-primary');
+					$('#image_quality').addClass('collapse');
+				}
+			}
+
+			function show_help(element)
+			{
+				help=$(element).find("span");
+				help.show();
+				help.fadeOut(help.html().split(" ").length*1500);
+			}
+
+			function check_collapse (element)
+			{
+				$(element).parent().parent().find('.panel-body').addClass('collapse');
+				$(element).parent().children('.panel-body').removeClass('collapse');
+			}
+
+
+			function check_collapse_from_heading (element)
+			{
+				$(element).parent().parent().parent().find('.panel-body').addClass('collapse');
+				$(element).parent().parent().parent().find('.panel').removeClass('panel-primary');
+				$(element).parent().parent().find('.panel-body').removeClass('collapse');
+				$(element).parent().parent().addClass('panel-primary');
+			}
+
+			function enable_imaging()
+			{
+				$('.imaging_dependent').removeClass('collapse');
+				$('.spec_dependent').addClass('collapse');
+			}
+
+			function disable_imaging()
+			{
+				$('.imaging_dependent').addClass('collapse');
+				$('.spec_dependent').removeClass('collapse');
+			}
+
+			function enable_ifu()
+			{
+				$('#ifu_dependent').removeClass('collapse');
+				disable_imaging();
+			}
+
+			function disable_ifu()
+			{
+				$('#ifu_dependent').addClass('collapse');
+				enable_imaging();
+			}
+
+
+			function check_section(element, id)
+			{
+				$('#' + id + ' input').attr("disabled", true);
+				$('#' + id + ' select').attr("disabled", true);
+				$('#' + id + ' div').children(".list-group-item").addClass('text-muted');
+				$(element).parent().find('input').attr("disabled", false);
+				$(element).parent().find('select').attr("disabled", false);
+				$(element).parent().removeClass('text-muted');
+				$('#' + id + ' input:radio').attr("disabled", false);
+			}
+
+			
+
+		</script>
+		<style>
+			.col-xs-15, .col-sm-15, .col-md-15, .col-lg-15 
+			{
+				position: relative;
+				min-height: 1px;
+				padding-right: 10px;
+				padding-left: 10px;
+			}
+			.col-xs-15 { width: 20%; float: left; }
+			@media (min-width: 768px) { .col-sm-15 { width: 20%; float: left; } }
+			@media (min-width: 992px) { .col-md-15 { width: 20%; float: left; } }
+			@media (min-width: 1200px) { .col-lg-15 { width: 20%; float: left; } }
+		</style>
+    </head>
+
+    <body>
+		<div class="container">
+			<div class="masthead">
+				<h3 class="text-muted">Frida</h3>
+				{% comment %}
+				<nav>
+					<ul class="nav nav-justified">
+						<li class="active"><a href="{% url "index" %}">Home</a></li>
+						<li><a href="#">Projects</a></li>
+						<li><a href="#">Services</a></li>
+						<li><a href="#">Downloads</a></li>
+						<li><a href="#">About</a></li>
+						<li><a href="#">Contact</a></li>
+					</ul>
+				</nav>
+				{% endcomment %}
+			</div>
+
+			{% block content %}
+			{% endblock %}
+
+			<!-- Site footer -->
+			<footer class="footer">
+				<p>&copy; Shidix Technologies 2014</p>
+			</footer>
+		</div> <!-- /container -->
+    </body>
+</html>
+

@@ -1,0 +1,311 @@
+<html>
+<head>
+<title>FRIDA Exposure Time Calculator</title>
+
+  
+<h2>General description</h2>
+   The FRIDA ETC is an exposure time calculator for the GTC near-infrared camera and 2-D spectrograph, FRIDA, which uses the GTC Adaptive Optics System, GTCAO. <P>The input page presents the entry fields and widgets for the target information, expected atmospheric conditions, instrument configuration,
+observation parameters such as exposure time or signal-to-noise, and output selection. An &quot;Apply&quot; button
+submits the parameters to the model executed on the ESO Web server. The results page presents the computed results,
+including number of counts for the object and the sky, signal-to-noise ratios, instrument efficiencies, PSF size
+etc.. The optional graphs are displayed as images and PDF formats for further analysis and printing.</P>
+   <h2>Target and Reference Source Spectrum</h2>
+   <p>In the Target Input Flux Distribution field, you can select a spectral type and filter magnitude for the target. 
+   Alternatively, you can choose to specify the target with a blackbody temperature (and a filter magnitude). In spectroscopic mode, you can choose to specify a single emission line instead. In the Reference Source Parameters field, information about spectral type and filter magnitude is entered for the reference source.</p>
+   <a id="spectype"></a>
+   <h3>Spectral Type</h3>
+   <p>In imaging a stellar spectral type is used to make the color correction.</p>
+   <p>In spectroscopy, a template spectrum is scaled to the provided magnitude.</p>
+   The Pickles template spectra covers only the JHK bands.  The target spectrum can also be selected from a subset of
+<A HREF="http://marcs.astro.uu.se/">MARCS</a>
+stellar model spectra, kindly provided by Bengt Edvardsson at the
+Uppsala Astronomical Observatory. The parameter space of the MARCS
+subsets are listed the following tables. Note that not all models
+(referring to all possible combinations of parameters) actually exist.
+<!-- insert run_marcs_help output here -->
+<br>
+
+      <a id="objmag"></a>Target / Reference Source Magnitude
+   </h3>
+   <p>You must select the filter and filter magnitude for proper scaling of the template spectrum. Available filters are V, J, H, K, L and M. For extended sources, the magnitude must be given per square arc second.</p>
+   <a id="sepa"></a>
+   <h3>Separation of Target and Reference Source</h3>
+   <p>The target is slightly off the optical axis, because another star is used as reference source. This is particularly useful if the target is very faint, since the quality of the AO correction deteriorates rapidly for reference source magnitudes greater than V=13. The reference source must be within 30 arc seconds of the primary target.</p>
+   <a id="sourcegeom"></a>
+   <h2>Target Spatial Distribution</h2>
+   <p>The geometry of the target will affect the signal to noise, since extended sources will cover a wider area of the detector. You can either select:</p>
+   <ul>
+      <li><a id="ptsourcelim"></a>
+         <h3>Point Source</h3></li>
+      <li>
+         <p>
+            If point source is chosen, the target object is assumed to be an emitter with negligible angular size. This can be selected for objects with an angular radius of much less than the sky-projected pixel size, see the <a href="http://www.eso.org/sci/facilities/paranal/instruments/naco/">NACO instrument page</a> or the <a href="http://www.eso.org/sci/facilities/paranal/instruments/naco/doc">user's manual</a>. For imaging, the S/N is given in an area of radius equal to 1.22*lambda/D,
+            which is 70 mas for an 8 m diameter telescope observing in the center of the K band (2.2 microns). In spectroscopy, the S/N reference area is a rectangle with dimensions*1.22 lambda/D the spatial direction and the slitwidth in the perpendicular direction.
+         </p>
+      </li>
+      <li>
+         <h3>
+            <a id="extsource">Extended Source</a>
+         </h3>
+      </li>
+      <li>
+         <p>If extended source is chosen, the target object is assumed to be an emitter with a uniform intensity distribution. In this case, the S/N on the result page is given per pixel element of the detector.</p>
+      </li>
+   </ul>
+   <hr>
+   <h2>
+      <a id="atmos">Atmosphere</a>
+   </h2>
+   <ul>
+      <li>
+         <h3>
+            <a id="seeinglim"></a><a id="seeing">Seeing</a>
+         </h3>
+      </li>
+      <li>
+         <p>The seeing at zenith at wavelength 500 nm.</p>
+      </li>
+      <li><a name="seeing_statistics">Seeing statistics:</a><br>
+         The Paranal seeing statistics is based on the so-called UT seeing measurements obtained from the UT1 Cassegrain Shack-Hartmann wavefront sensor used for active optics.
+         The measurements are deconvolved in order to represent the seeing outside the dome (i.e. they are corrected for the instrument+telescope resolution).
+         These data come from <a href="http://www.eso.org/gen-fac/pubs/astclim/paranal/seeing/singcumul.html">http://www.eso.org/gen-fac/pubs/astclim/paranal/seeing/singcumul.html</a>
+      </li>
+      <li><a id="airmass"></a>
+         <h3>Airmass</h3></li>
+      <li>
+         <p>The airmass of the observed target. The airmass must be &ge; 1.</p>
+      </li>
+      <li><a id="sky"></a>
+         <h3>Sky</h3></li>
+      <li>
+         <p>The sky flux is based on a model with absolute flux calibration that takes into account thermal background and OH lines.</p>
+      </li>
+   </ul>
+   <hr>
+   <h2>
+      <a id="inssetup">Instrument Setup</a>
+   </h2>
+
+   <h2>Results</h2>
+   <p>
+      You must supply information about the total observation time. This can be done in terms of DIT (Detector Integration Time), which is the duration of individual exposures, and NDIT (Number of DIT's), which is the number of exposures. The total exposure time is the product of DIT times NDIT. This exposure time does not take into account instrument and telescope overheads.<br> Alternatively, you can specify a signal to noise ratio, in which case the ETC will compute the minimal number of
+      individual exposures (each of duration DIT) required to reach the requested S/N ratio.
+   </p>
+   <ul>
+      <li><a NAME="chopping"> Chopping / Non-chopping modes></a>
+         <p>
+            Since P71, NACO imaging can be performed in two exposure modes, either chopping or non-chopping. The Chopping mode can only be used for observations in M' (mandatory) and L', NB_3.74 and NB_4.05 (optional).<br> The S/N ratio in chopping mode is approximately reduced by a factor 1/sqrt(2). Please find more details about chopping in the <a href="http://www.eso.org/sci/facilities/paranal/instruments/naco/doc">NACO user's manual</a>.
+         </p></li>
+      <li><a id="chopexptime"></a>
+         <h3>Total exposure time</h3>
+         <p>For the chopping mode of NACO, the user selects the total exposure time, in minutes. The DIT (Detector Integration Time) depends on the instrument configuration. It will be set to the relevant minimal DIT. The NDIT (Number of DIT's) is then found from the total exposure time, by dividing with the DIT.</p></li>
+      <li><a id="dit"></a>
+         <h3>DIT</h3>
+         <p>
+            Detector on-chip integration time for one exposure (in seconds). Limits for <a href="#sat_lin_lim">saturation and non-linearity</a> depend on DIT for small DITs.
+         </p></li>
+      <li>
+         <h3>
+            <a id="blip">BLIP integration time</a>
+         </h3>The so-called <b>BLIP integration time</b> (<b>B</b>ackground <b>LI</b>mited <b>P</b>erformance) is the DIT for which the photon noise from the background equals the readout noise contribution of the detector (RON<sup>2</sup>). Definition: BlipTime = RON<sup>2</sup> / BackgroundPerPixelPerSecond (with the RON and background flux in electrons).<br> <br>
+         <ul>
+            <li>In general, the S/N is readnoise-limited, when DIT &lt; BlipTime. (The ETC will issue a warning).</li>
+            <li>To be truly background-limited, set DIT &lt; BlipTime. <!-- There is generally no need to have DIT > BlipTime in any IR system. -->
+            </li>
+         </ul> <br> Note that in the ETC, the unit of the listed value <tt>"Total bkg. value"</tt> is e- per pixel per DIT (not per second).
+      </li>
+      <li>
+         <h3>
+            <a id="sn"></a><a id="snr">S/N Ratio</a>
+         </h3>
+      </li>
+      <li>
+         <p>Indicate here a S/N value and choose a DIT, to get an estimate on how many exposures (NDIT) will be needed to achieve it.</p>
+      </li>
+      <li>
+         <h3>
+            <a id="exptime">Exposure Time</a>
+         </h3>
+      </li>
+      <li>
+         <p>
+            The Exposure Time is the product of
+            <tt>DIT</tt>
+            and
+            <tt>NDIT</tt>
+            .
+         </p>
+         <ul>
+            <li><tt>DIT</tt> is the detector integration time (in seconds)</li>
+            <li><a id="ndit"><tt>NDIT</tt></a> is the number of exposures of duration <tt>DIT</tt> for a saved image. The NDIT is rounded up to the nearest integer value and this value is used when calculating the S/N. If the quoted NDIT value is zero, the target star is extremely bright and will be overexposed.</li>
+         </ul>
+         <p>
+            The total exposure time is therefore
+            <tt>DIT x NDIT</tt>
+            .
+         </p>
+      </li>
+      <li>
+         <h3>
+            <a id="exptimerange">Plotting Range</a>
+         </h3>
+      </li>
+      <li style="list-style: none">The <tt>Range</tt> box sets up the computation interval for the output curve of S/N versus exposure time. The percentage is the interval (in % of the total exposure time) shown beyond the end of the exposure time interval.
+      </li>
+   </ul>
+   <b>Do not confuse exposure time and total observation time, the latter being a sum of exposure time and overheads in the telescope and instrument. Please consult the <a href="http://www.eso.org/sci/facilities/paranal/instruments/naco/doc">NACO user's manual</a> for guidance on the choice of the integration parameters.
+   </b>
+   <hr>
+   <h2>
+      <a id="output">Possible Outputs in Imaging</a>
+   </h2>
+   <p>For the purpose of presenting the results of the calculations of the NACO Imaging ETC, you can choose from the following output options:</p>
+
+   <h3>
+      <a id="spsf">Show 2-D PSF image (jpg and FITS)</a>
+   </h3>
+   <p>
+      Toggling this option will display two images (jpg format) of the Point-Spread Function (PSF), the first one with a linear color scale and the second one with a logarithmic color scale. In addition, a 2D FITS file with the PSF will be available for download. Note that these are monochromatic PSFs computed by the NAOS-PS software for the central wavelength of the filter used in the simulation.<br> The pixel scale in the fits image corresponds to lambda / 2D, with D being the diameter of
+      the telescope. More information on the simulation parameters is available in the FITS header.
+   </p>
+
+   <h3>
+      <a id="aperture">Encircled Energy as a function of Aperture Radius</a>
+   </h3>
+
+   <p>Toggling this option will display a plot of the Encicled Energy (EE) as a function of the aperture radius (arcsecs). A cross of two lines will indicate the selected aperture radius r and the value EE(r). The default aperture radius is 1.22*lambda/D (D=8.2m).</p>
+
+   <h3>
+      <a id="snexp">S/N as a function of Exposure Time</a>
+   </h3>
+
+   <p>
+      Toggling this option will display the S/N as a function of exposure time. For <a href="#ptsourcelim">point sources</a> the S/N is calculated in the area of the diffraction limited core, radius equal to 1.22 lambda/D, which is 70 mas for an 8 m diameter telescope observing in the central K band (2.2 microns). For <a href="#extsource">extended sources</a>, the S/N is calculated per pixel element, using the surface brightness in magnitudes per square arcsec.
+   </p>
+   On the results page, the input parameters are repeated, the NACO transmission model parameters are given, sky data is given, and the S/N is plotted. See
+   <a href="#txtoutput">Text Summary Results</a> for a description of the text output.Toggling both options will display a page with the input parameters, the NACO transmission model parameters, sky data and the graphs described above. Toggling no options will give you only the
+   <a href="#txtoutput">Text Summary Results</a>.
+
+   <hr>
+
+   <h3>
+      <a id="txtoutput">Text Summary Results</a>
+   </h3>
+   
+   <h4>All magnitudes are in the Vega system unless explicitly indicated otherwise</h4>
+   
+   
+   <p>The text summary results are given on all results pages. Here follows a short description of the items in the text summary results. For spectroscopy, the numbers quoted are for the central wavelength.</p>
+   <b>Source spectral type:</b> The spectral type of the target.
+   <br>
+   <b>Source magnitude:</b> The magnitude of the target in the chosen filter, in magnitudes for point sources, and magnitudes per square arc second for extended sources.
+   <br>
+   <b>Source geometry:</b> Geometry of target (point source or extended).
+   <b><br>Reference Source separation:</b> Separation of reference source and target in arc seconds.
+   <br>
+   <b>Reference Source spectral type:</b> The spectral type of the reference source.
+   <b><br>Reference Source magnitude:</b> The magnitude of the reference source.
+   <b><br>Reference Source geometry:</b> Geometry of the reference source (always point source)
+   <br>
+   <b><br>Sky background:</b> 
+     Since ETC version 6.0.0, the sky background radiance and transmission model in the NACO Spectroscopy ETC is based on the <a href="/observing/etc/doc/skycalc/The_Cerro_Paranal_Advanced_Sky_Model.pdf">Cerro Paranal advanced sky model</a>. The new sky model is not yet enabled in the NACO Imaging ETC.
+   <b><br>NAOS Wavefront sensor:</b> The selected wavefront sensor (visible / IR)
+   <br>
+   <b>NAOS Transmission:</b> Name of wavefront sensor and transmission in %.
+   <b><br>CONICA Filter:</b> The used CONICA filter.
+   <br>
+   <b>CONICA Grism:</b> The used CONICA grism (spectroscopy only).
+   <a id="slit"><b><br>CONICA Slit:</b> The used CONICA slit (spectroscopy only).<br> <b>CONICA Objective:</b> The used CONICA objective.<br> </a>
+   <a id="readout_mode"><b>Detector Read-out mode:</b></a> The used detector read-out mode. We offer the five combinations of read-out mode and detector mode:
+   <ul>
+      <li>FowlerNsamp(HighSensitivity) FowlerNsamp and HighSensitivity (For 1 to 2.5 micron observations)</li>
+      <li>Double_RdRstRd(HighDynamic) Double_RdRstRd and HighDynamic (For 1 to 2.5 micron observations)</li>
+      <li>Uncorr(HighDynamic) Uncorr and HighDynamic (For observations in NB_3.74 and NB_4.05)</li>
+      <li>Uncorr(HighWellDepth) Uncorr and High HighWellDepth (For observations in L')</li>
+      <li>Uncorr(HighBackground) Uncorr and HighBackground (For observations in M')</li>
+   </ul>
+   <b>User Requested:</b> The user requested exposure time or S/N setting.
+   <br>
+   <b>DIT:</b> Detector integration time for one exposure.
+   <b><br>S/N:</b> Selected signal-to-noise ratio
+   <b>.<br>NDIT:
+   </b> Number of detector integrations.
+   <h3>NACO Transmission Model:</h3>
+   <b>Signal-to-noise:</b> The signal to noise is given for a target of the selected magnitude, in the filter selected and for the selected exposure time or S/N settings.
+   <br>
+   <b>Total exposure time:</b>
+   <tt>NDIT*DIT</tt>
+   , in seconds and without overhead, is the time required to reach the signal-to-noise quoted above.
+   <br>
+   <b>Number of detector integrations:</b>
+   <tt>NDIT</tt>
+   , is the number of detector integrations needed to reach the signal-to-noise quoted above.
+   <br>
+   <a id="snrefarea"></a>
+   <b>Radius of the S/N reference area: Imaging:</b> The radius in arc seconds of the ref. area for the quoted S/N value.
+   <b>Spectroscopy:</b>The spatial extent of the rectangular S/N reference area. The slitwidth is the extent in the perpendicular direction.
+   <br>
+   <b>Number of pixels...:</b> Same as above, but quoted in pixels.
+   <br>
+   <b>Total number of e-...:</b>The number of photo-electrons on the detector array within the PSF area, counted in one DIT.
+   <br>
+   <b><a id="sat_lin_lim"> Detector Saturation and Linearity Limits:</a>
+   </b>Saturation refers to the maximum number of photo-electrons that can be counted in one pixel. Additional photo-electrons are either lost, or bleed out into neighboring pixels. The Linearity Limit refers to the max. counts for which the detector response is proportional to the received photo-electrons.
+   <br> In some cases, the linearity- and saturation levels is observed to depend on DIT (for small DITs, when the ratio DIT/DIT
+   <sub>min</sub> is less than a few). In practice, this is implemented the following way, currently only for the
+   <a href="#readout_mode">readmode</a>
+   <tt>
+      FowlerNsamp(HighSensitivity) 
+   </tt>
+   , although it may also be relevant in other cases.
+   <br>
+
+   <ul>
+      <li><b>if ( DIT/DIT</b><sub><b>min</b></sub><b> &lt; 2) then Satlim and LinLim are both halved </b></li>
+      <li><b>if ( 2 &lt; DIT/DIT</b><sub><b>min</b></sub><b> &lt; 4) then Satlim and LinLim are linearly interpolated, to be between 1/2 and 1 times Satlim and LinLim, respectively </b></li>
+      <li><b>if ( DIT/DIT</b><sub><b>min</b></sub><b> &gt; 4) then Satlim and LinLim are not changed </b></li>
+   </ul>
+   <b><a id="EE">Encircled Energy:</a></b>This is the fraction of light within the considered PSF area. This number must be between 0 and 1, and quantifies the efficiency of the AO system. The higher the number, the better is the correction. In spectroscopy, this is effectively the slit transmission factor.
+
+   <br>
+   <b><a id="strehl">Strehl Ratio:</a></b> Ratio of the peak intensity of the observed PSF to that of a perfect diffraction limited PSF.
+   <br>
+   <b>Pixel Scale...:</b>The sky-projected angular size of a pixel element (pixel side).
+   <br>
+   <b>Overall Transmission:</b>The total transmission coefficient of the NACO optical system. In spectroscopy, this number does not include the slit transmission factor.
+
+   <br>
+   <a id="skyvar"></a><b>Sky Variability Table:</b> This table contains some of the information given above, but for three different sky brightness cases (imaging only):Average, Bright and Dark Sky:</b> corresponding to the typical sky variability. In the last row of the table, the so-called <a href="#blip"><b>BLIP integration time</b></a> for each sky brightness is displayed.
+
+      <h2>
+         <a id="version">Version Information</a>
+      </h2>
+  <ul>
+     <li><b>Version 6.2.0 (August 30, 2016)</b><br>
+          The new sky model has been updated with adjusted ozone and CO<sub>2</sub> abundances and minor changes in the moonlight model.<br>
+     </li>
+     <li><b>Version 6.0.1 (May 06, 2016)</b>
+         Simplified interaction between ETC with the NAOS-PS server (enabling some previous valid dichroic/FWS combinations which were erroneously blocked). Improved execution time.
+     </li>
+     <li><b>Version 6.0.0 (February 26, 2015)</b>
+         A unified convention for <a href="#seeing">seeing and image quality</a> applied in all ETCs offered from CfP P96.<br>
+         Spectroscopy ETC: A new <a href="/observing/etc/doc/skycalc/The_Cerro_Paranal_Advanced_Sky_Model.pdf">advanced sky model</a> enabled. The Imaging ETC uses a simpler sky background model.
+     </li>
+     <li><b>Version 5.0.0 (July 1, 2013)</b><br>
+        All ETC version numbers have been aligned at 5.0.0 as the ETC system infrastructure was re-factored and 
+        installed on a new web server. Due to implementation changes, some numerical results may differ 
+        slightly from previous versions. Please report significant discrepancies to the ESO user support group usd-help@eso.org<br>
+        <br>
+   </ul>
+   <hr>
+<table width="100%" border="0">
+<tr>
+  <td align="left"><small>Send comments and questions to <a href="mailto:usd-help@eso.org?subject=ETC">usd-help@eso.org</a></small></td>
+  <td align="right"><img width="32" height="40" src="/observing/etc/doc/images/eso-logo.gif" border="0"></td>
+</tr>
+</table>
+</body>
+</html>
+
+
+

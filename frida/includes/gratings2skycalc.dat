@@ -1,0 +1,9 @@
+Name,Sky_radiance,Atmos_trans_WV2p5
+zJ Low,radiance_700_1550_R1371.dat,transmission_700_1550_R1371_WV2p5.dat
+HK Low,radiance_1170_2780_R1261.dat,transmission_1170_2780_R1261_WV2p5.dat
+z Med,radiance_800_1400_R7000.dat,transmission_800_1400_R7000_WV2p5.dat
+J Med,radiance_800_1400_R7000.dat,transmission_800_1400_R7000_WV2p5.dat
+H Med,radiance_1400_2500_R5000.dat,transmission_1400_2500_R5000_WV2p5.dat
+K Med,radiance_1400_2500_R5000.dat,transmission_1400_2500_R5000_WV2p5.dat
+H High,radiance_1550_1700_R26546.dat,transmission_1550_1700_R26546_WV2p5.dat
+K High,radiance_2100_2250_R32172.dat,transmission_2100_2250_R32172_WV2p5.dat

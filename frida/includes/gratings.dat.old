@@ -1,0 +1,8 @@
+#All units in  microns, except Disp in [nm/pix]
+Name,Code,Transmission,Disp,lcenter,cut_on,cut_off
+"J (R~4000)","MR_J","isaac_mr_j.dat",0.312,1.25,0.990,1.310
+"H (R~4000)","MR_H","isaac_mr_h.dat",0.4125,1.65,1.45,1.99
+"K (R~4000)","MR_K","isaac_mr_k.dat",0.550,2.2,1.99,2.5
+"K (R~30000)","HR_K","isaac_mr_k.dat",0.0733,2.2,1.99,2.5
+"Z+J (R~1200)","LR_ZJ","cold_fe2_1p26.dat",0.916,1.1,0.95,1.310
+"H+K (R~1200)","LR_HK","cold_pab.dat",1.625,1.9,1.45,2.5
