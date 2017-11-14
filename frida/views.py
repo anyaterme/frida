@@ -80,8 +80,8 @@ def get_SkyConditions(request):
 	"""
 	# cond = Conditions()
 	sky_conditions = {'seeing': 0.9, 'lambda_seeing': 0.5, 'airmass': 1.2, 'pwv': 2.5}
-	sky_conditions['seeing'] = float(request.POST.get("seeing"))
-	sky_conditions['airmass'] = float(request.POST.get("airmass"))
+	sky_conditions['seeing'] = float(request.POST.get("seeing", sky_conditions['seeing']))
+	sky_conditions['airmass'] = float(request.POST.get("airmass", sky_conditions['airmass']))
 	# (JAP) FALTA INCLUIR VAPOR DE AGUA
 	return sky_conditions
 

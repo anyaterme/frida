@@ -61,7 +61,7 @@ def define_photzp():
 
     id = 'R'
     efflamb = 0.641 * u.micron
-    bwidth = 0.15 * u.micron
+    bwidth = 0.138 * u.micron       # Change by Dani. We cann't have two values equals for interpolate
     log10_flambZP = -7.7167 * u.dex(u.Watt / u.m**2 / u.micron) 
     mAB_to_mVega = 0.21
     zp = {'name':id,'efflamb':efflamb,'bwidth':bwidth,'l10_flamb':log10_flambZP,'mAB_to_Vega':mAB_to_mVega}

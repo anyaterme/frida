@@ -256,9 +256,10 @@ class Calculator_Image:
 		print ("Integrating Object Photon Flux")
 		print (" Wave   Fl_obj  Atm_trans  Filt_trans  Phot_Ener   Throughput")
 		ii = 150
-		#print ("%7.3F"% self.filter_wave[ii], "%9.2E"% flux_obj[ii], "%6.2F"% self.atmostrans[ii], "%6.2F"% self.filter_trans[ii],"%9.2E"% self.energy_photon(self.filter_wave[ii]), "%6.2F"% self.throughput[ii])
-		print "DEBUG================="
-		print ("{0:7.3F}".format(self.filter_wave[ii]), "{0:9.2E}".format(flux_obj[ii]), "{0:6.2F}".format(self.atmostrans[ii]), "{0:6.2F}".format(self.filter_trans[ii]),"{0:%9.2E}".format(self.energy_photon(self.filter_wave[ii])), "{0:6.2F}".format(self.throughput[ii]))
+		print (self.filter_wave[ii], flux_obj[ii], self.atmostrans[ii], self.filter_trans[ii],self.energy_photon(self.filter_wave[ii]), self.throughput[ii])
+		#print ("%7.3F"% self.filter_wave[ii].value, "%9.2E"% flux_obj[ii].value, "%6.2F"% self.atmostrans[ii].value, "%6.2F"% self.filter_trans[ii].value,"%9.2E"% self.energy_photon(self.filter_wave[ii].value), "%6.2F"% self.throughput[ii].value)
+		#print ("%7.3F"% self.filter_wave[ii].value, "%9.2E"% flux_obj[ii].value, "%6.2F"% self.atmostrans[ii].value, "%6.2F"% self.filter_trans[ii].value,"%9.2E"% self.energy_photon(self.filter_wave[ii].value), "%6.2F"% self.throughput[ii].value)
+
 		return( flux_obj * self.atmostrans * self.filter_trans / self.energy_photon(self.filter_wave) * self.throughput)
 
 	def energy_photon(self,wave):
@@ -333,13 +334,42 @@ class Calculator_Image:
 		from frida.aux_functions import interpolate
 		wave_zp = []
 		photzp_values = []
+		matrix = []
+
+#		for each_band in phot_zp:
+#			wave_zp.append(phot_zp[each_band]['bwidth'])
+#			photzp_values.append(phot_zp[each_band]['mAB_to_Vega'])
+#
+#		if hasattr(wave_zp[0],'unit'):
+#			wave_zp = [item.value for item in wave_zp]
+#		if hasattr(photzp_values[0],'unit'):
+#			photzp_values = [photzp.value for photzp in photzp_values]
+#
+#		print "=============DEBUG=============", wave_zp, photzp_values, wave
+#		phot_zp_interp = interpolate(np.array(wave_zp),np.array(photzp_values),wave)
+#
+#		skyflux = 10.**(phot_zp_interp-0.4*self.skymag)
+
+		print "================= DEBUG =================="
 		for each_band in phot_zp:
-			wave_zp.append(phot_zp[each_band][0])
-			photzp_values.append(phot_zp[each_band][2])
+			if hasattr(phot_zp[each_band]['bwidth'], 'unit'):
+				current_wave = phot_zp[each_band]['bwidth'].value
+			else:
+				current_wave = phot_zp[each_band]['bwidth']
 
-		phot_zp_interp = interpolate(np.array(wave_zp),np.array(photzp_values),wave)
+			if hasattr(phot_zp[each_band]['mAB_to_Vega'], 'unit'):
+				current_mag = phot_zp[each_band]['mAB_to_Vega'].value
+			else:
+				current_mag = phot_zp[each_band]['mAB_to_Vega']
 
+			print "## ", each_band, current_wave
+
+			matrix.append([current_wave, current_mag])
+		matrix = np.sort(np.array(matrix), axis=0)
+		phot_zp_interp = interpolate(matrix[:,0], matrix[:,1], wave)
 		skyflux = 10.**(phot_zp_interp-0.4*self.skymag)
+
+
 		return skyflux
 
 

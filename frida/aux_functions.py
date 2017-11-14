@@ -56,7 +56,7 @@ def interpolate(wvl,specfl,new_wvl,unity='None'):
 		wvl = np.array([item.value for item in wvl])
 	ind_i=np.where(new_wvl <= wvl.min())[0]
 	ind_f=np.where(new_wvl >= wvl.max())[0]
-	nel=np.clip(0.1*len(wvl),3,20)
+	nel=int(np.clip(0.1*len(wvl),3,20))
 	#
 	#
 	if len(ind_i) >= 1:
@@ -68,13 +68,23 @@ def interpolate(wvl,specfl,new_wvl,unity='None'):
 			#	   at the origin of the fit makes the extrapolated
 			#	   curve jump at this point
 			#
-			temp=polyval(cof,new_wvl[ind_i])
+			if hasattr(new_wvl, '__getitem__'):
+				temp=polyval(cof,new_wvl[ind_i])
+			else:
+				temp=polyval(cof,new_wvl)
+
 			result[ind_i]=(temp+(specfl[0]-temp[-1])).clip(0)
 	#
 	if len(ind_f) >= 1:
 			cof=polyfit(wvl[-1*nel:],specfl[-1*nel:],1)
-			temp=polyval(cof,new_wvl[ind_f])
-			temp2=polyval(cof,new_wvl[-1])
+			if hasattr(new_wvl, '__getitem__'):
+				temp=polyval(cof,new_wvl[ind_f])
+				temp2=polyval(cof,new_wvl[-1])
+				result[ind_f]=(temp+(specfl[-1]-temp[0])).clip(0)
+			else:
+				temp=polyval(cof,new_wvl)
+				temp2=polyval(cof,new_wvl)
+			print new_wvl, ind_f, temp, specfl
 			result[ind_f]=(temp+(specfl[-1]-temp[0])).clip(0)
 	#
 	if working_unit == None:
