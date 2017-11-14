@@ -5,3 +5,4 @@ log.txt
 media/
 docs/
 **.DS_Store
+db.sqlite3
