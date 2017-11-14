@@ -1,0 +1,233 @@
+Help on module frida.calculator in frida:
+
+NAME
+    frida.calculator
+
+CLASSES
+    builtins.object
+        Calculator_Image
+        Calculator_Spect
+        GuideStar
+        SkyConditions
+        TargetInfo
+    
+    class Calculator_Image(builtins.object)
+     |  Methods defined here:
+     |  
+     |  __init__(self, target_info, filter, atmospheric_cond=None, scale=None, telescope_name='GTC', instrument_name='FRIDA')
+     |      Celestial source parameters in a dictionary
+     |      target_info = {'Magnitude':19,'MagSystem':,'Band':'J','sed':sed} ;
+     |       sed is a tuple like ('PowerLaw',index_powerlaw), ('Blackbdoy',temperature_bb)
+     |  
+     |  compute_photonrate_filter(self, flambda)
+     |      compute the number of photons integrated upon filter passband
+     |      INPUTS:
+     |  
+     |  compute_photonrate_simple(self, flux_filter, lambda_filter, width_filter, throughput)
+     |      compute the number of photons
+     |      INPUTS:
+     |  
+     |  compute_sky_photonrate_filter(self)
+     |      compute the number of photons integrated upon filter passband
+     |      INPUTS:
+     |         Units: [flux_band] is expected in J s^-1 m^-2 micron^-1
+     |                        [h] = J s
+     |                        [lambda_band,width_band] = micron
+     |                        [telarea] = m^2
+     |                        [throughput] = No units
+     |                              Results as ===> s^-1 m^-1 micron -> x1.E-6 -> s^-1
+     |  
+     |  energy_photon(self, wave)
+     |      Compute the energy of a photon at a given wavelenght [in microns]
+     |      :param wave:
+     |      :return:
+     |  
+     |  get_skyflux_band(self, wave)
+     |  
+     |  integrand_obj(self, flux_obj)
+     |  
+     |  integrand_sky(self)
+     |  
+     |  signal_noise_texp_img(self, Nexp_min, Nexp_max, Nexp_step, dit, aperture)
+     |      Compute the S/N ratio as function of exposure time
+     |      :param Nexp_min:
+     |      :param Nexp_max:
+     |      :param Nexp_step:
+     |      :param dit:
+     |      :param aperture:
+     |      :return:
+     |  
+     |  texp_signal_noise_img(self, required_sn, dit, aperture)
+     |      Compute the exposure time needed to reach a S/N ratio
+     |      :param Nexp_min:
+     |      :param Nexp_max:
+     |      :param Nexp_step:
+     |      :param dit:
+     |      :param aperture:
+     |      :return:
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  atmosphere = None
+     |  
+     |  energy_photon_1mic = 1.985e-19
+     |  
+     |  obs_filter = None
+    
+    class Calculator_Spect(builtins.object)
+     |  Methods defined here:
+     |  
+     |  __init__(self, target_info, sky_conditions, spectrograph_setup, scale, Atmospheric_Cond=None, Telescope='GTC', Instrument='FRIDA')
+     |      Celestial source parameters in a dictionary
+     |      target_info = {'Magnitude':19,'MagSystem':,'Band':'J','sed':sed} ;
+     |       sed is a tuple like ('PowerLaw',index_powerlaw), ('Blackbdoy',temperature_bb)
+     |  
+     |  compute_photonrate_grating(self, flambda)
+     |      compute the number of photons integrated upon grating passband
+     |      INPUTS:
+     |  
+     |  compute_sky_photonrate_grating(self)
+     |      compute the number of photons integrated upon filter passband
+     |      INPUTS:
+     |         Units: [flux_band] is expected in J s^-1 m^-2 micron^-1
+     |                        [h] = J s
+     |                        [lambda_band,width_band] = micron
+     |                        [telarea] = m^2
+     |                        [throughput] = No units
+     |                              Results as ===> s^-1 m^-1 micron -> x1.E-6 -> s^-1
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  atmosphere = None
+     |  
+     |  energy_photon_1mic = 1.985e-19
+     |  
+     |  obs_filter = None
+    
+    class GuideStar(builtins.object)
+     |  Class containing information about Guide Star characteristics (magnitude and distance to opt. axis)
+     |  :param gs_mag: Magnitude of guide Star 
+     |  :type gs_mag: float. 
+     |  :param gs_dist: Distance of guide Star to optical axis. 
+     |  :type gs_dist: float 
+     |  :returns: class self. -- .Magnitude, .Separation 
+     |  :raises:
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, gs_mag=8, gs_dis=0.0)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class SkyConditions(builtins.object)
+     |  Methods defined here:
+     |  
+     |  __init__(self, seeing=0.75, airmass=1.0)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  AirMass = None
+     |  
+     |  Seeing = None
+    
+    class TargetInfo(builtins.object)
+     |  Class containing information about Science Target
+     |  :param mag_target: Magnitude of guide Star 
+     |  :type mag_target: float. 
+     |  :param band: Band in which the brightness is specified. 
+     |  :type band: string 
+     |  :param mag_system: Magnitude system (Vega or AB). 
+     |  :type mag_system: string 
+     |  :param sed: Type of Spectral Energy Distribution 
+     |  :type sed: string 
+     |  :returns: class self. -- .Magnitude, .Separation 
+     |  :raises:
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, mag_target, band, mag_system, sed)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  flambda_sed(self, wave)
+     |      Compute f_lambda for the selected SED and a given wave array
+     |      :param wave:
+     |      :return:
+     |  
+     |  photons_sed(self, wave)
+     |      Compute f_lambda for the selected SED and a given wave array
+     |      :param wave:
+     |      :return:
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+
+FUNCTIONS
+    exp(...)
+        exp(x)
+        
+        Return e raised to the power of x.
+    
+    pow(...)
+        pow(x, y)
+        
+        Return x**y (x to the power of y).
+    
+    sqrt(...)
+        sqrt(x)
+        
+        Return the square root of x.
+
+DATA
+    path_absolute = '/Users/JoseAcosta/FRIDA/ETC/python/shidix/iac/frida/'
+    phot_zp = {'B': {'bwidth': <Quantity 0.09 micron>, 'efflamb': <Quantit...
+    settings = <LazySettings "iac.settings">
+
+FILE
+    /Users/JoseAcosta/FRIDA/ETC/python/shidix/iac/frida/calculator.py
+
+

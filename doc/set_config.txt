@@ -1,0 +1,157 @@
+Help on module frida.set_config in frida:
+
+NAME
+    frida.set_config
+
+CLASSES
+    builtins.object
+        Atmosphere
+        Filter
+        Grating
+        Instrument_static
+        Spec_response
+        Telescope
+    
+    class Atmosphere(builtins.object)
+     |  This class includes any processing dealing with Earth atmosphere transmission and emission
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, transmission='skytransmission_mean.dat', radiance='skyradiance_mean.dat', path=None)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  compute_skymag(self, filter)
+     |  
+     |  compute_skyrad(self, wave, kernel='pulse')
+     |  
+     |  compute_skytrans(self, wave, kernel=None)
+     |  
+     |  compute_skytrans_avg(self, wave)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class Filter(builtins.object)
+     |  This class includes any processing to be done with filters in imaging mode
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, filter_name, path_list=None, path_filters=None)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  avg_transmission(self, threshold_fraction=2.0)
+     |  
+     |  lambda_center(self)
+     |  
+     |  width(self, threshold_fraction=2.0)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class Grating(builtins.object)
+     |  Methods defined here:
+     |  
+     |  __init__(self, grating_name, cent_wave=None, path_list=None, path_gratings=None)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  interp_effic(self)
+     |      This function generates an array with the wavele to compute S/N in spectroscopy mode
+     |      :param wave_center:
+     |      :param npix:
+     |      :return:
+     |  
+     |  wave_array(self, npix=2048)
+     |      This function generates an array with the wavelength reference to compute S/N in spectroscopy mode
+     |      :param self.cent_wave:
+     |      :param npix:
+     |      :return:
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class Instrument_static(builtins.object)
+     |  This module will load all parameters related to the instrument, e.g. the transmission files, the detector characteristics
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, scale='fine_scale', instid='FRIDA', path=None)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  compute_static_response(self, wave)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class Spec_response(builtins.object)
+     |  Methods defined here:
+     |  
+     |  __init__(self, file, path=None)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  avg_response(self, wave_range)
+     |  
+     |  interpol2wave(self, wave)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class Telescope(builtins.object)
+     |  Methods defined here:
+     |  
+     |  __init__(self, telid='GTC')
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+
+FUNCTIONS
+    flux_vega(filter='H')
+    
+    param_filter(filter_name='H')
+    
+    param_gratings()
+
+DATA
+    path_absolute = '/Users/JoseAcosta/FRIDA/ETC/python/shidix/iac/frida/'
+    settings = <LazySettings "iac.settings">
+
+FILE
+    /Users/JoseAcosta/FRIDA/ETC/python/shidix/iac/frida/set_config.py
+
+

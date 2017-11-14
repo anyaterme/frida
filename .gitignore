@@ -1,0 +1,7 @@
+*pyc
+log.txt
+*.swp
+*.swo
+media/
+docs/
+**.DS_Store
