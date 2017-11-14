@@ -49,7 +49,7 @@ class Telescope:
 		self.aperture = teldiam1
 
 class Spec_response:
-	def __init__(self,file,path=None):
+	def __init__(self,file,path=settings.INCLUDES):
 		#fp = np.loadtxt(os.path.join(path,file))
 		#self.wave = fp[:,0] * u.micron
 		#self.response = fp[:,1]
@@ -79,11 +79,13 @@ class Spec_response:
 		self.value = sprf_value
 
 	def interpol2wave(self,wave):
-		return np.interp(wave,self.wave,self.response)
+		#return np.interp(wave,self.wave,self.response)
+		return np.interp(wave,self.wave,self.value)
 
 	def avg_response(self,wave_range):
 		# first interpolate
-		response_wave =  interpolate(self.wave,self.response,wave_range)
+		#response_wave =  interpolate(self.wave,self.response,wave_range)
+		response_wave =  interpolate(self.wave,self.value,wave_range)
 		avg_response = scipy.integrate.simps(response_wave,wave_range)/(wave_range[-1]-wave_range[0])
 		return avg_response
 
@@ -91,7 +93,7 @@ class Instrument_static:
 	"""
 	This module will load all parameters related to the instrument, e.g. the transmission files, the detector characteristics
 	"""
-	def __init__ (self,scale='fine_scale',instid='FRIDA',path=None):
+	def __init__ (self,scale='fine_scale',instid='FRIDA',path=settings.INCLUDES):
 		self.qe = Spec_response("detector_qe.dat",path=path)
 		self.qe.value = self.qe.value * u.electron/u.photon
 
@@ -125,9 +127,13 @@ class Instrument_static:
 		:param wave:
 		:return:
 		"""
-		interp_qe = np.interp(wave.to("micron"),self.qe.wave,self.qe.value)
-		interp_camera = np.interp(wave.to("micron"),self.camera_transmission.wave, self.camera_transmission.value)
-		interp_collim = np.interp(wave.to("micron"),self.collimator_transmission.wave, self.collimator_transmission.value)
+#		interp_qe = np.interp(wave.to("micron"),self.qe.wave,self.qe.value)
+#		interp_camera = np.interp(wave.to("micron"),self.camera_transmission.wave, self.camera_transmission.value)
+#		interp_collim = np.interp(wave.to("micron"),self.collimator_transmission.wave, self.collimator_transmission.value)
+
+		interp_qe = np.interp(wave * u.micron,self.qe.wave,self.qe.value)
+		interp_camera = np.interp(wave * u.micron,self.camera_transmission.wave, self.camera_transmission.value)
+		interp_collim = np.interp(wave * u.micron,self.collimator_transmission.wave, self.collimator_transmission.value)
 		return {"qe":interp_qe*self.qe.value.unit,"collimator":interp_collim,"camera":interp_camera}
 
 def param_gratings():
@@ -341,7 +347,11 @@ class Filter:
 		import csv
 		fp = open(os.path.join(path_list, 'filters.dat'))
 		list_filters= csv.DictReader(filter(lambda row: row[0] != '#', fp))
+		myfilter = None
 		for each_filter in list_filters:
+			if myfilter is None:
+				if os.path.isfile(os.path.join(path_filters, each_filter["Transmission"])):
+					myfilter = each_filter
 			if each_filter["Name"] == filter_name :
 				myfilter = each_filter
 				print("Filter Code: ", myfilter["Code"])
@@ -350,10 +360,14 @@ class Filter:
 				break
 		fp.close()
 
-		ftrans = np.loadtxt(os.path.join(path_filters, myfilter["Transmission"]))
-		np.sort(ftrans,axis=0)
-		self.wave = ftrans[:,0]
-		self.transmission = ftrans[:,1]
+		if (myfilter is None):
+			print "Filter is not selected"
+			##FIXME Add Default Values
+		else:
+			ftrans = np.loadtxt(os.path.join(path_filters, myfilter["Transmission"]))
+			np.sort(ftrans,axis=0)
+			self.wave = ftrans[:,0]
+			self.transmission = ftrans[:,1]
 		print ("Wave transmision:",self.wave[0:4],self.transmission[0:4])
 
 	def avg_transmission(self,threshold_fraction=2.):
@@ -389,7 +403,7 @@ class Atmosphere:
 	This class includes any processing dealing with Earth atmosphere transmission and emission
 	"""
 
-	def __init__ (self, transmission="skytransmission_mean.dat",radiance="skyradiance_mean.dat",path=None):
+	def __init__ (self, transmission="skytransmission_mean.dat",radiance="skyradiance_mean.dat",path=settings.INCLUDES):
 		f = np.loadtxt(os.path.join(path,transmission))
 		## Wavelenght units are nm, must be converted to microns
 		self.atmtrans_wave = f[:,0]/1.e3
@@ -402,7 +416,7 @@ class Atmosphere:
 		self.skyrad_photons = f[:,1]
 		self.skyrad_delta = abs(f[1,0] -f[0,0])/1.e3
 
-	def compute_skytrans(self,wave,kernel=None):
+	def compute_skytrans(self,wave,kernel='pulse'):
 		# first check spacing of wave
 		delta = abs(wave[1]-wave[0])
 		if (self.atmtrans_delta < delta):
@@ -434,7 +448,8 @@ class Atmosphere:
 		skytrans_avg = scipy.integrate.simps(sky_trans,wave)/(wave[-1]-wave[0])
 		return skytrans_avg
 
-	def compute_skymag(self,filter):
+	def compute_skymag(self,filter='H'):
+		skymag = 14.4
 		if (filter == 'H'):
 			skymag=14.4
 		elif (filter == 'J'):

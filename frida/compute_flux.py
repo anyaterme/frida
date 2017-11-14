@@ -10,10 +10,12 @@ def bbody(lamb, T):
         [c] = m s^-1
     returns units of J s^-1 m^-3 - J s^-1 m^-2 * 10^-6 micron^-1    /s/cm^2/cm/Steradian
     """
+    if not hasattr(lamb,'unit'):
+        lamb = lamb * u.micron
     lamb_m = lamb.to('m') # convert microns to metres
     #norm_J = 1.67e-16 ## normalization to have mag_Vega=15 at J with T=9600. which is Teff of A0
     norm_J = phot_zp['J']['l10_flamb'].physical ## normalization to have mag_Vega=15 at J with T=9600. which is Teff of A0
-    flamb = norm_J * 2*const.h*const.c**2 / (lamb_m**5 * (np.exp(const.h*const.c / (lamb_m*const.k_B*T)) - 1))
+    flamb = norm_J * 2*const.h*const.c**2 / (lamb_m**5 * (np.exp(const.h.value*const.c.value / (lamb_m.value*const.k_B.value*T)) - 1))
     return flamb
 
 def powl(lamb,alpha,band_norm='J'):

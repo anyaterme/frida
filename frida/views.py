@@ -96,15 +96,15 @@ def get_TargetInfo(request):
 	band = request.POST.get("band_flux")
 	mag_system = request.POST.get('units_sib')
 	energy_type = request.POST.get('spectral_type')
-	debug_values["Brightness (Astronomical Source Definition)"] = mag_target
-	debug_values["Filter_Name (Astronomical Source Definition)"] = band
-	debug_values["Energy Distribution (Astronomical Source Definition)"] = energy_type
+#	debug_values["Brightness (Astronomical Source Definition)"] = mag_target
+#	debug_values["Filter_Name (Astronomical Source Definition)"] = band
+#	debug_values["Energy Distribution (Astronomical Source Definition)"] = energy_type
 
 	## Select morphology of source
 	source_morpho = request.POST.get('source_type')
 	if (source_morpho == 'extended'):
 		label_source_morpho = 'Extended source'
-	elif (source_type == 'point'):
+	elif (source_morpho == 'point'):
 		label_source_morpho = 'Point source'
 
 	# create a tuple with the information relative to the Spectral Energy Distribution
@@ -184,11 +184,11 @@ def calculate_ima(request):
 		label_energy_type = 'Power Law, lambda^%s' % pl_index
     """
 
-	telescope = "VLT"
+	telescope = "GTC"
 	telescope_params = Telescope(telescope)
 
 	# Creates an object of type Calculator_Image
-	a=Calculator_Image(target_info,sky_conditions,selected_filter,selected_scale,telescope=telescope)
+	a=Calculator_Image(target_info,selected_filter,sky_conditions,selected_scale,telescope_name=telescope)
 
 
     ## call GTC_AO to compute Strehl ratio and Encircled Energy

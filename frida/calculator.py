@@ -144,7 +144,7 @@ class Calculator_Image:
 		print ('Telescope is ',params_tel.name)
 
 		#### filter
-		filter_info = Filter(filter)
+		filter_info = Filter(filter,path_list=settings.INCLUDES,path_filters=settings.FILTERS)
 		self.filter_wave =  filter_info.wave
 		self.filter_trans = filter_info.transmission
 		lambda_center = float(filter_info.lambda_center())
@@ -256,11 +256,10 @@ class Calculator_Image:
 		print ("Integrating Object Photon Flux")
 		print (" Wave   Fl_obj  Atm_trans  Filt_trans  Phot_Ener   Throughput")
 		ii = 150
-		print ("%7.3F"% self.filter_wave[ii], "%9.2E"% flux_obj[ii], "%6.2F"% self.atmostrans[ii],\
-			   "%6.2F"% self.filter_trans[ii],"%9.2E"% self.energy_photon(self.filter_wave[ii]),\
-			   "%6.2F"% self.throughput[ii])
-		return( flux_obj * self.atmostrans * self.filter_trans \
-			   / self.energy_photon(self.filter_wave) * self.throughput)
+		#print ("%7.3F"% self.filter_wave[ii], "%9.2E"% flux_obj[ii], "%6.2F"% self.atmostrans[ii], "%6.2F"% self.filter_trans[ii],"%9.2E"% self.energy_photon(self.filter_wave[ii]), "%6.2F"% self.throughput[ii])
+		print "DEBUG================="
+		print ("{0:7.3F}".format(self.filter_wave[ii]), "{0:9.2E}".format(flux_obj[ii]), "{0:6.2F}".format(self.atmostrans[ii]), "{0:6.2F}".format(self.filter_trans[ii]),"{0:%9.2E}".format(self.energy_photon(self.filter_wave[ii])), "{0:6.2F}".format(self.throughput[ii]))
+		return( flux_obj * self.atmostrans * self.filter_trans / self.energy_photon(self.filter_wave) * self.throughput)
 
 	def energy_photon(self,wave):
 		"""
