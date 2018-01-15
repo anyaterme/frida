@@ -6,7 +6,7 @@ import scipy.integrate
 import numpy as np
 import csv
 import os
-from frida.aux_functions import convolve2pulse,interpolate
+from frida.aux_functions import convolve2pulse,interpolate,read_grating_files
 
 class Telescope:
 

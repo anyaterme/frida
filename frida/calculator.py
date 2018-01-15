@@ -49,7 +49,7 @@ class TargetInfo:
     :returns: class self. -- .Magnitude, .Separation 
     :raises: 
 	"""
-	def __init__ (self,mag_target,band,mag_system,sed,waveshift,\
+	def __init__ (self,mag_target,band,mag_system,sed,waveshift=('radial_velocity', 0.),\
 	       wave_ini=8500*u.angstrom,wave_end=25000.*u.angstrom,dwave=2.*u.angstrom):
 		self.Magnitude = mag_target
 		self.Band = band
@@ -58,7 +58,7 @@ class TargetInfo:
 		self.lambda_band= phot_zp[band]['efflamb']   # calculamos el flujo de referencia
 
 		## waveshift es una tupla el primer elemento es una cadena indicando \
-		## la selección "radial_velocity" o "redshift", el segundo elemento es 
+		## la seleccion "radial_velocity" o "redshift", el segundo elemento es 
 		## el valor de la velocidad, que debe ser en km/s o el redshift. 
 		## Por ejemplo waveshift =('radial_velocity',350.) o ('redshift',0.084)
 		redshift = float(waveshift[1])
