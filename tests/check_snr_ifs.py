@@ -95,7 +95,8 @@ print("Set target parameters")
 mag_target = 18.
 band = 'H'
 mag_system='Vega'
-sed=('black_body',3000.*u.K)
+#sed=('black_body',3000.*u.K)
+sed=('black_body',3000.)
 phot_zp = define_photzp()
 
 print(phot_zp['J'])
@@ -103,9 +104,9 @@ print(phot_zp['J']['bwidth'])
 # sed=('power_law',0.)
 target_info = TargetInfo(mag_target,band,mag_system,sed)
 
-flux_scale=target_info.flux_scale
-print ("flux scale=",flux_scale)
-photons_obj=target_info.photons_sed(wave_array)
+#flux_scale=target_info.flux_scale
+#print ("flux scale=",flux_scale)
+photons_obj=target_info.photons_wave(wave_array)
 
 photunit=u.photon/(u.s * u.cm**2 * u.angstrom)
 print ("photons_obj=",photons_obj[1000:1010].to(photunit))
