@@ -1,0 +1,31 @@
+Imported from http://www.gemini.edu/node/10257.
+Spectral distribution
+The source spectrum is selected from the available libraries of stellar and non-stellar spectra, model emission line + continuum, and black body, power law and user-defined spectra. Different options are available depending on the instrument in question. The spectrum may be redshifted by an arbitrary amount. If the selected (redshifted) spectrum does not completely cover the observing wavelength range, as defined by the colour filter or dispersive element, either an error is reported by the ITC or the spectrum is padded with leading or trailing zeros.
+For spectroscopic calculations, the source spectrum is smoothed to the resolution of the spectrograph as given by the dispersing element with an entrance aperture defined by the slit width, or source extent if narrower (some exceptions are noted for specific instruments). Note that the stellar and non-stellar libraries may have an intrinsic resolution less than that of the instrument or a coarser sampling. In all cases they are re-sampled to the appropriate dispersion within the ITC.
+The sky transmission and sky background spectra employed currently have a resolution of ~1nm and sampling of ~0.5nm. Hence at higher instrument spectral resolutions, the sky lines will not be treated correctly.
+(a) Stellar library
+The Pickles (1998; PASP, 110, 863) stellar library covers optical and near-IR wavelengths out to 2.5um across a broad range of spectral types (O5 to M9) and luminosity classes (I, III and V). We have extended these spectra out to 6um, arbitrarily adopting the slope of the K0III star for all spectral types. More accurate spectrophotometry will be inserted in the ITC library as it becomes available.
+(b) Non-stellar library
+
+Rest-frame optical and near-IR spectra:
+eGalaxy.dat
+	Elliptical galaxy - a template spectrum (class T=-5, -4) covering the wavelength range 22 - 10000 nm and taken from the Pegase Atlas 
+	of Galaxies by Fioc & Rocca-Volmerange (1997). The spectrum has a sampling of 1nm at wavelengths shortwards of 878nm and 20nm longwards.
+	(Look at a plot or download the data file).
+
+scGalaxy.dat
+	Spiral (Sc) galaxy - a template spectrum (type Sc, class T=5) covering the wavelength range 22 - 10000 nm and taken from the Pegase 
+	Atlas of Galaxies by Fioc & Rocca-Volmerange (1997). The spectrum has a sampling of 1nm at wavelengths shortwards of 878nm and 20nm 
+	longwards. (Look at a plot or download the data file).
+
+qso.dat
+	QSO - covers the (rest) wavelength range 80 - 855 nm and is taken from Vanden Berk et al. (2001, AJ, 122, 549). The spectrum has spectral 
+	resolution ~1800 and a sampling of 0.1nm. (Look at a plot or download the data file).
+	QSO2 - covers the (rest) wavelength range 276 - 3520 nm and is taken from Glikman et al. (2006, ApJ, 640, 579). The spectrum has 
+	a sampling of 0.1nm. (Look at a plot or download the data file).
+
+orion.dat
+	HII region (Orion) - covers the wavelength range 100 - 1100 nm and was taken from the HST STIS exposure time calculator. 
+	The spectrum has a sampling of 0.05nm. (Look at a plot or download the data file).
+Planetary nebula (NGC7009) - covers the wavelength range 100 - 1100 nm and was taken from the HST STIS exposure time calculator. The spectrum has a sampling of 0.05nm. (Look at a plot or download the data file).
+Planetary nebula 2 (IC5117) - covers the wavelength range 480 - 2500 nm and is taken from correspondence with Rick Rudy, based on Rudy et al. (2001, AJ, 121, 362).  The spectrum has a sampling of 0.05nm. (Look at a plot or download the data file).

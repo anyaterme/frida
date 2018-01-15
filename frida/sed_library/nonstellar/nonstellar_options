@@ -1,0 +1,8 @@
+# Label               -->  sed file
+"Elliptical galaxy"  --> eGalaxy.dat
+"Spiral galaxy" --> scGalaxy.dat
+"QSO" --> qso.dat
+"QSO2"  --> qso2.dat
+"HII region" --> orion.dat
+"Planetary Nebula (NGC 7009)"  --> pn.dat
+"Planetary Nebula (IC5117)" --> pn2.dat
