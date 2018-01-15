@@ -4,8 +4,8 @@ import random, os, glob
 
 import astropy.units as u
 import astropy.constants as const
-#from astropy.modeling.blackbody import blackbody_lambda
-from astropy.analytic_functions import blackbody_lambda
+from astropy.modeling.blackbody import blackbody_lambda
+#from astropy.analytic_functions import blackbody_lambda
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -67,6 +67,7 @@ class TargetInfo:
 		lambda_band_rest = self.lambda_band/(1.+redshift)
 			
         
+		##REFACTOR --- define functions 
 		if (sed[0] == "black_body"):
 			temp_bb = float(sed[1])*u.K
 			# calculamos el flujo en la banda de referencia y el factor de escala
@@ -123,6 +124,7 @@ class TargetInfo:
 		    flux_scale = scale_to_vega(band,mag_target,input_normflux) 
 		    sed_flambda = flux_scale * sed_nonstellar['flambda']
 		    sed_wave = sed_nonstellar['wave']*(1+redshift)
+		## END Refactor
 
 		print(" min - max sed_wave",min(sed_wave),max(sed_wave))
 		mask = (sed_wave >= wave_ini) & (sed_wave <= wave_end) 
