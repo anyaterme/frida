@@ -127,13 +127,9 @@ class Instrument_static:
 		:param wave:
 		:return:
 		"""
-#		interp_qe = np.interp(wave.to("micron"),self.qe.wave,self.qe.value)
-#		interp_camera = np.interp(wave.to("micron"),self.camera_transmission.wave, self.camera_transmission.value)
-#		interp_collim = np.interp(wave.to("micron"),self.collimator_transmission.wave, self.collimator_transmission.value)
-
-		interp_qe = np.interp(wave * u.micron,self.qe.wave,self.qe.value)
-		interp_camera = np.interp(wave * u.micron,self.camera_transmission.wave, self.camera_transmission.value)
-		interp_collim = np.interp(wave * u.micron,self.collimator_transmission.wave, self.collimator_transmission.value)
+		interp_qe = np.interp(wave.to("micron"),self.qe.wave,self.qe.value)
+		interp_camera = np.interp(wave.to("micron"),self.camera_transmission.wave, self.camera_transmission.value)
+		interp_collim = np.interp(wave.to("micron"),self.collimator_transmission.wave, self.collimator_transmission.value)
 		return {"qe":interp_qe*self.qe.value.unit,"collimator":interp_collim,"camera":interp_camera}
 
 def param_gratings():
@@ -223,28 +219,8 @@ class Grating:
 		fp.close()
 
 		#ftrans = np.loadtxt(os.path.join(path_gratings, mygrating["Efficiency"]))
-		fp = open(os.path.join(path_gratings, mygrating["Efficiency"]))
-		greffic_file = csv.DictReader(filter(lambda row: row[0] != '#', fp))
-		greffic_fn0 = greffic_file.fieldnames[0]
-		greffic_fn1 = greffic_file.fieldnames[1]
-		greffic_wave = []
-		greffic_value = []
-		for row in greffic_file:
-			greffic_wave.append(float(row[greffic_fn0]))
-			greffic_value.append(float(row[greffic_fn1]))
-		greffic_wave = np.array(greffic_wave)
-		greffic_value = np.array(greffic_value)
-		fp.close()
-		# give units
-		if '[nm]' in greffic_fn0:
-			greffic_wave = greffic_wave * u.nm
-		if '[angstrom]' in greffic_fn0:
-			greffic_wave = greffic_wave* u.AA
-		if '[micron]' in greffic_fn0:
-			greffic_wave = greffic_wave* u.micron
-		## if value is given in % convert to fraction
-		if '[%]' in greffic_fn1:
-			greffic_value = greffic_value / 100.
+		## read efficiency file
+		greffic=read_grating_files(mygrating["Efficiency"],path_gratings=path_gratings)
 		## create an array using dispersion in the whole range available in the transmission curve
 		self.delt_wave = float(mygrating["Dispersion"]) * u.AA
 		if cent_wave is not None:
@@ -253,8 +229,8 @@ class Grating:
 			self.cent_wave = float(mygrating["Central_Wave"]) * u.AA
 		self.cuton=mygrating["Wave_ini"]
 		self.cutoff=mygrating["Wave_end"]
-		self.gr_wave = greffic_wave
-		self.gr_effic = greffic_value
+		self.gr_wave = greffic['wave']
+		self.gr_effic = greffic['effic']
 		print ("Wave efficiency:",self.gr_wave[0:4],self.gr_effic[0:4])
 
 		# read sky emission and atmospheric absorption
@@ -361,7 +337,7 @@ class Filter:
 		fp.close()
 
 		if (myfilter is None):
-			print "Filter is not selected"
+			print("Filter is not selected")
 			##FIXME Add Default Values
 		else:
 			ftrans = np.loadtxt(os.path.join(path_filters, myfilter["Transmission"]))
@@ -416,7 +392,7 @@ class Atmosphere:
 		self.skyrad_photons = f[:,1]
 		self.skyrad_delta = abs(f[1,0] -f[0,0])/1.e3
 
-	def compute_skytrans(self,wave,kernel='pulse'):
+	def compute_skytrans(self,wave,kernel='gauss'):
 		# first check spacing of wave
 		delta = abs(wave[1]-wave[0])
 		if (self.atmtrans_delta < delta):
@@ -449,7 +425,6 @@ class Atmosphere:
 		return skytrans_avg
 
 	def compute_skymag(self,filter='H'):
-		skymag = 14.4
 		if (filter == 'H'):
 			skymag=14.4
 		elif (filter == 'J'):

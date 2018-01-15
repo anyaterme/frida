@@ -2,9 +2,10 @@ from math import exp, pow, sqrt
 import numpy as np
 import random, os, glob
 
-import numpy as np
 import astropy.units as u
 import astropy.constants as const
+#from astropy.modeling.blackbody import blackbody_lambda
+from astropy.analytic_functions import blackbody_lambda
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -16,6 +17,7 @@ import sys
 from frida.compute_flux import *
 #import frida.set_config
 from frida.set_config import *
+from frida.aux_functions import *
 
 phot_zp = define_photzp()
 
@@ -47,48 +49,112 @@ class TargetInfo:
     :returns: class self. -- .Magnitude, .Separation 
     :raises: 
 	"""
-	def __init__ (self,mag_target,band,mag_system,sed):
+	def __init__ (self,mag_target,band,mag_system,sed,waveshift,\
+	       wave_ini=8500*u.angstrom,wave_end=25000.*u.angstrom,dwave=2.*u.angstrom):
 		self.Magnitude = mag_target
 		self.Band = band
 		self.MagSystem = mag_system
 		self.SED = sed
 		self.lambda_band= phot_zp[band]['efflamb']   # calculamos el flujo de referencia
 
+		## waveshift es una tupla el primer elemento es una cadena indicando \
+		## la selección "radial_velocity" o "redshift", el segundo elemento es 
+		## el valor de la velocidad, que debe ser en km/s o el redshift. 
+		## Por ejemplo waveshift =('radial_velocity',350.) o ('redshift',0.084)
+		redshift = float(waveshift[1])
+		if (waveshift[0] == "radial_velocity"):
+			redshift = redshift*u.Unit('km/s')/const.c.to('km/s')
+		lambda_band_rest = self.lambda_band/(1.+redshift)
+			
+        
 		if (sed[0] == "black_body"):
-			temp_bb = sed[1]
-			input_normflux=bbody(self.lambda_band,temp_bb)  # calculamos el flujo en la banda de referencia
+			temp_bb = float(sed[1])*u.K
+			# calculamos el flujo en la banda de referencia y el factor de escala
+			#input_normflux=bbody(lambda_band_rest,temp_bb)
+			omega=1.e-16*u.sr
+			input_normflux=blackbody_lambda(lambda_band_rest,temp_bb)*omega
+			flux_scale=scale_to_vega(band,mag_target,input_normflux)
+			wave_array_rest = np.arange(wave_ini.to('angstrom').value,\
+			   wave_end.to('angstrom').value,dwave.to('angstrom').value)\
+               * u.angstrom
+			print(' normflux=',input_normflux,' value=',input_normflux.value)  
+			print(' flux_scale=',flux_scale,' value=',flux_scale.value,float(flux_scale))   
+			#sed_flambda = flux_scale * bbody(wave_array_rest,temp_bb)
+			sed_wave = wave_array_rest*(1+redshift)
+			sed_flambda = flux_scale * blackbody_lambda(wave_array_rest,temp_bb)*omega
 		elif (sed[0] == "power_law"):
 			index_pwl = sed[1]
 			input_normflux=powl(self.lambda_band,index_pwl)
+			flux_scale=scale_to_vega(band,mag_target,input_normflux)
+			print(' normflux=',input_normflux,' value=',input_normflux.value)  
+			print(' flux_scale=',flux_scale,' value=',flux_scale.value,float(flux_scale))   
+			wave_array_rest = np.arange(wave_ini.to('angstrom').value,\
+			   wave_end.to('angstrom').value,dwave.to('angstrom').value)\
+               * u.angstrom
+			sed_wave = wave_array_rest*(1+redshift)
+			sed_flambda = flux_scale * powl(sed_wave,index_pwl)
+		elif (sed[0] == "pickles"):
+		    template = sed[1]
+		    #sed_pickles=read_sed_pickles_files(template,\
+		    #      path_sed=os.path.join(settings.SED_LIBRARY,'pickles'))
+		    sed_pickles=read_sed_pickles_files(template,\
+		          path_sed=os.path.join(settings.SED_LIBRARY,'pickles'))
+		    print("sed_pickles_wave=",sed_pickles['wave'])
+		    print("sed_pickles_flambda=",sed_pickles['flambda'])
+		    print("lambda_band_rest=",lambda_band_rest)
+		    lambda_band_rest_sameunit = lambda_band_rest.to(sed_pickles['wave'].unit).value
+		    input_normflux=np.interp(lambda_band_rest_sameunit,sed_pickles['wave'].value,\
+		          sed_pickles['flambda'].value) * sed_pickles['flambda'].unit
+		    print("input_normflux=",input_normflux)
+		    flux_scale = scale_to_vega(band,mag_target,input_normflux) 
+		    print("flux_scale=",flux_scale)
+		    sed_flambda = flux_scale * sed_pickles['flambda']
+		    sed_wave = sed_pickles['wave']*(1+redshift)
+		elif (sed[0] == "nonstellar"):
+		    template = sed[1]
+		    sed_nonstellar=read_sed_nonstellar_files(template,\
+		          path_sed=os.path.join(settings.SED_LIBRARY,'nonstellar'))
+		    print("sed_nonstellar_wave=",sed_nonstellar['wave'])
+		    print("sed_nonstellar_flambda=",sed_nonstellar['flambda'])
+		    print("lambda_band_rest=",lambda_band_rest)
+		    lambda_band_rest_sameunit = lambda_band_rest.to(sed_nonstellar['wave'].unit).value
+		    input_normflux=np.interp(lambda_band_rest_sameunit,sed_nonstellar['wave'].value,\
+		          sed_nonstellar['flambda'].value) * sed_nonstellar['flambda'].unit
+		    flux_scale = scale_to_vega(band,mag_target,input_normflux) 
+		    sed_flambda = flux_scale * sed_nonstellar['flambda']
+		    sed_wave = sed_nonstellar['wave']*(1+redshift)
 
-		self.flux_scale=scale_to_vega(band,mag_target,input_normflux)
+		print(" min - max sed_wave",min(sed_wave),max(sed_wave))
+		mask = (sed_wave >= wave_ini) & (sed_wave <= wave_end) 
+		self.sed_wave = sed_wave[mask]
+		self.sed_flambda = sed_flambda[mask]
 
-	def flambda_sed(self,wave):
+
+	def flambda_wave(self,wave):
 		"""
 		Compute f_lambda for the selected SED and a given wave array
 		:param wave:
 		:return:
 		"""
 
-		if (self.SED[0] == "black_body"):
-			flambda = self.flux_scale * bbody(wave,self.SED[1])
-		elif (self.SED[0] == "power_law"):
-			flambda = self.flux_scale * powl(wave,self.SED[1])
+		#if (self.SED[0] == "black_body"):
+		#	flambda = self.flux_scale * bbody(wave,self.SED[1])
+		#elif (self.SED[0] == "power_law"):
+		#	flambda = self.flux_scale * powl(wave,self.SED[1])
+        ## interpolate 
+		flambda_unit = self.sed_flambda.unit
+		wave_sameunit = wave.to(self.sed_wave.unit).value
+		flambda = np.interp(wave_sameunit,self.sed_wave.value,self.sed_flambda.value)
+		return flambda * flambda_unit
 
-		return flambda
-
-	def photons_sed(self,wave):
+	def photons_wave(self,wave):
 		"""
 		Compute f_lambda for the selected SED and a given wave array
 		:param wave:
 		:return:
 		"""
-		energy_per_photon = const.h * const.c/wave / u.photon
-		if (self.SED[0] == "black_body"):
-			phot_lambda = self.flux_scale * bbody(wave,self.SED[1])/energy_per_photon #const.h/const.c*wave
-		elif (self.SED[0] == "power_law"):
-			phot_lambda = self.flux_scale * powl(wave,self.SED[1])/energy_per_photon # const.h/const.c*wave
-
+		energy_per_photon = const.h * const.c/ wave / u.photon
+		phot_lambda = self.flambda_wave(wave)/(energy_per_photon) #const.h/const.c*wave
 		return phot_lambda
 
 
@@ -185,8 +251,8 @@ class Calculator_Image:
 
 
 		## compute the target f-lambda within the wavelength range determined by the filter transmission
-		obj_flambda_spec = target_info.flambda_sed(self.filter_wave)
-		obj_photons_spec = target_info.photons_sed(self.filter_wave)
+		obj_flambda_spec = target_info.flambda_wave(self.filter_wave)
+		obj_photons_spec = target_info.photons_wave(self.filter_wave)
 		ii = len(self.filter_wave)/2
 		print (" wave,obj_flambda,photons["+str(ii)+"]=",self.filter_wave[ii],obj_flambda_spec[ii],\
 			   obj_photons_spec[ii])
@@ -194,13 +260,13 @@ class Calculator_Image:
 
 		## compute the flux from the target and the number of photons per unit time
 		#self.obj_flambda = flux_scale * bbody(filter_info['lamb_eff'],temp_bb) # Units are
-		self.obj_flambda_lambcenter = target_info.flambda_sed(lambda_center)
+		self.obj_flambda_lambcenter = target_info.flambda_wave(lambda_center)
 		print ("obj_flambda_lambeff:",self.obj_flambda_lambcenter)
 		phi_obj_total2 = self.compute_photonrate_simple(self.obj_flambda_lambcenter,lambda_center,\
 									   filter_width["width"],atmospheric_trans_avg*self.effic_total)
 
-		self.flambda_sed = target_info.flambda_sed
-		self.phi_obj_total = self.compute_photonrate_filter(target_info.flambda_sed(self.filter_wave))
+		self.flambda_wave = target_info.flambda_wave
+		self.phi_obj_total = self.compute_photonrate_filter(target_info.flambda_wave(self.filter_wave))
 
 		print("phi_obj_total [simple int-filter]",phi_obj_total2,self.phi_obj_total)
 
@@ -350,7 +416,7 @@ class Calculator_Image:
 #
 #		skyflux = 10.**(phot_zp_interp-0.4*self.skymag)
 
-		print "================= DEBUG =================="
+		print("================= DEBUG ==================")
 		for each_band in phot_zp:
 			if hasattr(phot_zp[each_band]['bwidth'], 'unit'):
 				current_wave = phot_zp[each_band]['bwidth'].value
@@ -362,7 +428,7 @@ class Calculator_Image:
 			else:
 				current_mag = phot_zp[each_band]['mAB_to_Vega']
 
-			print "## ", each_band, current_wave
+			print("## ", each_band, current_wave)
 
 			matrix.append([current_wave, current_mag])
 		matrix = np.sort(np.array(matrix), axis=0)
@@ -406,7 +472,7 @@ class Calculator_Spect:
 		#flux_scale_old =scale_to_vega(input_band,mag_ref,input_normflux)
 		flux_scale=target_info.flux_scale
 		print ("flux scale=",flux_scale)
-		photons_obj=target_info.photons_sed(self.wave_array)
+		photons_obj=target_info.photons_wave(self.wave_array)
 
 		# determine flux density for the
 
@@ -432,13 +498,13 @@ class Calculator_Spect:
 
 
 		## compute the target f-lambda within the wavelength range determined by the filter transmission
-		self.obj_flambda_wave = target_info.flambda_sed(self.wave_array)
-		self.obj_photons_wave = target_info.photons_sed(self.wave_array)
+		self.obj_flambda_wave = target_info.flambda_wave(self.wave_array)
+		self.obj_photons_wave = target_info.photons_wave(self.wave_array)
 		ii = len(self.wave_array)/2
 		print (" wave,obj_flambda,photons["+str(ii)+"]=",self.wave_array[ii],obj_flambda_wave[ii],\
 			   obj_photons_wave[ii])
 
-		self.flambda_sed = target_info.flambda_sed
+		self.flambda_wave = target_info.flambda_wave
 		# compute the effective photon rate from target and sky as measured by the detector
 		self.phi_obj_total = self.compute_photonrate_spect(self)
 		self.phi_sky_sangle = self.compute_sky_photonrate_spect(self)

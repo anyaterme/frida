@@ -96,9 +96,9 @@ def get_TargetInfo(request):
 	band = request.POST.get("band_flux")
 	mag_system = request.POST.get('units_sib')
 	energy_type = request.POST.get('spectral_type')
-#	debug_values["Brightness (Astronomical Source Definition)"] = mag_target
-#	debug_values["Filter_Name (Astronomical Source Definition)"] = band
-#	debug_values["Energy Distribution (Astronomical Source Definition)"] = energy_type
+	debug_values["Brightness (Astronomical Source Definition)"] = mag_target
+	debug_values["Filter_Name (Astronomical Source Definition)"] = band
+	debug_values["Energy Distribution (Astronomical Source Definition)"] = energy_type
 
 	## Select morphology of source
 	source_morpho = request.POST.get('source_type')
@@ -184,7 +184,7 @@ def calculate_ima(request):
 		label_energy_type = 'Power Law, lambda^%s' % pl_index
     """
 
-	telescope = "GTC"
+	telescope = "VLT"
 	telescope_params = Telescope(telescope)
 
 	# Creates an object of type Calculator_Image
@@ -233,7 +233,7 @@ def calculate_ima(request):
 	nele = len(obs_filter.wave)
 	m2 = np.zeros((nele,2))
 	m2[:,0] = obs_filter.wave
-	m2[:,1] = target_info.flambda_sed(obs_filter.wave)/1.e-16
+	m2[:,1] = target_info.flambda_wave(obs_filter.wave)/1.e-16
 	m2 = str(m2.tolist())
 
 
@@ -358,7 +358,7 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	nele = len(obs_filter.wave)
 	m2 = np.zeros((nele,2))
 	m2[:,0] = obs_filter.wave
-	m2[:,1] = target_info.flambda_sed(obs_filter.wave)/1.e-16
+	m2[:,1] = target_info.flambda_wave(obs_filter.wave)/1.e-16
 	m2 = str(m2.tolist())
 
 
