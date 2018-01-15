@@ -127,11 +127,12 @@ class Instrument_static:
 		:param wave:
 		:return:
 		"""
+		## FIXME convertir a unidades de lo que vienen
 #		interp_qe = np.interp(wave.to("micron"),self.qe.wave,self.qe.value)
 #		interp_camera = np.interp(wave.to("micron"),self.camera_transmission.wave, self.camera_transmission.value)
 #		interp_collim = np.interp(wave.to("micron"),self.collimator_transmission.wave, self.collimator_transmission.value)
 
-		interp_qe = np.interp(wave * u.micron,self.qe.wave,self.qe.value)
+		interp_qe = np.interp(wave * u.micron,self.qe.wave, self.qe.value)
 		interp_camera = np.interp(wave * u.micron,self.camera_transmission.wave, self.camera_transmission.value)
 		interp_collim = np.interp(wave * u.micron,self.collimator_transmission.wave, self.collimator_transmission.value)
 		return {"qe":interp_qe*self.qe.value.unit,"collimator":interp_collim,"camera":interp_camera}
