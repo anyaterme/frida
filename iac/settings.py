@@ -19,6 +19,7 @@ STATICFILES = os.path.join (BASE_DIR, "frida/static")
 FILTERS = os.path.join (BASE_DIR, "frida/filters")
 GRATINGS = os.path.join (BASE_DIR, "frida/gratings")
 SKYCALC_GRATINGS = os.path.join (BASE_DIR, "frida/skycalc")
+SED_LIBRARY = os.path.join (BASE_DIR,"frida/sed_library")
 TELESCOPE = "GTC"
 INSTRUMENT = "FRIDA"
 
