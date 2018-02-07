@@ -84,25 +84,25 @@
 
 			function enable_imaging()
 			{
-				$('.imaging_dependent').removeClass('collapse');
-				$('.spec_dependent').addClass('collapse');
+				$('.imaging_dependent').removeClass('hide');
+				$('.spec_dependent').addClass('hide');
 			}
 
 			function disable_imaging()
 			{
-				$('.imaging_dependent').addClass('collapse');
-				$('.spec_dependent').removeClass('collapse');
+				$('.imaging_dependent').addClass('hide');
+				$('.spec_dependent').removeClass('hide');
 			}
 
 			function enable_ifu()
 			{
-				$('#ifu_dependent').removeClass('collapse');
+				$('#ifu_dependent').removeClass('hide');
 				disable_imaging();
 			}
 
 			function disable_ifu()
 			{
-				$('#ifu_dependent').addClass('collapse');
+				$('#ifu_dependent').addClass('hide');
 				enable_imaging();
 			}
 
@@ -137,7 +137,7 @@
     </head>
 
     <body>
-		<div class="container">
+		<div class="container-fluid">
 			<div class="masthead">
 				<h3 class="text-muted">Frida</h3>
 				{% comment %}

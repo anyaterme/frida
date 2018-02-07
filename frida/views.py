@@ -37,21 +37,28 @@ def index(request):
 
 	fp1 = open(os.path.join(settings.INCLUDES, 'filters.dat'))
 	list_filters = csv.DictReader(filter(lambda row: row[0] != '#', fp1))
+	list_filters_dict = []
 	for each_filter in list_filters:
-		print("Filter Code: ", each_filter["Code"])
-		print("Filter_Transmission File: ", each_filter["Transmission"])
-		print("Lambda center", each_filter["lambda_center"])
+		my_filter = {}
+		my_filter["Code"] = each_filter["Code"]
+		my_filter["Name"] = each_filter["Name"]
+		list_filters_dict.append(my_filter)
 
 	#fp1.close()
 
 	fp2 = open(os.path.join(settings.INCLUDES, 'gratings.dat'))
 	list_gratings= csv.DictReader(filter(lambda row: row[0] != '#', fp2))
+	list_gratings_dict = []
 	for each_grating in list_gratings:
-		print("Grating Code: ", each_grating["Name"])
-		print("Grating Efficiency file: ", each_grating["Efficiency"])
+		my_grating = {}
+		my_grating["Description"] = each_grating["Description"]
+		my_grating["Name"] = each_grating["Name"]
+		my_grating["Central_Wave"] = each_grating["Central_Wave"]
+		my_grating["Efficiency"] = each_grating["Efficiency"]
+		list_gratings_dict.append(my_grating)
 	#fp2.close()
 
-	context = {'list_filters':list_filters, 'list_gratings':list_gratings}
+	context = {'list_filters':list_filters_dict, 'list_gratings':list_gratings_dict}
 	return render(request, 'index.html', context)
 
 def calculate_draw(request):
