@@ -1,0 +1,8 @@
+Notes to run django
+
+Tests on tests directory, from iac directory
+./manage.py test tests.module.py
+
+Start Run server 
+./manage.py runserver 
+

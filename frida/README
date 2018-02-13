@@ -1,0 +1,23 @@
+
+Rest-frame optical and near-IR spectra:
+eGalaxy.dat
+	Elliptical galaxy - a template spectrum (class T=-5, -4) covering the wavelength range 22 - 10000 nm and taken from the Pegase Atlas 
+	of Galaxies by Fioc & Rocca-Volmerange (1997). The spectrum has a sampling of 1nm at wavelengths shortwards of 878nm and 20nm longwards.
+	(Look at a plot or download the data file).
+
+scGalaxy.dat
+	Spiral (Sc) galaxy - a template spectrum (type Sc, class T=5) covering the wavelength range 22 - 10000 nm and taken from the Pegase 
+	Atlas of Galaxies by Fioc & Rocca-Volmerange (1997). The spectrum has a sampling of 1nm at wavelengths shortwards of 878nm and 20nm 
+	longwards. (Look at a plot or download the data file).
+
+qso.dat
+	QSO - covers the (rest) wavelength range 80 - 855 nm and is taken from Vanden Berk et al. (2001, AJ, 122, 549). The spectrum has spectral 
+	resolution ~1800 and a sampling of 0.1nm. (Look at a plot or download the data file).
+	QSO2 - covers the (rest) wavelength range 276 - 3520 nm and is taken from Glikman et al. (2006, ApJ, 640, 579). The spectrum has 
+	a sampling of 0.1nm. (Look at a plot or download the data file).
+
+orion.dat
+	HII region (Orion) - covers the wavelength range 100 - 1100 nm and was taken from the HST STIS exposure time calculator. 
+	The spectrum has a sampling of 0.05nm. (Look at a plot or download the data file).
+Planetary nebula (NGC7009) - covers the wavelength range 100 - 1100 nm and was taken from the HST STIS exposure time calculator. The spectrum has a sampling of 0.05nm. (Look at a plot or download the data file).
+Planetary nebula 2 (IC5117) - covers the wavelength range 480 - 2500 nm and is taken from correspondence with Rick Rudy, based on Rudy et al. (2001, AJ, 121, 362).  The spectrum has a sampling of 0.05nm. (Look at a plot or download the data file).
