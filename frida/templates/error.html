@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% load i18n %}
+{%block content%}
+{% for msg in msg_err %}
+	<div class="alert alert-danger">{{msg}}</div>
+{% endfor %}
+{%endblock%}

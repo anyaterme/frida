@@ -6,7 +6,7 @@ import scipy.integrate
 import numpy as np
 import csv
 import os
-from frida.aux_functions import convolve2pulse,interpolate,read_grating_files
+from frida.aux_functions import convolve2pulse,interpolate,read_grating_files,convolve2gauss
 
 class Telescope:
 
@@ -192,7 +192,7 @@ def param_filter(filter_name='H'):
 
 class Grating:
 
-	def __init__ (self,grating_name,cent_wave=None,path_list=None,path_gratings=None,path_skycalc=None):
+	def __init__ (self,grating_name,cent_wave=None,path_list=settings.INCLUDES,path_gratings=settings.GRATINGS,path_skycalc=settings.SKYCALC_GRATINGS):
 		import csv
 		fp = open(os.path.join(path_list, 'gratings.dat'))
 		list_gratings= csv.DictReader(filter(lambda row: row[0] != '#', fp))
@@ -394,20 +394,26 @@ class Atmosphere:
 
 	def compute_skytrans(self,wave,kernel='gauss'):
 		# first check spacing of wave
+		print "ENTER HERE"
 		delta = abs(wave[1]-wave[0])
+		delta = delta.value
 		if (self.atmtrans_delta < delta):
 			if (kernel == 'pulse'):
+				print 1
 				atmtrans_conv = convolve2pulse(self.atmtrans_wave,self.atmtrans_perone,2*delta)
 			elif (kernel == 'gauss'):
+				print 2
 				atmtrans_conv = convolve2gauss(self.atmtrans_wave,self.atmtrans_perone,2*delta)
 			atmtrans_interp = interpolate(self.atmtrans_wave,atmtrans_conv,wave)
 		else:
 			atmtrans_interp = interpolate(self.atmtrans_wave,self.atmtrans_perone,wave)
+		print atmtrans_interp
 		return atmtrans_interp
 
 	def compute_skyrad(self,wave,kernel='pulse'):
 		# first check spacing of wave
 		delta = abs(wave[1]-wave[0])
+		delta = delta.value
 		if (self.skyrad_delta < delta):
 			if (kernel == 'pulse'):
 				skyrad_conv = convolve2pulse(self.skyrad_wave,self.skyrad_photons,2*delta)
@@ -425,6 +431,7 @@ class Atmosphere:
 		return skytrans_avg
 
 	def compute_skymag(self,filter='H'):
+		skymag = 13.
 		if (filter == 'H'):
 			skymag=14.4
 		elif (filter == 'J'):

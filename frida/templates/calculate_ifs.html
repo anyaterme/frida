@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% load fridatags %}
+{% block content %}
+	<ul class="list-group">
+	{% for value in debug_values %}
+		<li class="list-group-item">{{ value }}</li>
+	{% endfor %}
+	</ul>
+	<script>
+	window.onload = function () {
+
+	var options = {
+		exportEnabled: true,
+		animationEnabled: true,
+		theme:"light2",
+		title:{
+			text: "Static Response"
+		},
+		subtitles: [{
+			text: "Click Legend to Hide or Unhide Data Series"
+		}],
+		axisX: {
+			title: "\u03BB [\u212B]"
+		},
+		axisY: {
+			title: "",
+			titleFontColor: "#4F81BC",
+			lineColor: "#4F81BC",
+			labelFontColor: "#4F81BC",
+			tickColor: "#4F81BC",
+			includeZero: false,
+			valueFormatString: "0.000"
+		},
+		toolTip: {
+			shared: true
+		},
+		legend: {
+			cursor: "pointer",
+			itemclick: toggleDataSeries
+		},
+		data: [{
+			type: "spline",
+			name: "QE",
+			showInLegend: true,
+			xValueFormatString: "#####.## AA",
+			yValueFormatString: "0.### ",
+			dataPoints: [
+				{% for qe_value in static_response.qe %}
+					{% with lambda=wave_array|list_value:forloop.counter0 %}
+					{ x: {{ lambda.value }}, y: {{qe_value.value}} },
+					{% endwith %}
+				{% endfor %}
+			]
+		},
+		{
+			type: "spline",
+			name: "Camera",
+			showInLegend: true,
+			xValueFormatString: "#####.## AA",
+			yValueFormatString: "0.### ",
+			dataPoints: [
+				{% for my_value in static_response.camera %}
+					{% with lambda=wave_array|list_value:forloop.counter0 %}
+					{ x: {{ lambda.value }}, y: {{my_value}} },
+					{% endwith %}
+				{% endfor %}
+			]
+		},
+		{
+			type: "spline",
+			name: "Collimator",
+			showInLegend: true,
+			xValueFormatString: "#####.## AA",
+			yValueFormatString: "0.### ",
+			dataPoints: [
+				{% for colli_value in static_response.collimator %}
+					{% with lambda=wave_array|list_value:forloop.counter0 %}
+					{ x: {{ lambda.value }}, y: {{colli_value}} },
+					{% endwith %}
+				{% endfor %}
+			]
+		},
+		{
+			type: "spline",
+			name: "Throughput",
+			showInLegend: true,
+			xValueFormatString: "#####.## AA",
+			yValueFormatString: "0.### ",
+			dataPoints: [
+				{% for my_value in throughput %}
+					{% with lambda=wave_array|list_value:forloop.counter0 %}
+					{ x: {{ lambda.value }}, y: {{my_value.value}} },
+					{% endwith %}
+				{% endfor %}
+			]
+		}
+		]
+	};
+
+	var options_atrans = {
+		exportEnabled: true,
+		animationEnabled: true,
+		theme:"light2",
+		title:{
+			text: "Atmospheric Transmission"
+		},
+		subtitles: [{
+			text: "Click Legend to Hide or Unhide Data Series"
+		}],
+		axisX: {
+			title: "\u03BB [\u212B]"
+		},
+		axisY: {
+			title: "",
+			titleFontColor: "#4F81BC",
+			lineColor: "#4F81BC",
+			labelFontColor: "#4F81BC",
+			tickColor: "#4F81BC",
+			includeZero: false,
+			valueFormatString: "0.000"
+		},
+		toolTip: {
+			shared: true
+		},
+		legend: {
+			cursor: "pointer",
+			itemclick: toggleDataSeries
+		},
+		data: [{
+			type: "spline",
+			name: "Atmospheric Transmission",
+			showInLegend: true,
+			xValueFormatString: "#####.## AA",
+			yValueFormatString: "0.### ",
+			dataPoints: [
+				{% for my_value in atrans %}
+					{% with lambda=wave_array|list_value:forloop.counter0 %}
+					{ x: {{ lambda.value }}, y: {{my_value}} },
+					{% endwith %}
+				{% endfor %}
+			]
+		}
+		]
+	};
+
+	var options_grating_effic= {
+		exportEnabled: true,
+		animationEnabled: true,
+		theme:"light2",
+		title:{
+			text: "Grating Effic"
+		},
+		subtitles: [{
+			text: "Click Legend to Hide or Unhide Data Series"
+		}],
+		axisX: {
+			title: "\u03BB [\u212B]"
+		},
+		axisY: {
+			title: "",
+			titleFontColor: "#4F81BC",
+			lineColor: "#4F81BC",
+			labelFontColor: "#4F81BC",
+			tickColor: "#4F81BC",
+			includeZero: false,
+			valueFormatString: "0.000"
+		},
+		toolTip: {
+			shared: true
+		},
+		legend: {
+			cursor: "pointer",
+			itemclick: toggleDataSeries
+		},
+		data: [{
+			type: "spline",
+			name: "Gratting Effic",
+			showInLegend: true,
+			xValueFormatString: "#####.## AA",
+			yValueFormatString: "0.### ",
+			dataPoints: [
+				{% for my_value in grating_effic %}
+					{% with lambda=wave_array|list_value:forloop.counter0 %}
+					{ x: {{ lambda.value }}, y: {{my_value}} },
+					{% endwith %}
+				{% endfor %}
+			]
+		}
+		]
+	};
+	var options_sky_rad= {
+		exportEnabled: true,
+		animationEnabled: true,
+		theme:"light2",
+		title:{
+			text: "Sky Radiance"
+		},
+		subtitles: [{
+			text: "Click Legend to Hide or Unhide Data Series"
+		}],
+		axisX: {
+			title: "\u03BB [\u212B]"
+		},
+		axisY: {
+			title: "",
+			titleFontColor: "#4F81BC",
+			lineColor: "#4F81BC",
+			labelFontColor: "#4F81BC",
+			tickColor: "#4F81BC",
+			includeZero: false,
+			valueFormatString: "0.000"
+		},
+		toolTip: {
+			shared: true
+		},
+		legend: {
+			cursor: "pointer",
+			itemclick: toggleDataSeries
+		},
+		data: [{
+			type: "spline",
+			name: "Sky Radiance",
+			showInLegend: true,
+			xValueFormatString: "#####.## AA",
+			yValueFormatString: "0.###",
+			dataPoints: [
+				{% for my_value in sky_rad %}
+					{% with lambda=wave_array|list_value:forloop.counter0 %}
+					{ x: {{ lambda.value }}, y: {{my_value.value}} },
+					{% endwith %}
+				{% endfor %}
+			]
+		}
+		]
+	};
+	$("#chartContainer").CanvasJSChart(options);
+	$("#atransContainer").CanvasJSChart(options_atrans);
+	$("#grating_efficContainer").CanvasJSChart(options_grating_effic);
+	$("#sky_radContainer").CanvasJSChart(options_sky_rad);
+
+	function toggleDataSeries(e) {
+		if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+			e.dataSeries.visible = false;
+		} else {
+			e.dataSeries.visible = true;
+		}
+		e.chart.render();
+	}
+
+	}
+	</script>
+	<div class="row">
+		<div class="col-md-4 col-xs-12">
+			<div id="chartContainer" style="height: 570px; max-width: 920px; width:100%; margin: 0px auto;"></div>
+		</div>
+		<div class="col-md-4 col-xs-12">
+			<div id="atransContainer" style="height: 570px; max-width: 920px; width:100%; margin: 0px auto;"></div>
+		</div>
+		<div class="col-md-4 col-xs-12">
+			<div id="grating_efficContainer" style="height: 570px; max-width: 920px; width:100%; margin: 0px auto;"></div>
+		</div>
+		<div class="col-md-4 col-xs-12">
+			<div id="sky_radContainer" style="height: 570px; max-width: 920px; width:100%; margin: 0px auto;"></div>
+		</div>
+	</div>
+<script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
+<script src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script>
+{% endblock %}

@@ -26,7 +26,7 @@ def compute_r0(in_lambda,seeing_ref_lambda,ref_lambda=0.5):
     seeing_ref_vis = 0.5  ## Seeing arcseconds at reference lambda 0.5 microns
     r0_ref_vis = 20.  ## r0 in cm equivalent to seeing_ref_vis=0.5 arcsec at 0.5microns
     r0_cm = r0_ref_lambda * (in_lambda/ref_lambda)**(6./5)
-    return r0_cm
+    return r0_cm.value * u.cm
 
 def compute_seeing_lambda(in_lambda,seeing_ref_lambda,ref_lambda=0.5):
     seeing = seeing_ref_lambda * (ref_lambda/in_lambda) **(1./5)
@@ -57,7 +57,8 @@ class GTC_AO:
         print ("self.r0_vis_cm=",self.r0_vis_cm)
         theta_isoplan_vis = 2.0  # arcsec at 0.5 micron (pag 43 GTCAO System Errors Budgets 3.A)
         ## correction of isoplanatic angle due to finite aperture Keck Report 208, Expression 4.6-3, pag 4.52
-        self.theta_isoplan_vis_eff =  theta_isoplan_vis*(1+1/np.log10(diam_telescope/self.r0_vis_cm))
+        aux = (diam_telescope / self.r0_vis_cm).si.value
+        self.theta_isoplan_vis_eff =  theta_isoplan_vis*(1+1/np.log10(aux))
 
 
     def compute_strehl(self,lamb_mic,airmass):
@@ -228,6 +229,11 @@ class GTC_AO:
         raper2_ref = raper_ref * raper_ref
         sigma2_halo = psf["sigma_halo"] * psf["sigma_halo"]
         sigma2_core = psf["sigma_core"] * psf["sigma_core"]
+        print "========================="
+        print raper2_ref.unit
+        print sigma2_halo.unit
+        print sigma2_core.unit
+        print "========================="
 
         #psf = compute_psf(strehl, sigma_core, sigma_halo)
 
@@ -235,11 +241,11 @@ class GTC_AO:
         A_halo = psf['Amp_halo']
         fcore = psf['rat_core2halo']
 
-        ee = (A_halo * sigma2_halo * (1 - np.exp(-raper2_ref / 2. / sigma2_halo)) + \
-              A_core * sigma2_core * (1 - np.exp(-raper2_ref / 2. / sigma2_core))) / \
+        ee = (A_halo * sigma2_halo * (1 - np.exp(-raper2_ref.value / 2. / sigma2_halo.value)) + \
+              A_core * sigma2_core * (1 - np.exp(-raper2_ref.value / 2. / sigma2_core.value))) / \
              (A_halo * sigma2_halo + A_core * sigma2_core)
 
-        ee1 = 1. - 1. / (sigma2_core * fcore + sigma2_halo) * (sigma2_halo * np.exp(-raper2_ref / 2. / sigma2_halo) + \
+        ee1 = 1. - 1. / (sigma2_core * fcore + sigma2_halo) * (sigma2_halo * np.exp(-raper2_ref.value / 2. / sigma2_halo.value) + \
                                                                fcore * sigma2_core * np.exp(-raper2_ref / 2. / sigma2_core))
         area_per_pixel = pixscale*pixscale
         ## check if spaxel is set, then assume a spaxel as 2x1 pixel, according to FRIDA specs.
@@ -302,7 +308,9 @@ class GTC_AO:
 
         rat2_sigma = (sigma_halo / sigma_core) ** 2
 
-        fcore = (strehl * rat2_sigma - 1) / (1 - strehl)
+
+        fcore = (strehl * rat2_sigma - (1 * (rat2_sigma.unit))) / (1 - strehl)
+
 
         amp_core_norm = 1. / 2 / pi / sigma_core ** 2 / (1 + rat2_sigma / fcore)
 

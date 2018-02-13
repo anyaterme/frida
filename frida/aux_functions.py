@@ -82,7 +82,40 @@ def convolve2pulse(wave,response,pulse_width):
 	conv_response = np.convolve(response,pulsodelta,'same')
 	return conv_response
 
-def interpolate(wvl,specfl,new_wvl,unity='None'):
+
+def interpolate(wvl, specfl, new_wvl, unity='None'):
+	#from scipy.interpolate import InterpolatedUnivariateSpline as inter
+	from numpy import interp as inter
+	from scipy import polyval,polyfit
+	try:
+		
+		specfl = specfl[0::len(specfl)/len(wvl)]
+		specfl = specfl[0:len(wvl)]				
+		if (type(wvl) != type (new_wvl)):
+			if (hasattr(wvl, "unit")):
+				new_wvl = new_wvl * wvl.unit
+			else:
+				wvl = wvl * new_wvl.unit
+		print (np.min(wvl), np.min(new_wvl), np.max(new_wvl), np.max(wvl))
+		if (np.min(wvl) <= np.min(new_wvl)) and (np.max(new_wvl) <= np.max(wvl)):
+			if (unity == 'perone'):
+					result=inter(new_wvl, wvl, specfl).clip(0,1)
+			elif (unity == 'percent'):
+					result=inter(new_wvl, wvl, specfl).clip(0,100)
+			else:
+					result=inter(new_wvl, wvl, specfl)
+			return result
+		else:
+			print 3
+			print (len(wvl), len(specfl))
+			inter_func=np.polyfit(wvl, specfl, 1)
+			f = np.poly1d(inter_func)
+			return f(new_wvl)
+	except Exception as e:
+		print ("ERROR in interpolate: ", e)
+		return None
+
+def interpolate_old(wvl,specfl,new_wvl,unity='None'):
 	#
 	#	   Interpolation to a given wvl array. Returned values
 	#	   are clipped to 0, and if it is a transmission curve,
@@ -93,6 +126,9 @@ def interpolate(wvl,specfl,new_wvl,unity='None'):
 	#
 	from scipy.interpolate import InterpolatedUnivariateSpline as inter
 	from scipy import polyval,polyfit
+	print (len(wvl), len(specfl))
+	print (np.max(wvl), np.min(wvl))
+	print (np.max(new_wvl), np.min(new_wvl))
 	#
 	inter_func=inter(wvl,specfl,k=1)
 	if (unity == 'perone'):
@@ -129,17 +165,19 @@ def interpolate(wvl,specfl,new_wvl,unity='None'):
 				temp=polyval(cof,new_wvl)
 
 			result[ind_i]=(temp+(specfl[0]-temp[-1])).clip(0)
-	#
+	#### FIXME ####
 	if len(ind_f) >= 1:
-			cof=polyfit(wvl[-1*nel:],specfl[-1*nel:],1)
-			if hasattr(new_wvl, '__getitem__'):
-				temp=polyval(cof,new_wvl[ind_f])
-				result[ind_f]=(temp+(specfl[-1]-temp[0])).clip(0)
-			else:
-				temp=polyval(cof,new_wvl)
-			print (new_wvl, ind_f, temp, specfl)
-			result[ind_f]=(temp+(specfl[-1]-temp[0])).clip(0)
-	#
+		print ("DEBUG==============", ind_f)
+		cof=polyfit(wvl[-1*nel:],specfl[-1*nel:],1)
+		if not hasattr(new_wvl, '__getitem__'):
+			new_wvl = [new_wvl]
+		temp=polyval(cof,new_wvl[ind_f[0]])
+		if not hasattr(temp, '__getitem__'):
+			temp = [temp]
+		result[ind_f[0]]=(temp+(specfl[-1]-temp[0])).clip(0)
+		print (new_wvl, ind_f, temp, specfl)
+	#### END FIXME ####
+	print (result)
 	if working_unit == None:
 		return result
 	else:

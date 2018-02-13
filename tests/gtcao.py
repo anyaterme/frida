@@ -2,6 +2,7 @@ import numpy as np
 import math
 
 def compute_strehl(filter,seeing,mag_gs,dist_gs,airmass):
+ print "AQUI"
 
  lamb_ref = 0.5
  r0_ref_cm = 20.*lamb_ref/seeing 
