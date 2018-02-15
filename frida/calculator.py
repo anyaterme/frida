@@ -132,6 +132,21 @@ class TargetInfo:
 		self.sed_wave = sed_wave[mask]
 		self.sed_flambda = sed_flambda[mask]
 
+	def debug(self):
+		result = []
+		result.append("=========== DEBUG TARGET INFO ==============")
+		result.append("Magnitude: %.2lf" % self.Magnitude)
+		result.append("Band: %s" % self.Band)
+		result.append("Mag System: %s " % str(self.MagSystem))
+		result.append("SED: %s" % str(self.SED))
+		result.append("Lambda Band: %s" % str(self.lambda_band))   # calculamos el flujo de referencia)
+		result.append("Flux Scale: %s" % str(self.flux_scale))
+		result.append("Sed Wave: %s" % str(self.sed_wave))
+		result.append("Sed Flambda: %s" % str(self.sed_flambda))
+		result.append("===========================================")
+		print '\n'.join(result)
+		return result
+
 
 	def flambda_wave(self,wave):
 		"""

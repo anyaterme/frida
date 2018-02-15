@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 #import frida.gtcao
 #import frida.set_config
 from frida.set_config import *
+from frida.compute_flux import define_photzp
 from frida.calculator import SkyConditions, GuideStar, TargetInfo, Calculator_Image, Calculator_Spect
 from frida.gtcao import GTC_AO
 #from django.http import JsonResponse
@@ -313,14 +314,6 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	a=Calculator_Spect(target_info,sky_conditions,spectrograph_setup,selected_scale,telescope=telescope_params, instrument=frida_setup, aocor = aocor)
 
 	static_response, throughput = a.get_static_response()
-
-	print "===================================="
-	print ("Resp Coll ", static_response["collimator"][1000:1015])
-	print ("SPRF camera ", static_response["camera"][1000:1015])
-	print ("Detector QE ", static_response["qe"][1000:1015])
-	print ("Throughput ", throughput[1000:1015])
-	print "===================================="
-
 	wave_array = a.grating_info.wave_array()
 
 	atrans = a.get_atrans()
@@ -328,6 +321,43 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	sky_rad = a.get_sky_rad()
 
 	context= {'debug_values':debug_values, "static_response":static_response, "throughput":throughput, "wave_array":wave_array, 'atrans': atrans, 'grating_effic':grating_effic, 'sky_rad':sky_rad}
+
+	phot_zp = define_photzp()
+	photons_obj = target_info.photons_wave(wave_array)
+	photunit=u.photon/(u.s * u.cm**2 * u.angstrom)
+	context['photons_obj'] = photons_obj.to(photunit)
+
+	detector = frida_setup.detector
+	phi_obj_total = photons_obj * atrans * telescope_params.area * telescope_params.reflectivity \
+						 * grating_effic * throughput
+
+	electron_per_s_unit=u.electron/(u.s * u.angstrom)
+	exptime = 300 * u.s	## FIXME. What is this param in web?
+
+	## compute sky emission and atmospheric absorption  (done within compute_sky_photonrate_spect)
+	area_reference = np.pi*(50 * u.marcsec)**2
+	phi_sky_apert = sky_rad * telescope_params.area * telescope_params.reflectivity * grating_effic * throughput * area_reference
+
+	## compute S/N
+	dit = float(request.POST.get('DIT_exp',1)) * u.s
+	nexp = int(request.POST.get('N_exp',1)) 
+	texp = nexp * dit
+	aperture = {"EE":0.5,"Npix":27}		##FIXME. What is this param in web?
+	phi_obj_apert = phi_obj_total * aperture["EE"]
+	dwave = a.grating_info.delt_wave
+	shot_noise2 = (texp * dwave * (phi_obj_apert + phi_sky_apert).to(electron_per_s_unit)).value
+	dark_noise2 = (texp * detector['darkc'] * aperture['Npix']).value
+	read_noise2 = (nexp * aperture['Npix'] * detector['ron'] ** 2).value
+	noise = np.sqrt(shot_noise2 + dark_noise2 + read_noise2)
+	signal = texp * dwave * phi_obj_apert
+	snr = signal.to("electron").value / noise
+	context["snr"] = snr
+	debug_values.append("SNR => %s" % str(snr))
+
+
+	debug_values = debug_values + target_info.debug()
+	context['debug_values'] = debug_values
+
 	return render (request, "calculate_ifs.html", context)
 
 

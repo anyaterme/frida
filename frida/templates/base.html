@@ -76,10 +76,23 @@
 
 			function check_collapse_from_heading (element)
 			{
+				check_collapse_from_heading_class(element, 'panel-primary');
+			}
+
+			function check_collapse_from_heading_class (element, myclass)
+			{
 				$(element).parent().parent().parent().find('.panel-body').addClass('collapse');
-				$(element).parent().parent().parent().find('.panel').removeClass('panel-primary');
+				$(element).parent().parent().parent().children('.panel').removeClass(myclass);
+				$(element).parent().parent().parent().children('.panel').addClass('panel-default');
 				$(element).parent().parent().find('.panel-body').removeClass('collapse');
-				$(element).parent().parent().addClass('panel-primary');
+				$(element).parent().parent().addClass(myclass);
+			}
+
+			function check_collapse_from_heading_class_v2 (element, myclass, reference_class)
+			{
+				$('.'+reference_class).removeClass(myclass);
+				$('.'+reference_class).addClass('panel-default');
+				$(element).parent().parent().addClass(myclass);
 			}
 
 			function enable_imaging()
