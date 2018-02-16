@@ -8,7 +8,8 @@
 						<input type="radio" name="spectral_type" id="spectral_type" value="black_body"  onclick="check_collapse_from_heading_class(this,'panel-info');" checked="checked"> &nbsp; Black body spectrum
 					</div>
 					<div class="panel-body">
-						Temperature <input type="number" class="form-control" id="temperature" value=10000 name="temperature" placeholder="10000" min="100" max="50000"> K
+						<label for="temperature">Temperature (K)</label>
+					  	<input type="number" class="form-control" id="temperature" value=10000 name="temperature" placeholder="10000" min="100" max="50000">
 					</div>
 				</div>
 				<div class="panel panel-default">
@@ -16,7 +17,8 @@
 						<input type="radio" name="spectral_type" id="spectral_type" value="power_law"  onclick="check_collapse_from_heading_class(this,'panel-info');"> Power-law spectrum. 
 					</div>
 					<div class="panel-body collapse">
-						S<sub>&lambda;</sub> = &lambda; ^ <input type="number" class="form-control" id="pl_index" name="pl_index" placeholder="1.0" min="-4.0" max="4.0" step="0.1">
+						<label for="pl_index"> S<sub>&lambda;</sub> = &lambda; ^ </label>
+						<input type="number" class="form-control" id="pl_index" name="pl_index" placeholder="1.0" min="-4.0" max="4.0" step="0.1">
 					</div>
 				</div>
 				<div class="panel panel-default">
@@ -33,32 +35,57 @@
 				</div>
 				<div class="panel panel-default">
 					<div class="panel-heading">
-					<input type="radio" name="spectral_type" id="spectral_type" value="single_emission"  onclick="check_collapse_from_heading_class(this,'panel-info');">
-					Single emission line 
+						<input type="radio" name="spectral_type" id="spectral_type" value="single_emission"  onclick="check_collapse_from_heading_class(this,'panel-info');">
+						Single emission line 
 					</div>
 					<div class="panel-body collapse">
 						<div class="col-xs-12">
-						at wavelength <input type="number" class="form-control" id="st_wavelength" name="st_wavelength" placeholder="2.2" style="width:75px;"> &nbsp;&mu;
+							<div class="row">
+								<div class="col-xs-5 text-left"> <label for="st_wavelength">Wavelength (&mu;)</label> </div>
+								<div class="col-xs-7 text-left">
+									<input type="number" class="form-control" id="st_wavelength" name="st_wavelength" placeholder="2.2" >
+								</div>
+							</div>
 						</div>
 						<div class="col-xs-12">
-						with line flux <input type="text" class="form-control" id="st_flux" name="st_flux" placeholder="5.0e-19" style="width:75px;">
-						<select class="form-control" name="st_units" id="st_units">
-							<option>W/m^2</option>
-							<option>...</option>
-						</select>
+							<div class="row">
+								<div class="col-md-5 text-left"> <label for="st_flux">Line flux</label> </div>
+								<div class="col-md-7 text-left"> <input type="text" class="form-control" id="st_flux" name="st_flux" placeholder="5.0e-19"> </div>
+							</div>
 						</div>
 						<div class="col-xs-12">
-							and line with <input type="text" class="form-control" id="st_velocity" name="st_velocity" placeholder="500.0" style="width:75px;"> Km/s 
+							<div class="row">
+								<div class="col-md-5 text-left"><label for="st_units">Flux Units</label></div>
+								<div class="col-md-7 text-left">
+									<select class="form-control" name="st_units" id="st_units">
+										<option value="">W/m^2</option>
+										<option value="mJy">mJansky</option>
+									</select>
+								</div>
+							</div>
 						</div>
 						<div class="col-xs-12">
-							on a flat (in wavelength) continuum of flux density 
+							<div class="row">
+								<div class="col-md-5 text-left"><label for="st_velocity">Velocity (Km/s)</div>
+								<div class="col-md-7 text-left"><input type="text" class="form-control" id="st_velocity" name="st_velocity" placeholder="500.0"></div>
+							</div>
 						</div>
 						<div class="col-xs-12">
-							<input type="text" class="form-control" id="st_flux_density" name="st_flux_density" placeholder="1.0e-16" style="width:75px;">
-							<select class="form-control" name="st_unit_flux_density" id="st_unit_flux_density">
-								<option>W/m^2/um</option>
-								<option>...</option>
-							</select>
+							<div class="row">
+								<div class="col-md-5"><label for="st_flux_density">Continuum</label></div>
+								<div class="col-md-7"> <input type="text" class="form-control" id="st_flux_density" name="st_flux_density" placeholder="1.0e-16"></div>
+							</div>
+						</div>
+						<div class="col-xs-12">
+							<div class="row">
+								<div class="col-md-5"><label for="st_unit_flux_density">Continuum units</label></div>
+								<div class="col-md-7 text-left">
+									<select class="form-control" name="st_unit_flux_density" id="st_unit_flux_density">
+										<option>W/m^2/um</option>
+										<option>...</option>
+									</select>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -88,131 +115,134 @@
 		</div>
 	</div>
 	<div class="col-xs-12 col-md-9">
-		<div class="col-xs-12 col-md-12">
-			<div class="panel panel-primary">
-				<div class="panel-heading"> <strong>Brightness: <a href="#" class="badge"> more info </a></strong></div>
-				<div class="panel-body panel-default">
-					<div class="row">
-						<div class="col-md-6 col-xs-12">
-							<div class="form-group">
-								<label for="spatial_integrated_brightness">Spatially integrated brightness </label><br/>
-								<input type="number" step="0.5" min="5" max="30" class="form-control" id="spatial_integrated_brightness" name="spatial_integrated_brightness" placeholder="17.0" value="17.0" required errorMsg=" (Tab 'Astronomical Source Definition') ">
-								<select class="form-control" name="units_sib" id="units_sib">
-									<option value="mag">mag</option>
-									<option value="wm2um">W/m<sup>2</sup>/&mu;m</option>
-								</select>
-								<br/>
-								<br/>
+		<div class="row">
+			<div class="col-xs-12 col-md-12">
+				<div class="panel panel-primary">
+					<div class="panel-heading"> <strong>Brightness: <a href="#" class="badge"> more info </a></strong></div>
+					<div class="panel-body panel-default">
+						<div class="row">
+							<div class="col-md-6 col-xs-12">
+								<div class="form-group">
+									<label for="spatial_integrated_brightness">Spatially integrated brightness </label><br/>
+									<input type="number" step="0.5" min="5" max="30" class="form-control" id="spatial_integrated_brightness" name="spatial_integrated_brightness" placeholder="17.0" value="17.0" required errorMsg=" (Tab 'Astronomical Source Definition') ">
+									<select class="form-control" name="units_sib" id="units_sib">
+										<option value="mag">mag</option>
+										<option value="wm2um">W/m<sup>2</sup>/&mu;m</option>
+									</select>
+									<br/>
+									<br/>
+								</div>
+							</div>
+							<div class="col-md-6 col-xs-12 ">
+								<label for="extinction"> Extinction (Av) </label><br/>
+								<input type="number" class="form-control" id="extinction" name="extinction" placeholder="0" >
 							</div>
 						</div>
-						<div class="col-md-6 col-xs-12 ">
-							<label for="extinction"> Extinction (Av) </label><br/>
-							<input type="number" class="form-control" id="extinction" name="extinction" placeholder="0" >
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-xs-12 col-md-6 form-group">
-							<div class="panel panel-info"> 
-								<div class="panel-heading"> <input type="radio" name="radio3" id="radio3" value="option1" checked> <label for="radio3">Filter</label></div>
-								<div class="panel-body">
-									<div class="col-xs-3">
-										<select class="form-control" name="band_flux" id="band_flux">
-											<option value="B">Band B</option>
-											<option value="V">Band V</option>
-											<option value="R" selected>Band R</option>
-											<option value="I">Band I</option>
-											<option value="J">Band J</option>
-											<option value="H">Band H</option>
-											<option value="K">Band K</option>
-										</select>
-									</div>
-									<div class="col-xs-9 ">
-										<label for="text5">Wavelength (&mu;)</label>
-										<input type="text" class="form-control" id="text5" name="text5" placeholder="2.2" style="width:75px;">
+						<div class="row">
+							<div class="col-xs-12 col-md-6 form-group">
+								<div class="panel panel-info"> 
+									<div class="panel-heading"> <input type="radio" name="radio3" id="radio3" value="option1" checked> <label for="radio3">Filter</label></div>
+									<div class="panel-body">
+										<div class="col-xs-3">
+											<select class="form-control" name="band_flux" id="band_flux">
+												<option value="B">Band B</option>
+												<option value="V">Band V</option>
+												<option value="R" selected>Band R</option>
+												<option value="I">Band I</option>
+												<option value="J">Band J</option>
+												<option value="H">Band H</option>
+												<option value="K">Band K</option>
+											</select>
+										</div>
+										<div class="col-xs-9 ">
+											<label for="text5">Wavelength (&mu;)</label>
+											<input type="text" class="form-control" id="text5" name="text5" placeholder="2.2" style="width:75px;">
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
-						<div class="col-xs-12 col-md-3 ">
-							<div class="panel panel-info panel-velocity-radio">
-								<div class="panel-heading"> <input type="radio" name="velocity_type" id="redshift" value="redshift" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" checked> <strong> Redshift (z) </strong></div>
-								<div class="panel-body">
-									<input type="number" step="0.01" class="form-control" id="redshift_value" name="redshift_value" placeholder="0.0" style="width:95%;">
+							<div class="col-xs-12 col-md-3 ">
+								<div class="panel panel-info panel-velocity-radio">
+									<div class="panel-heading"> <input type="radio" name="velocity_type" id="redshift" value="redshift" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" checked> <strong> Redshift (z) </strong></div>
+									<div class="panel-body">
+										<input type="number" step="0.01" class="form-control" id="redshift_value" name="redshift_value" placeholder="0.0" style="width:95%;">
+									</div>
 								</div>
 							</div>
-						</div>
-						<div class="col-xs-12 col-md-3 ">
-							<div class="panel panel-default panel-velocity-radio">
-								<div class="panel-heading"> <input type="radio" name="velocity_type" id="radial_vel" value="radial_vel" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" > <strong> Radial Vel (Km/s) </strong></div>
-								<div class="panel-body">
-									<input type="number" step="0.01" class="form-control" id="radial_value" name="radial_value" placeholder="0.0" style="width:95%;"> 
+							<div class="col-xs-12 col-md-3 ">
+								<div class="panel panel-default panel-velocity-radio">
+									<div class="panel-heading"> <input type="radio" name="velocity_type" id="radial_vel" value="radial_vel" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" > <strong> Radial Vel (Km/s) </strong></div>
+									<div class="panel-body">
+										<input type="number" step="0.01" class="form-control" id="radial_value" name="radial_value" placeholder="0.0" style="width:95%;"> 
+									</div>
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<div class="col-xs-12 col-md-12">
-			<div class="panel panel-primary">
-				<div class="panel-heading"> <strong>Spatial profile: <a href="#" class="badge"> more info </a></strong></div>
-				<div class="panel-body">
-					<div class="col-xs-12 col-md-6">
-						<div class="panel panel-default panel-primary">
-							<div class='panel-heading'>
-								<input type="radio" name="source_type" id="point" value="point" checked onchange='check_extended_source()'>
-								<strong>Point source</strong> with ...
+			<div class="col-xs-12 col-md-12">
+				<div class="panel panel-primary">
+					<div class="panel-heading"> <strong>Spatial profile: <a href="#" class="badge"> more info </a></strong></div>
+					<div class="panel-body">
+						<div class="col-xs-12 col-md-6">
+							<div class="panel panel-default panel-primary">
+								<div class='panel-heading'>
+									<input type="radio" name="source_type" id="point" value="point" checked onchange='check_extended_source()'>
+									<strong>Point source</strong> with ...
+								</div>
 							</div>
 						</div>
-					</div>
-					<div class="col-xs-12 col-md-6">
-						<div class="panel panel-default">
-							<div class="panel-heading">
-								<input type="radio" name="source_type" id="extended" value="extended" onchange='check_extended_source()'>
-								<strong>Extended source</strong>  
-							</div>
-							<div id="extended_source" class="panel-body">
-									<div class='panel panel-default panel-primary' id='gaussian_section'>
-										<div class="panel-heading">
-										&nbsp;&nbsp;<input type="radio" name="radio2" id="radio2" value="option1" checked onchange="check_collapse_from_heading(this)">
-										Gaussian profile 
-										</div>
-										<div class="panel-body">
-											<span class='list-group'>
-												<span class="list-group-item col-xs-12">
-													Full width half maximum of 
-													<input type="number" class="form-control" id="text2" name="text2" placeholder="1.0" style="width:100px;" max="30.0" min="0.0" step="0.10" >
-													&nbsp;arcsec 
-													<span class= "glyphicon glyphicon-question-sign" onclick="show_help(this);">&nbsp;<span class="text-info" style="display:none">Texto de Ayuda</span></span>
+						<div class="col-xs-12 col-md-6">
+							<div class="panel panel-default">
+								<div class="panel-heading">
+									<input type="radio" name="source_type" id="extended" value="extended" onchange='check_extended_source()'>
+									<strong>Extended source</strong>  
+								</div>
+								<div id="extended_source" class="panel-body">
+										<div class='panel panel-default panel-primary' id='gaussian_section'>
+											<div class="panel-heading">
+											&nbsp;&nbsp;<input type="radio" name="radio2" id="radio2" value="option1" checked onchange="check_collapse_from_heading(this)">
+											Gaussian profile 
+											</div>
+											<div class="panel-body">
+												<span class='list-group'>
+													<span class="list-group-item col-xs-12">
+														Full width half maximum of 
+														<input type="number" class="form-control" id="text2" name="text2" placeholder="1.0" style="width:100px;" max="30.0" min="0.0" step="0.10" >
+														&nbsp;arcsec 
+														<span class= "glyphicon glyphicon-question-sign" onclick="show_help(this);">&nbsp;<span class="text-info" style="display:none">Texto de Ayuda</span></span>
+													</span>
 												</span>
-											</span>
+											</div>
 										</div>
-									</div>
-									<div class='panel panel-default' id='uniform_surface'>
-										<div class="panel-heading">
-										&nbsp;&nbsp;<input type="radio" name="radio2" id="radio2" value="option2" onchange="check_collapse_from_heading(this);">
-										Uniform surface 
-										</div>
-										<div class='panel-body collapse'>
-											<span class='list-group' >
-												<span class='list-group-item'>
-													Brightness <input type="text" class="form-control" id="text4" name="text4" placeholder="22.0" style="width:75px;">
-													<select class="form-control" name="select3" id="select3">
-														<option value="magsqarcsec">mag /(sq arcsec)</option>
-														<option value="wm2um">W/m^2/um</option>
-													</select>
-													&nbsp;
-													<span class= "glyphicon glyphicon-question-sign" onclick="show_help(this);">&nbsp;<span class="text-info" style="display:none">Texto de Ayuda</span></span>
+										<div class='panel panel-default' id='uniform_surface'>
+											<div class="panel-heading">
+											&nbsp;&nbsp;<input type="radio" name="radio2" id="radio2" value="option2" onchange="check_collapse_from_heading(this);">
+											Uniform surface 
+											</div>
+											<div class='panel-body collapse'>
+												<span class='list-group' >
+													<span class='list-group-item'>
+														Brightness <input type="text" class="form-control" id="text4" name="text4" placeholder="22.0" style="width:75px;">
+														<select class="form-control" name="select3" id="select3">
+															<option value="magsqarcsec">mag /(sq arcsec)</option>
+															<option value="wm2um">W/m^2/um</option>
+														</select>
+														&nbsp;
+														<span class= "glyphicon glyphicon-question-sign" onclick="show_help(this);">&nbsp;<span class="text-info" style="display:none">Texto de Ayuda</span></span>
+													</span>
 												</span>
-											</span>
+											</div>
 										</div>
-									</div>
-								</span>
+									</span>
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
+			<div class="col-xs-12 col-md-12"> <input type="submit" class="btn btn-block btn-lg btn-warning" value="Calculate" /></div>
 		</div>
 	</div>
 </div>

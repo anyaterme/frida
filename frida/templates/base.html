@@ -8,7 +8,7 @@
         <meta name="description" content="IAC Frida">
         <meta name="keywords" content="IAC Frida" />
         <meta name="author" content="IAC Frida" />
-        <title>IAC - Calculadora Frida</title>
+        <title>IAC - FRIDA ETC</title>
 		<!-- Latest compiled and minified CSS -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 
@@ -134,41 +134,19 @@
 			
 
 		</script>
-		<style>
-			.col-xs-15, .col-sm-15, .col-md-15, .col-lg-15 
-			{
-				position: relative;
-				min-height: 1px;
-				padding-right: 10px;
-				padding-left: 10px;
-			}
-			.col-xs-15 { width: 20%; float: left; }
-			@media (min-width: 768px) { .col-sm-15 { width: 20%; float: left; } }
-			@media (min-width: 992px) { .col-md-15 { width: 20%; float: left; } }
-			@media (min-width: 1200px) { .col-lg-15 { width: 20%; float: left; } }
-		</style>
     </head>
 
     <body>
 		<div class="container-fluid">
-			<div class="masthead">
-				<h3 class="text-muted">Frida</h3>
-				{% comment %}
-				<nav>
-					<ul class="nav nav-justified">
-						<li class="active"><a href="{% url "index" %}">Home</a></li>
-						<li><a href="#">Projects</a></li>
-						<li><a href="#">Services</a></li>
-						<li><a href="#">Downloads</a></li>
-						<li><a href="#">About</a></li>
-						<li><a href="#">Contact</a></li>
-					</ul>
-				</nav>
-				{% endcomment %}
-			</div>
+			<nav class="nav navbar-inverse navbar-fixed-top navbar-toggleable-md">
+				<div class="visible-lg"> <h1 class="navbar-brand mb-0">Frida. Exposure Time Calculator</h1></div>
+				<div class="hidden-lg hidden-sm"> <h1 class="navbar-brand mb-0">Frida. ETC</h1></div>
+			</nav>
 
+			<div class="body-content">
 			{% block content %}
 			{% endblock %}
+			</div>
 
 			<!-- Site footer -->
 			<footer class="footer">

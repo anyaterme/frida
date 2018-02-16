@@ -1,43 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
     <ul class="nav nav-tabs">
-        <li class="active"><a data-toggle="tab" href="#sectionA">Astronomical source definition</a></li>
-        <li><a data-toggle="tab" href="#sectionB">Observing conditions and GTCAO configuration</a></li>
-        <li><a data-toggle="tab" href="#sectionC">Instrument (FRIDA) configuration</a></li>
-		  <!--
-        <li><a data-toggle="tab" href="#sectionD">Details of observation</a></li>
-		  -->
+		 <li class="active"><a data-toggle="tab" href="#sectionA"><span class="hidden-xs">Astronomical source definition</span><span class="hidden-sm hidden-md hidden-lg hidden-xl">ASD</span></a></li>
+		 <li><a data-toggle="tab" href="#sectionB"><span class="hidden-xs">Observing conditions and GTCAO configuration</span><span class="hidden-sm hidden-md hidden-lg hidden-xl">Observ & GTCAO</span></a></li>
+        <li><a data-toggle="tab" href="#sectionC">FRIDA configuration</a></li>
     </ul>
 	<form class="form-inline" method="POST" action="{% url "calculate" %}" id="calculate_form" target="_blank">
 	 	<ul class="errorMessages list-group"></ul>
 		{% csrf_token %}
 		<div class="tab-content">
 			<div id="sectionA" class="tab-pane fade in active">
-				<br/>
-				<p class="text-right"><input type="submit" class="btn btn-lg btn-warning" value="Calculate" /></p>
 				{% include "params1.html" %}
-				<p class="text-right"><input type="submit" class="btn btn-lg btn-warning" value="Calculate" /></p>
 			</div>
 			<div id="sectionB" class="tab-pane fade">
-				<br/>
-				<p class="text-right"><input type="submit" class="btn btn-lg btn-warning" value="Calculate" /></p>
 				{% include "params2.html" %}
-				<p class="text-right"><input type="submit" class="btn btn-lg btn-warning" value="Calculate" /></p>
 			</div>
 			<div id="sectionC" class="tab-pane fade">
-				<br/>
-				<p class="text-right"><input type="submit" class="btn btn-lg btn-warning" value="Calculate" /></p>
 				{% include "params3.html" %}
-				<p class="text-right"><input type="submit" class="btn btn-lg btn-warning" value="Calculate" /></p>
 			</div>
-			<!--
-			<div id="sectionD" class="tab-pane fade">
-				<br/>
-				<p class="text-right"><input type="submit" class="btn btn-lg btn-warning" value="Calculate" /></p>
-				{% include "params4.html"%}
-				<p class="text-right"><input type="submit" class="btn btn-lg btn-warning" value="Calculate" /></p>
-			</div>
-			-->
 		</div>
 	</form>
 	<script>

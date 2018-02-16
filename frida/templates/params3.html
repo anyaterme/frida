@@ -1,20 +1,57 @@
-	<div class="">
+<div class="col-xs-12 col-lg-6">
+	<div class="row">
 		<div class="col-xs-12 col-lg-6">
 			<div class="panel panel-primary">
 				<div class="panel-heading">
 					<strong>Observing mode: </strong> 
 				</div>
 				<div class="panel-body">
-					<div class="col-xs-6 text-center">
-						<input type="radio" name="observation_mode" id="direct_imaging" value="DI" onchange="disable_ifu();" checked> Direct Imaging
-					</div>
-					<div class="col-xs-6 text-center">
-						<input type="radio" name="observation_mode" id="ifs" value="IFS" onchange="enable_ifu()" > Integral Field Spectroscopy
+					<div class="row">
+						<div class="col-lg-5 text-center"> <input type="radio" name="observation_mode" id="direct_imaging" value="DI" onchange="disable_ifu();" checked> Direct Imaging </div>
+						<div class="col-lg-7 text-center"> <input type="radio" name="observation_mode" id="ifs" value="IFS" onchange="enable_ifu()" > Integral Field Spectroscopy </div>
 					</div>
 				</div>
 			</div>
 		</div>
 		<div class="col-xs-12 col-lg-6">
+			<div class="panel panel-primary imaging_dependent">
+				<div class="panel-heading">
+					<strong>Filter:</strong>
+				</div>
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-md-5 text-right"> <label for="filter">Filter</label></div> 
+						<div class="col-md-7">
+							<select class="form-control" name="filter" id="filter" >
+							{% for filter in list_filters %}
+								<option value='{{ filter.Code }}'>{{ filter.Name }}</option>
+							{% endfor %}
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="panel panel-primary spec_dependent hide">
+				<div class="panel-heading">
+					<strong>Grating:</strong>
+				</div>
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-xs-12 col-lg-4 text-right">
+							<select class="form-control" name="grating" id="grating" onChange="change_grating_value();">
+								{% for grating in list_gratings %}
+									<option value='{{ grating.Name }}' aux='{{ grating.Central_Wave }}'>{{ grating.Name }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="col-xs-12 col-lg-8 text-left">
+							<input type="text" class="form-control" id="rating_value" name="grating_value" > &#8491;
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-xs-12 col-lg-12">
 			<div class="panel panel-primary">
 				<div class="panel-heading">
 					<strong>Instrument scale:</strong>
@@ -33,142 +70,117 @@
 			</div>
 		</div>
 	</div>
-	<div class="col-xs-12 col-lg-6 text-center">
-		<div class="panel panel-primary imaging_dependent">
-			<div class="panel-heading">
-				<strong>Filter:</strong>
-			</div>
-			<div class="panel-body">
-				<select class="form-control" name="filter" id="filter" >
-					{% for filter in list_filters %}
-						<option value='{{ filter.Code }}'>{{ filter.Name }}</option>
-					{% endfor %}
-				</select>
-			</div>
+</div>
+<div class="col-xs-12 col-lg-6">
+	<div class="panel panel-primary">
+		<div class="panel-heading">
+			<strong>Calculation method:</strong> <a href="#" class="badge">more info</a>
 		</div>
-		<div class="panel panel-primary spec_dependent hide">
-			<div class="panel-heading">
-				<strong>Grating:</strong>
-			</div>
-			<div class="panel-body">
-				<div class="row">
-					<div class="col-xs-12 col-lg-4 text-right">
-						<select class="form-control" name="grating" id="grating" onChange="change_grating_value();">
-							{% for grating in list_gratings %}
-								<option value='{{ grating.Name }}' aux='{{ grating.Central_Wave }}'>{{ grating.Name }}</option>
-							{% endfor %}
-						</select>
+		<div class="panel-body">
+			<div class="col-xs-6">
+				<div class="panel panel-default">
+					<div class="panel-heading text-center ">
+						<input class="control" type="radio" name="type_results" value="SN_ratio"/> S/N ratio
 					</div>
-					<div class="col-xs-12 col-lg-8 text-left">
-					Spectrum central wavelength:
-					<input type="text" class="form-control" id="rating_value" name="grating_value" > &#8491;
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="col-xs-12 col-lg-6">
-		<div class="panel panel-primary">
-			<div class="panel-heading">
-				<strong>Calculation method:</strong> <a href="#" class="badge">more info</a>
-			</div>
-			<div class="panel-body">
-				<div class="col-xs-6">
-					<div class="panel panel-default">
-						<div class="panel-heading text-center ">
-							<input class="control" type="radio" name="type_results" value="SN_ratio"/> S/N ratio
-						</div>
-						<div class="panel-body">
-								<div class="col-xs-12 form-group">
+					<div class="panel-body">
+						<div class="row">
+							<div class="col-xs-12 ">
+								<div class="col-xs-4">
 									<label for="signal_noise">S/N</label>
+								</div>
+								<div class="col-xs-8">
 									<input class="form-control" type="number" id="signal_noise" name="signal_noise" value="5.000" step="0.001"/>
 								</div>
-								<div class="col-xs-12 form-group">
-									<label for="DIT_exp" >DIT</label>
-									<input class="form-control" type="number" name="DIT_exp" id="DIT_exp" value="20.0000" step="0.0001"/> seconds
-								</div>
-						</div>
-					</div>
-				</div>
-				<div class="col-xs-6">
-					<div class="panel panel-default">
-						<div class="panel-heading text-center ">
-							<input class="" type="radio" name="type_results" value="exposure_time"/> Exposure Time
-						</div>
-						<div class="panel-body">
-							<div class="form-group">
-								<label for="N_exp"> NDIT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </label>
-								<input class="form-control" type="number" name="N_exp" id="N_exp" value="100"/> 
 							</div>
-							<div class="form-group">
-								<label for="dit_pattern"> DIT Pattern </label>
-								<input class="form-control" type="number" name="dit_pattern" id="dit_pattern" value="1" disabled/> 
+							<div class="col-xs-12 ">
+								<div class="col-xs-4"> <label for="DIT_exp" >DIT (sec)</label> </div>
+								<div class="col-xs-8"> <input class="form-control" type="number" name="DIT_exp" id="DIT_exp" value="20.0000" step="0.0001"/> </div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-	</div>
-	<div class="col-xs-12 col-lg-12">
-		<div class="panel panel-primary hide" id="ifu_dependent">
-			<div class="panel-heading">
-				<strong>Analysis method:</strong> <a href="#" class="badge"> more info</a>
-			</div>
-			<div class="panel-body">
-				For Integral Field Unit (IFU) spectroscopy only...
-				<input type="radio" name="radio6" id="radio6" value="0">
-				Select multiple IFU elements to be summed: 	
-				<input type="text" class="form-control" id="text16" name="text16" placeholder="2" style="width:75px;"> 
-				by
-				<input type="text" class="form-control" id="text17" name="text17" placeholder="5" style="width:75px;"> 
-				apertures (each one 0.103x0.042 arcsec)
-
-				<br/><br/>
-				<input type="radio" name="radio6" id="radio6" value="1">
-				Select an individual IFU element offset by 
-				<input type="text" class="form-control" id="text18" name="text18" placeholder="0.0" style="width:75px;"> 
-				arcsec from the center
-
-				<br/><br/>
-				<input type="radio" name="radio6" id="radio6" value="2">
-				Select multiple IFU elements along a radius with offsets of 
-				<input type="text" class="form-control" id="text19" name="text19" placeholder="0.0" style="width:75px;"> 
-				to
-				<input type="text" class="form-control" id="text20" name="text20" placeholder="1.0" style="width:75px;"> 
-				arcsec
-			</div>
-		</div>
-	</div>
-		<div class="col-xs-12">
-			<div class="panel panel-primary">
-				<div class="panel-heading">
-					<strong>Output:</strong>
-				</div>
-				<div class="panel-body">
-					<div class="row spec_dependent hide" >
+			<div class="col-xs-6">
+				<div class="panel panel-default">
+					<div class="panel-heading text-center ">
+						<input class="" type="radio" name="type_results" value="exposure_time"/> Exposure Time
+					</div>
+					<div class="panel-body">
 						<div class="col-xs-12">
-							For spectroscopy, 
-							<input type="radio" name="radio7" id="radio7" value="autoscale">
-							autoscale or 
-							<input type="radio" name="radio7" id="radio7" value="limits">
-							specify limits for plotted spectra (lower wavelength
-							<input type="text" class="form-control" id="text21" name="text21" placeholder="2.10" style="width:75px;"> 
-							micron and upper wavelength
-							<input type="text" class="form-control" id="text22" name="text22" placeholder="2.20" style="width:75px;"> 
-							micron)
-							<br/> <br/>
+							<div class="col-md-5"> <label for="N_exp"> NDIT </label></div>
+							<div class="col-md-7"> <input class="form-control" type="number" name="N_exp" id="N_exp" value="100"/> </div>
 						</div>
-					</div>
-					<div class="row imaging_dependent" id="naco">
-						<div class="col-xs-4 text-center"> <input type="checkbox" name="2d_psf" disabled/> 2-D PSF image (jpg and FITS) (point source only)</div>
-						<div class="col-xs-4 text-center"> <input type="checkbox" name="enc_energy_aperture_radius" disabled/> Encircled Energy as a function of Aperture Radius (point source only)</div>
-						<div class="col-xs-4 text-center"> <input type="checkbox" name="sn_as_exp_time" disabled/> S/N as a function of Exposure Time </div>
+						<div class="col-md-12">
+							<div class="col-md-5"> <label for="dit_pattern"> DIT Pattern </label></div>
+							<div class="col-md-7"><input class="form-control" type="number" name="dit_pattern" id="dit_pattern" value="1" disabled/> </div>
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
+</div>
+<div class="col-xs-12 col-lg-12">
+	<div class="panel panel-primary hide" id="ifu_dependent">
+		<div class="panel-heading">
+			<strong>Analysis method:</strong> <a href="#" class="badge"> more info</a>
+		</div>
+		<div class="panel-body">
+			For Integral Field Unit (IFU) spectroscopy only...
+			<input type="radio" name="radio6" id="radio6" value="0">
+			Select multiple IFU elements to be summed: 	
+			<input type="text" class="form-control" id="text16" name="text16" placeholder="2" style="width:75px;"> 
+			by
+			<input type="text" class="form-control" id="text17" name="text17" placeholder="5" style="width:75px;"> 
+			apertures (each one 0.103x0.042 arcsec)
+
+			<br/><br/>
+			<input type="radio" name="radio6" id="radio6" value="1">
+			Select an individual IFU element offset by 
+			<input type="text" class="form-control" id="text18" name="text18" placeholder="0.0" style="width:75px;"> 
+			arcsec from the center
+
+			<br/><br/>
+			<input type="radio" name="radio6" id="radio6" value="2">
+			Select multiple IFU elements along a radius with offsets of 
+			<input type="text" class="form-control" id="text19" name="text19" placeholder="0.0" style="width:75px;"> 
+			to
+			<input type="text" class="form-control" id="text20" name="text20" placeholder="1.0" style="width:75px;"> 
+			arcsec
+		</div>
+	</div>
+</div>
+<div class="col-xs-12">
+	<div class="panel panel-primary">
+		<div class="panel-heading">
+			<strong>Output:</strong>
+		</div>
+		<div class="panel-body">
+			<div class="row spec_dependent hide" >
+				<div class="col-xs-12">
+					For spectroscopy, 
+					<input type="radio" name="radio7" id="radio7" value="autoscale">
+					autoscale or 
+					<input type="radio" name="radio7" id="radio7" value="limits">
+					specify limits for plotted spectra (lower wavelength
+					<input type="text" class="form-control" id="text21" name="text21" placeholder="2.10" style="width:75px;"> 
+					micron and upper wavelength
+					<input type="text" class="form-control" id="text22" name="text22" placeholder="2.20" style="width:75px;"> 
+					micron)
+					<br/> <br/>
+				</div>
+			</div>
+			<div class="row imaging_dependent" id="naco">
+				<div class="col-xs-4 text-center"> <input type="checkbox" name="2d_psf" disabled/> 2-D PSF image (jpg and FITS) (point source only)</div>
+				<div class="col-xs-4 text-center"> <input type="checkbox" name="enc_energy_aperture_radius" disabled/> Encircled Energy as a function of Aperture Radius (point source only)</div>
+				<div class="col-xs-4 text-center"> <input type="checkbox" name="sn_as_exp_time" disabled/> S/N as a function of Exposure Time </div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="col-xs-12">
+	<input type="submit" class="btn btn-lg btn-warning btn-block" value="Calculate" />
+</div>
 </div>
 <script>
 	change_grating_value();

@@ -1,0 +1,21 @@
+h1.navbar-brand
+{
+	font-size:2em;
+}
+.body-content
+{
+	padding-top:100px;
+	padding-bottom:100px;
+}
+
+footer
+{
+	position:fixed;
+	width:100%;
+	bottom:0px;
+	height:50px;
+	background:#111;
+	color:white;
+	padding:10px;
+	text-align:right;
+}
