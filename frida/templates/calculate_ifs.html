@@ -1,11 +1,6 @@
 {% extends "base.html" %}
 {% load fridatags %}
 {% block content %}
-	<ul class="list-group">
-	{% for value in debug_values %}
-		<li class="list-group-item">{{ value }}</li>
-	{% endfor %}
-	</ul>
 	<script>
 	window.onload = function () {
 
@@ -402,7 +397,15 @@
 			</div>
 		</div>
 	</div>
-</div>
+	<div class="row">
+		<div class="col-xs-12">
+			<ul class="list-group">
+			{% for value in debug_values %}
+				<li class="list-group-item">{{ value }}</li>
+			{% endfor %}
+			</ul>
+		</div>
+	</div>
 <script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
 <script src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script>
 {% endblock %}
