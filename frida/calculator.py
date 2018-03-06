@@ -420,6 +420,11 @@ class Calculator_Image:
 		"""
 		phi_obj_apert = self.phi_obj_total * aperture['EE']
 		phi_sky_apert = self.phi_sky_sqarc * np.pi * aperture['Radius']**2
+		print "==========================="
+		print phi_obj_apert.unit
+		print phi_sky_apert.unit
+		print (self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2).unit
+		print "==========================="
 		##noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
 		noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
 
