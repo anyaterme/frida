@@ -230,6 +230,7 @@ class Calculator_Image:
 		self.refl_tel = params_tel.reflectivity
 		print ('Telescope is ',params_tel.name)
 
+
 		#### filter
 		filter_info = Filter(filter,path_list=settings.INCLUDES,path_filters=settings.FILTERS)
 		self.filter_wave =  filter_info.wave
@@ -332,8 +333,12 @@ class Calculator_Image:
 		"""
 		import scipy.integrate
 
-		a = self.integrand_obj(flambda) # include convolution with atmospheric and filter transmission
+		h_nu = const.h*const.c/self.filter_wave
+		a = self.integrand_obj(flambda) / h_nu # include convolution with atmospheric and filter transmission
+		print "**** DEB 001", a.unit
 		photons_through_filter = scipy.integrate.simps(a,self.filter_wave)
+		print "**** DEB 002", photons_through_filter * a.unit * self.filter_wave.unit
+		print "***************",(photons_through_filter*self.area_tel*self.refl_tel).unit,"************"
 		return photons_through_filter*self.area_tel*self.refl_tel
 
 
@@ -423,7 +428,8 @@ class Calculator_Image:
 		print "==========================="
 		print phi_obj_apert.unit
 		print phi_sky_apert.unit
-		print (self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2).unit
+		print (self.detector['darkc']*aperture['Npix']).unit
+		print (aperture['Npix']*self.detector['ron']**2).unit
 		print "==========================="
 		##noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
 		noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
