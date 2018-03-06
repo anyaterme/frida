@@ -49,8 +49,7 @@ class TargetInfo:
     :returns: class self. -- .Magnitude, .Separation 
     :raises: 
 	"""
-	def __init__ (self,mag_target,band,mag_system,sed,waveshift=('radial_velocity', 0.),\
-	       wave_ini=8500*u.angstrom,wave_end=25000.*u.angstrom,dwave=2.*u.angstrom):
+	def __init__ (self,mag_target,band,mag_system,sed,waveshift=('radial_velocity', 0.), wave_ini=8500*u.angstrom,wave_end=25000.*u.angstrom,dwave=2.*u.angstrom):
 		self.Magnitude = mag_target
 		self.Band = band
 		self.MagSystem = mag_system
@@ -164,7 +163,7 @@ class TargetInfo:
 		if hasattr(wave,'unit'):
 			wave_sameunit = wave.to(self.sed_wave.unit).value
 		else:
-			wave = wave * u.um
+			wave = wave * u.micron
 			wave_sameunit = wave.to(self.sed_wave.unit).value
 		flambda = np.interp(wave_sameunit,self.sed_wave.value,self.sed_flambda.value)
 		return flambda * flambda_unit
@@ -235,14 +234,14 @@ class Calculator_Image:
 		filter_info = Filter(filter,path_list=settings.INCLUDES,path_filters=settings.FILTERS)
 		self.filter_wave =  filter_info.wave
 		self.filter_trans = filter_info.transmission
-		lambda_center = float(filter_info.lambda_center())
+		lambda_center = float(filter_info.lambda_center().value)
 		filter_width = filter_info.width()
 		print ("lambda_eff,bandwidth=",lambda_center,filter_width["width"],filter_width["cut_on"],filter_width["cut_off"])
 
 
 		## instrument characteristics
 		instrument=Instrument_static(scale,instid=instrument_name)
-		static_response = instrument.compute_static_response(self.filter_wave * u.um)
+		static_response = instrument.compute_static_response(self.filter_wave)
 		self.throughput = static_response["collimator"] * static_response['camera'] * static_response['qe']
 		print ("Throughput ",self.throughput[1:5])
 		self.detector = instrument.detector
@@ -273,19 +272,17 @@ class Calculator_Image:
 
 
 		## compute the target f-lambda within the wavelength range determined by the filter transmission
-		obj_flambda_spec = target_info.flambda_wave(self.filter_wave*u.um)
-		obj_photons_spec = target_info.photons_wave(self.filter_wave*u.um)
+		obj_flambda_spec = target_info.flambda_wave(self.filter_wave)
+		obj_photons_spec = target_info.photons_wave(self.filter_wave)
 		ii = len(self.filter_wave)/2
-		print (" wave,obj_flambda,photons["+str(ii)+"]=",self.filter_wave[ii],obj_flambda_spec[ii],\
-			   obj_photons_spec[ii])
+		print (" wave,obj_flambda,photons["+str(ii)+"]=",self.filter_wave[ii],obj_flambda_spec[ii], obj_photons_spec[ii])
 
 
 		## compute the flux from the target and the number of photons per unit time
 		#self.obj_flambda = flux_scale * bbody(filter_info['lamb_eff'],temp_bb) # Units are
 		self.obj_flambda_lambcenter = target_info.flambda_wave(lambda_center)
 		print ("obj_flambda_lambeff:",self.obj_flambda_lambcenter)
-		phi_obj_total2 = self.compute_photonrate_simple(self.obj_flambda_lambcenter,lambda_center,\
-									   filter_width["width"],atmospheric_trans_avg*self.effic_total)
+		phi_obj_total2 = self.compute_photonrate_simple(self.obj_flambda_lambcenter,lambda_center,filter_width["width"],atmospheric_trans_avg*self.effic_total)
 
 		self.flambda_wave = target_info.flambda_wave
 		self.phi_obj_total = self.compute_photonrate_filter(target_info.flambda_wave(self.filter_wave))
@@ -392,9 +389,21 @@ class Calculator_Image:
 		texp = nexp * dit
 		#print ("nexp ",nexp[0],nexp[-1])
 		phi_obj_apert = self.phi_obj_total * aperture['EE']
-		phi_sky_apert = self.phi_sky_sqarc * pi * aperture['Radius']**2
-		noise = np.sqrt(texp*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+ \
-			nexp*aperture['Npix']*self.detector['ron']**2)
+		phi_sky_apert = self.phi_sky_sqarc * np.pi * aperture['Radius']**2
+
+		noise2_obj = dit*phi_obj_apert
+		noise2_sky = dit*phi_sky_apert
+		noise2_read = aperture['Npix']*self.detector['ron']**2
+		noise2_dark = dit*self.detector['darkc']
+		print "==========================="
+		print noise2_obj.unit
+		print noise2_sky.unit
+		print noise2_read.unit
+		print noise2_dark.unit
+		print "==========================="
+		noise = np.sqrt(nexp*(noise2_obj.value+noise2_sky.value+noise2_read.value+noise2_dark.value)) ###FIX ME UNITSS????
+
+		##noise = np.sqrt(texp*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+ \ nexp*aperture['Npix']*self.detector['ron']**2)
 		signal = texp * phi_obj_apert
 		snr = signal / noise
 		return (texp,snr)
@@ -410,7 +419,8 @@ class Calculator_Image:
 		:return:
 		"""
 		phi_obj_apert = self.phi_obj_total * aperture['EE']
-		phi_sky_apert = self.phi_sky_sqarc * pi * aperture['Radius']**2
+		phi_sky_apert = self.phi_sky_sqarc * np.pi * aperture['Radius']**2
+		##noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
 		noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
 
 		ndit = round(required_sn**2 * noise_ndit / phi_obj_apert**2 / dit**2)
@@ -423,6 +433,7 @@ class Calculator_Image:
 		wave_zp = []
 		photzp_values = []
 		matrix = []
+		print "########", wave
 
 #		for each_band in phot_zp:
 #			wave_zp.append(phot_zp[each_band]['bwidth'])
@@ -566,8 +577,7 @@ class Calculator_Spect:
 		print (nexp*aperture['Npix'][selected_index]*self.detector['ron']**2).unit
 		print texp.unit
 		print "==========================="
-		noise = np.sqrt(texp.value*(phi_obj_apert.value+phi_sky_apert.value+(self.detector['darkc']*aperture['Npix'][selected_index]).value)+ \
-			(texp*aperture['Npix'][selected_index]*self.detector['ron']**2).value)
+		noise = np.sqrt(texp.value*(phi_obj_apert.value+phi_sky_apert.value+(self.detector['darkc']*aperture['Npix'][selected_index]).value)+ (texp*aperture['Npix'][selected_index]*self.detector['ron']**2).value)
 		signal = texp * phi_obj_apert
 		print signal.unit
 		snr = signal / noise

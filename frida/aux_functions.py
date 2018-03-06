@@ -85,32 +85,36 @@ def convolve2pulse(wave,response,pulse_width):
 
 def interpolate(wvl, specfl, new_wvl, unity='None'):
 	#from scipy.interpolate import InterpolatedUnivariateSpline as inter
-	from numpy import interp as inter
-	from scipy import polyval,polyfit
+#	from numpy import interp as inter
+#	from scipy import polyval,polyfit
+#	try:
+#		
+#		specfl = specfl[0::len(specfl)/len(wvl)]
+#		specfl = specfl[0:len(wvl)]				
+#		if (type(wvl) != type (new_wvl)):
+#			if (hasattr(wvl, "unit")):
+#				new_wvl = new_wvl * wvl.unit
+#			else:
+#				wvl = wvl * new_wvl.unit
+#		print (np.min(wvl), np.min(new_wvl), np.max(new_wvl), np.max(wvl))
+#		if (np.min(wvl) <= np.min(new_wvl)) and (np.max(new_wvl) <= np.max(wvl)):
+#			if (unity == 'perone'):
+#					result=inter(new_wvl, wvl, specfl).clip(0,1)
+#			elif (unity == 'percent'):
+#					result=inter(new_wvl, wvl, specfl).clip(0,100)
+#			else:
+#					result=inter(new_wvl, wvl, specfl)
+#			return result
+#		else:
+#			print 3
+#			print (len(wvl), len(specfl))
+#			inter_func=np.polyfit(wvl, specfl, 1)
+#			f = np.poly1d(inter_func)
+#			return f(new_wvl)
 	try:
-		
-		specfl = specfl[0::len(specfl)/len(wvl)]
-		specfl = specfl[0:len(wvl)]				
-		if (type(wvl) != type (new_wvl)):
-			if (hasattr(wvl, "unit")):
-				new_wvl = new_wvl * wvl.unit
-			else:
-				wvl = wvl * new_wvl.unit
-		print (np.min(wvl), np.min(new_wvl), np.max(new_wvl), np.max(wvl))
-		if (np.min(wvl) <= np.min(new_wvl)) and (np.max(new_wvl) <= np.max(wvl)):
-			if (unity == 'perone'):
-					result=inter(new_wvl, wvl, specfl).clip(0,1)
-			elif (unity == 'percent'):
-					result=inter(new_wvl, wvl, specfl).clip(0,100)
-			else:
-					result=inter(new_wvl, wvl, specfl)
-			return result
-		else:
-			print 3
-			print (len(wvl), len(specfl))
-			inter_func=np.polyfit(wvl, specfl, 1)
-			f = np.poly1d(inter_func)
-			return f(new_wvl)
+		z = np.polyfit(wvl, specfl,1 )
+		f = np.poly1d(z)
+		return (f(new_wvl))
 	except Exception as e:
 		print ("ERROR in interpolate: ", e)
 		return None

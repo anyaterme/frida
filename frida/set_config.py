@@ -127,9 +127,9 @@ class Instrument_static:
 		:param wave:
 		:return:
 		"""
-		interp_qe = np.interp(wave.to("micron"),self.qe.wave,self.qe.value)
-		interp_camera = np.interp(wave.to("micron"),self.camera_transmission.wave, self.camera_transmission.value)
-		interp_collim = np.interp(wave.to("micron"),self.collimator_transmission.wave, self.collimator_transmission.value)
+		interp_qe = np.interp(wave.to(u.micron),self.qe.wave,self.qe.value)
+		interp_camera = np.interp(wave.to(u.micron),self.camera_transmission.wave, self.camera_transmission.value)
+		interp_collim = np.interp(wave.to(u.micron),self.collimator_transmission.wave, self.collimator_transmission.value)
 		return {"qe":interp_qe*self.qe.value.unit,"collimator":interp_collim,"camera":interp_camera}
 
 def param_gratings():
@@ -342,7 +342,7 @@ class Filter:
 		else:
 			ftrans = np.loadtxt(os.path.join(path_filters, myfilter["Transmission"]))
 			np.sort(ftrans,axis=0)
-			self.wave = ftrans[:,0]
+			self.wave = ftrans[:,0] * u.Unit('micron')
 			self.transmission = ftrans[:,1]
 		print ("Wave transmision:",self.wave[0:4],self.transmission[0:4])
 
@@ -359,7 +359,7 @@ class Filter:
 	def lambda_center(self):
 		lambda_eff = scipy.integrate.simps(self.transmission*self.wave,self.wave)/ \
 			scipy.integrate.simps(self.transmission,self.wave)
-		return lambda_eff
+		return lambda_eff * u.micron
 
 	def width(self,threshold_fraction=2.):
 		trans = self.transmission

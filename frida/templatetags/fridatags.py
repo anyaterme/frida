@@ -2,6 +2,7 @@
 from django import template
 from django.conf import settings
 from django.utils.safestring import mark_safe
+from django.core.urlresolvers import reverse
 import datetime
 
 register = template.Library()
@@ -13,3 +14,11 @@ def list_value(dict, index):
 @register.filter
 def astro_unit_value(item, unit):
 	return item.to(unit).value
+
+@register.simple_tag
+def ajax_send_form_reverse(action, form, div):
+	url = reverse(action)
+	return ("$.ajax({url:'%s',type:'POST',data:$('#%s').serialize(),success:function(data){$('#%s').html(data);gotoelement('%s');}});" % (url, form, div, div))
+
+
+

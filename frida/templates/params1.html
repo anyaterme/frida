@@ -1,5 +1,6 @@
+{%load fridatags %}
 <div class="row">
-	<div class="col-xs-12 col-md-3">
+	<div class="col-xs-12 col-md-3 form-inline">
 		<div class="panel panel-primary">
 			<div class="panel-heading"> <strong>Spectral distribution: <a href="#" class="badge"> more info </a></strong></div>
 			<div class="panel-body">
@@ -28,8 +29,9 @@
 					</div>
 					<div class="panel-body collapse">
 						<select class="form-control" name="star_type" id="star_type">
-							<option>AOV</option>
-							<option>...</option>
+							{% for pickles in list_pickles %}
+							<option value='{{ pickles.sed_file}}' >{{ pickles.Label}}</option>
+							{% endfor %}
 						</select>
 					</div>
 				</div>
@@ -121,59 +123,72 @@
 					<div class="panel-heading"> <strong>Brightness: <a href="#" class="badge"> more info </a></strong></div>
 					<div class="panel-body panel-default">
 						<div class="row">
-							<div class="col-md-6 col-xs-12">
-								<div class="form-group">
-									<label for="spatial_integrated_brightness">Spatially integrated brightness </label><br/>
-									<input type="number" step="0.5" min="5" max="30" class="form-control" id="spatial_integrated_brightness" name="spatial_integrated_brightness" placeholder="17.0" value="17.0" required errorMsg=" (Tab 'Astronomical Source Definition') ">
-									<select class="form-control" name="units_sib" id="units_sib">
-										<option value="mag">mag</option>
-										<option value="wm2um">W/m<sup>2</sup>/&mu;m</option>
-									</select>
-									<br/>
-									<br/>
-								</div>
-							</div>
-							<div class="col-md-6 col-xs-12 ">
-								<label for="extinction"> Extinction (Av) </label><br/>
-								<input type="number" class="form-control" id="extinction" name="extinction" placeholder="0" >
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-xs-12 col-md-6 form-group">
-								<div class="panel panel-info"> 
-									<div class="panel-heading"> <input type="radio" name="radio3" id="radio3" value="option1" checked> <label for="radio3">Filter</label></div>
-									<div class="panel-body">
-										<div class="col-xs-3">
-											<select class="form-control" name="band_flux" id="band_flux">
-												<option value="B">Band B</option>
-												<option value="V">Band V</option>
-												<option value="R" selected>Band R</option>
-												<option value="I">Band I</option>
-												<option value="J">Band J</option>
-												<option value="H">Band H</option>
-												<option value="K">Band K</option>
-											</select>
+							<div class="col-md-8">
+								<div class="row">
+									<div class="col-md-5 col-xs-12 form-group form-inline">
+										<div class="panel panel-info">
+											<div class="panel-heading">
+												<label for="spatial_integrated_brightness">Spatially integrated brightness </label>
+											</div>
+											<div class="panel-body">
+													<input type="number" step="0.5" min="5" max="30" class="form-control" id="spatial_integrated_brightness" name="spatial_integrated_brightness" placeholder="17.0" value="17.0" required errorMsg=" (Tab 'Astronomical Source Definition') ">
+													<select class="form-control" name="units_sib" id="units_sib">
+														<option value="mag">mag</option>
+														<option value="wm2um">W/m<sup>2</sup>/&mu;m</option>
+													</select>
+											</div>
 										</div>
-										<div class="col-xs-9 ">
-											<label for="text5">Wavelength (&mu;)</label>
-											<input type="text" class="form-control" id="text5" name="text5" placeholder="2.2" style="width:75px;">
+									</div>
+									<div class="col-md-3 col-xs-12  form-group">
+										<div class="panel panel-info">
+											<div class="panel-heading">
+												<label for="extinction"> Extinction (Av) </label><br/>
+											</div>
+											<div class="panel-body">
+												<input type="number" class="form-control" id="extinction" name="extinction" placeholder="0" >
+											</div>
+										</div>
+									</div>
+									<div class="col-xs-12 col-md-4  form-group ">
+										<div class="panel panel-info"> 
+											<div class="panel-heading"><label>Filter (&mu;)</label></div>
+											<div class="panel-body row">
+												<div class="col-md-6">
+													<select class="form-control" name="band_flux" id="band_flux">
+														<option value="B">Band B</option>
+														<option value="V">Band V</option>
+														<option value="R" selected>Band R</option>
+														<option value="I">Band I</option>
+														<option value="J">Band J</option>
+														<option value="H">Band H</option>
+														<option value="K">Band K</option>
+													</select>
+												</div>
+												<div class="col-md-6">
+												<input type="text" class="form-control" id="wavelength-band-flux" name="wl_band_flux" placeholder="2.2">
+												</div>
+											</div>
 										</div>
 									</div>
 								</div>
 							</div>
-							<div class="col-xs-12 col-md-3 ">
-								<div class="panel panel-info panel-velocity-radio">
-									<div class="panel-heading"> <input type="radio" name="velocity_type" id="redshift" value="redshift" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" checked> <strong> Redshift (z) </strong></div>
-									<div class="panel-body">
-										<input type="number" step="0.01" class="form-control" id="redshift_value" name="redshift_value" placeholder="0.0" style="width:95%;">
+							<div class="col-md-4">
+								<div class="row">
+									<div class="col-xs-12 col-md-6 form-group">
+										<div class="panel panel-info panel-velocity-radio">
+											<div class="panel-heading"> <input type="radio" class="form-radio-control" name="velocity_type" id="redshift" value="redshift" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" checked> <strong> Redshift (z) </strong></div>
+											<div class="panel-body">
+												<input type="number" step="0.01" class="form-control" id="redshift_value" name="redshift_value" placeholder="0.0">
+											</div>
+										</div>
 									</div>
-								</div>
-							</div>
-							<div class="col-xs-12 col-md-3 ">
-								<div class="panel panel-default panel-velocity-radio">
-									<div class="panel-heading"> <input type="radio" name="velocity_type" id="radial_vel" value="radial_vel" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" > <strong> Radial Vel (Km/s) </strong></div>
-									<div class="panel-body">
-										<input type="number" step="0.01" class="form-control" id="radial_value" name="radial_value" placeholder="0.0" style="width:95%;"> 
+									<div class="col-xs-12 col-md-6 ">
+										<div class="panel panel-default panel-velocity-radio">
+											<div class="panel-heading"> <input type="radio" name="velocity_type" id="radial_vel" value="radial_vel" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" > <strong> Radial Vel (Km/s) </strong></div>
+											<div class="panel-body">
+												<input type="number" step="0.01" class="form-control" id="radial_value" name="radial_value" placeholder="0.0" style="width:95%;"> 
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>

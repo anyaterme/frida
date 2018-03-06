@@ -58,8 +58,18 @@ def index(request):
 		my_grating["Efficiency"] = each_grating["Efficiency"]
 		list_gratings_dict.append(my_grating)
 	#fp2.close()
+	fp3 = open(os.path.join(settings.SED_LIBRARY, 'pickles','pickles_options.csv'))
+	list_pickles= csv.DictReader(filter(lambda row: row[0] != '#', fp3))
+	list_pickles_dict = []
+	for each_pickles in list_pickles:
+		my_pickles = {}
+		my_pickles["Label"] = each_pickles["Label"]
+		my_pickles["sed_file"] = each_pickles["sed_file"]
+		list_pickles_dict.append(my_pickles)
 
-	context = {'list_filters':list_filters_dict, 'list_gratings':list_gratings_dict}
+	print (list_pickles_dict)
+
+	context = {'list_filters':list_filters_dict, 'list_gratings':list_gratings_dict, 'list_pickles':list_pickles_dict}
 	return render(request, 'index.html', context)
 
 def calculate_draw(request):
@@ -125,9 +135,19 @@ def get_TargetInfo(request):
 		pl_index = float(request.POST.get('pl_index'))
 		sed = (energy_type,pl_index)
 		label_energy_type = 'Power Law, lambda^%s' % pl_index
+	elif (energy_type == 'stellar_template'):
+		templatename = request.POST.get('star_type')
+		sed = ('pickles', templatename)
+		label_energy_type = 'Pickles, template: %s' % templatename
+
+	waveshift = None
+	if (request.POST.get("velocity_type",'redshift') == 'redshift'):
+		waveshift = ('redshift', float(request.POST.get('redshift_value', '0.')))
+	else:
+		waveshift = ('radial_velocity', float(request.POST.get('radial_value', '0.')))
 
 	# creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
-	target_info = TargetInfo(mag_target,band,mag_system,sed)
+	target_info = TargetInfo(mag_target,band,mag_system,sed,waveshift)
 	return target_info
 
 def calculate_ima(request):
@@ -214,11 +234,11 @@ def calculate_ima(request):
 	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
 	fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core
 	pixscale = frida_setup.pixscale # in arcseconds
-	ee_aperture=aocor.compute_ee(psf,pixscale,fcore=fcore)
+	ee_aperture=aocor.compute_ee(psf,pixscale * u.arcsecond,fcore=fcore)
 
 	calc_method = request.POST.get('type_results')
 
-	dit = float(request.POST.get('DIT_exp'))
+	dit = float(request.POST.get('DIT_exp')) * u.second
 	Nexp = int(request.POST.get('N_exp'))
 	Nexp_min = 1
 	Nexp_max = 100.
@@ -302,7 +322,6 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	spectrograph_setup = {'Grating':selected_grating,'Central_wave':float(central_wave_grating)*u.AA}
 
 	# creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
-	#target_info = TargetInfo(mag_target,band,mag_system,sed)
 	target_info = get_TargetInfo(request)
 
     ## call GTC_AO to compute Strehl ratio and Encircled Energy
@@ -328,11 +347,9 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	context['photons_obj'] = photons_obj.to(photunit)
 
 	detector = frida_setup.detector
-	phi_obj_total = photons_obj * atrans * telescope_params.area * telescope_params.reflectivity \
-						 * grating_effic * throughput
+	phi_obj_total = photons_obj * atrans * telescope_params.area * telescope_params.reflectivity * grating_effic * throughput
 
 	electron_per_s_unit=u.electron/(u.s * u.angstrom)
-	exptime = 300 * u.s	## FIXME. What is this param in web?
 
 	## compute sky emission and atmospheric absorption  (done within compute_sky_photonrate_spect)
 	area_reference = np.pi*(50 * u.marcsec)**2
@@ -342,7 +359,7 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	dit = float(request.POST.get('DIT_exp',1)) * u.s
 	nexp = int(request.POST.get('N_exp',1)) 
 	texp = nexp * dit
-	aperture = {"EE":0.5,"Npix":27}		##FIXME. What is this param in web?
+	aperture = {"EE":0.5,"Npix":27}		##FIXME. What is this param in web?  ==> GTCAO
 	phi_obj_apert = phi_obj_total * aperture["EE"]
 	dwave = a.grating_info.delt_wave
 	shot_noise2 = (texp * dwave * (phi_obj_apert + phi_sky_apert).to(electron_per_s_unit)).value
@@ -360,70 +377,4 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 
 	return render (request, "calculate_ifs.html", context)
 
-
-#	lambda_eff = a.wave_array[1000:1010]
-#	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
-#	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
-#	## the aperture in the IFS case is box-like, one side corresponds to the "slit-width" and the other
-#	## side is along the radial profile
-#	fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core
-#	pixscale = frida_setup.pixscale # in arcseconds
-#	ee_aperture=aocor.compute_ee(psf,pixscale,fcore=fcore,spaxel=1)
-#
-#	dit = float(request.POST.get('DIT_exp'))
-#	Nexp = int(request.POST.get('N_exp'))
-#	Nexp_min = 1
-#	Nexp_max = 100.
-#	Nexp_step = (Nexp_max-Nexp_min)/30
-#	(texp_seq,snr_seq) = a.signal_noise_texp_spect(Nexp_min,Nexp_max,Nexp_step,dit,ee_aperture)
-#	texp_seq = np.linspace(0,texp_seq, len(snr_seq))
-#
-#	required_sn = snr_seq[-1]	#ndit = a.texp_signal_noise_spect(required_sn,dit,aperture)
-#	#ndit = a.texp_signal_noise_spect(required_sn,dit,aperture)
-#	print (" Required S/N ",required_sn)
-#	#print ("Time required to reach S/N ",ndit,ndit*dit)
-#
-#	################################
-#	# Graphical output
-#	# exposure time vs SNR
-#	len_texp_seq = len(texp_seq)
-#	m4 = np.zeros((len_texp_seq,2))
-#	print ("texp, snr ",texp_seq[len_texp_seq-1],snr_seq[len_texp_seq-1])
-#	m4[:,0] = texp_seq
-#	m4[:,1] = snr_seq
-#	m4 = str(m4.tolist())
-#
-#	# wavelength vs SED above atmosphere
-##	nele = len(obs_filter.wave)
-##	m2 = np.zeros((nele,2))
-##	m2[:,0] = obs_filter.wave
-##	m2[:,1] = target_info.flambda_wave(obs_filter.wave)/1.e-16
-##	m2 = str(m2.tolist())
-##
-#
-#	mag_target = float(request.POST.get('spatial_integrated_brightness'))
-#	debug_values["FWHM_core"] = psf['FWHM_core']
-#
-#	context = {
-#					'graph_title':'IFS Mode',
-#					'sed_flambda':m4,
-#					'signal_noise':m4,
-#					'lambda_center': central_wave_grating,
-#					'Object_magnitude': mag_target,
-#					'Input_Band': target_info.Band,
-#					'strehl_ratio':strehl['StrehlR'],
-#					'encircled_energy': ee_aperture['EE'],
-#					'Aperture_radius': ee_aperture['Radius'],
-#					'Pixscale': pixscale,
-#					'AreaNpix': ee_aperture['Npix'],
-#					'flux_obj': None,
-#					#'detected_photons_from_source': str("%9.2E"% a.phi_obj_total.value),
-#					#'detected_photons_from_sky_sqarcsec' : str("%9.2E"% a.phi_sky_sqarc.value),
-#					#'atmospheric_transmission': a.atmostrans[10],
-#					'efficiency': a.grating_effic,
-#					'debug_values': debug_values,
-#					}
-#	return render(request, 'result.html', context)
-#
-#
 

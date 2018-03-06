@@ -1,0 +1,20 @@
+Label,sed_file
+O5V (54000 K),uko5v.dat
+BOV (29200 K),ukb0v.dat
+B8V (12300 K),ukb5v.dat
+A0V (9600 K),uka0v.dat
+A3V (8750 K),uka3v.dat
+A7V (7920 K),uka7v.dat
+F0V (7350 K),ukf0v.dat
+F5V (6700 K),ukf5v.dat
+F8V (6300 K),ukf8v.dat
+G0V (6050 K),ukg0v.dat
+G5V (5660 K),ukg5v.dat
+G8V (5440 K),ukg8v.dat
+K0V (5240 K),ukk0v.dat
+K5V (4400 K),ukk5v.dat
+K7V (4000 K),ukk7v.dat
+M0V (3750 K),ukm0v.dat
+M3V (3500 K),ukm3v.dat
+M5V (3200 K),ukm5v.dat
+M6V (3100 K),ukm6v.dat
