@@ -357,8 +357,7 @@ class Filter:
 		return avg_trans
 
 	def lambda_center(self):
-		lambda_eff = scipy.integrate.simps(self.transmission*self.wave,self.wave)/ \
-			scipy.integrate.simps(self.transmission,self.wave)
+		lambda_eff = scipy.integrate.simps(self.transmission*self.wave,self.wave)/scipy.integrate.simps(self.transmission,self.wave)
 		return lambda_eff * u.micron
 
 	def width(self,threshold_fraction=2.):

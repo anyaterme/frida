@@ -220,7 +220,7 @@ class Calculator_Image:
 		flux_scale =scale_to_vega(input_band,mag_ref,input_normflux)
 		#flux_scale=target_info.flux_scale
 
-		print ("flux scale",flux_scale,flux_scale)
+		print ("flux scale",flux_scale)
 
 		self.obs_filter_name=filter
 
@@ -242,7 +242,9 @@ class Calculator_Image:
 
 		## instrument characteristics
 		instrument=Instrument_static(scale,instid=instrument_name)
+		self.instrument = instrument
 		static_response = instrument.compute_static_response(self.filter_wave)
+		self.static_response = static_response
 		self.throughput = static_response["collimator"] * static_response['camera'] * static_response['qe']
 		print ("Throughput ",self.throughput[1:5])
 		self.detector = instrument.detector
@@ -301,6 +303,8 @@ class Calculator_Image:
 		print("phi_sky/pix/sec (simple  int-filter)",phi_sky_sqarc_simple*instrument.pixscale**2,\
 			  self.phi_sky_sqarc*instrument.pixscale**2)
 
+	def get_static_response(self):
+		return (self.static_response, self.throughput)
 
 	def compute_photonrate_simple(self,flux_filter,lambda_filter,width_filter,throughput):
 		"""
@@ -316,7 +320,7 @@ class Calculator_Image:
 					Results as ===> s^-1 m^-1 micron -> x1.E-6 -> s^-1
 		"""
 		phot_tot = flux_filter/const.h/const.c*lambda_filter*width_filter*self.area_tel*throughput  # units are photons/s
-		return phot_tot
+		return (phot_tot.value * u.ph *u.s**-1)
 
 	def compute_photonrate_filter(self,flambda):
 		"""
@@ -329,17 +333,14 @@ class Calculator_Image:
 				  [lambda_band,width_band] = micron
 				  [telarea] = m^2
 				  [throughput] = No units
-					Results as ===> s^-1 m^-1 micron -> x1.E-6 -> s^-1
+					Results as ===> ph^-1 s^-1 m^-1 micron -> x1.E-6 -> ph^-1 s^-1
 		"""
 		import scipy.integrate
 
 		h_nu = const.h*const.c/self.filter_wave
 		a = self.integrand_obj(flambda) / h_nu # include convolution with atmospheric and filter transmission
-		print "**** DEB 001", a.unit
 		photons_through_filter = scipy.integrate.simps(a,self.filter_wave)
-		print "**** DEB 002", photons_through_filter * a.unit * self.filter_wave.unit
-		print "***************",(photons_through_filter*self.area_tel*self.refl_tel).unit,"************"
-		return photons_through_filter*self.area_tel*self.refl_tel
+		return (photons_through_filter*self.area_tel*self.refl_tel).value * u.ph * u.s**-1
 
 
 	def integrand_obj(self, flux_obj):
@@ -375,7 +376,7 @@ class Calculator_Image:
 
 		a = self.integrand_sky() # include convolution with filter transmission
 		photons_through_filter = scipy.integrate.simps(a,self.filter_wave)
-		return photons_through_filter*self.area_tel*self.refl_tel
+		return (photons_through_filter*self.area_tel*self.refl_tel).value * u.ph * u.s**-1
 
 	def integrand_sky(self):
 		return(self.skyemission_photons * self.filter_trans * self.throughput)
@@ -428,13 +429,16 @@ class Calculator_Image:
 		print "==========================="
 		print phi_obj_apert.unit
 		print phi_sky_apert.unit
-		print (self.detector['darkc']*aperture['Npix']).unit
-		print (aperture['Npix']*self.detector['ron']**2).unit
+		print e_to_ph(self.detector['darkc']),"***",aperture['Npix']
+		print e_to_ph(self.detector['ron'])**2,"****",aperture['Npix']
 		print "==========================="
 		##noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
-		noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
+		noise = phi_obj_apert.value+phi_sky_apert.value+(e_to_ph(self.detector['darkc'])*aperture['Npix']).value 					#### FIX ME UNITS
+		noise = noise*u.ph*u.s**-1
+		print noise
+		noise_ndit = (dit*(noise)).value+(aperture['Npix']*e_to_ph(self.detector['ron'])**2).value
 
-		ndit = round(required_sn**2 * noise_ndit / phi_obj_apert**2 / dit**2)
+		ndit = round((required_sn**2 * noise_ndit / phi_obj_apert**2 / dit**2).value)
 
 		return (ndit)
 
@@ -444,7 +448,6 @@ class Calculator_Image:
 		wave_zp = []
 		photzp_values = []
 		matrix = []
-		print "########", wave
 
 #		for each_band in phot_zp:
 #			wave_zp.append(phot_zp[each_band]['bwidth'])
@@ -584,7 +587,6 @@ class Calculator_Spect:
 		print phi_obj_apert.unit 
 		print phi_sky_apert.unit
 		print (self.detector['darkc']*aperture['Npix'][selected_index]).unit
-		print "--------------"
 		print (nexp*aperture['Npix'][selected_index]*self.detector['ron']**2).unit
 		print texp.unit
 		print "==========================="

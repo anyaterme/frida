@@ -12,7 +12,7 @@ telarea=3.14*(teldiam1*teldiam1-teldiam2*teldiam2)/4.
 refl_primary=0.9
 refl_second=0.9
 refl_tertia=0.9
-effic_tel=refl_primary*refl_second*refl_tertia 
+effic_tel=refl_primary*refl_second*refl_tertia 		# Telescope.reflectivity
 
 # Atmospheric conditions - fried parameter
 #r0=10   

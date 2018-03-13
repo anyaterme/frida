@@ -70,8 +70,24 @@
 
 	<body>
 		<!--Div that will hold the pie chart-->
-		<div class="container">
+		<div class="container-fluid">
 			<h3>Frida's Results. {{ graph_title }}</h3>
+			<div class="row">
+				<div class="col-xs-12">
+					<div class='panel-group'>
+						<div class="panel panel-info">
+							<div class="panel-heading">Debug Values</div>
+							<div class="panel-body">
+								<ul class="list-group">
+									{% for k, v in debug_values.items %}
+										<li class="list-group-item"> {{ k }} = {{ v }}</li>
+									{% endfor %}
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 			<div class="row">
 				<div class="col-xs-12">
 					<div class="col-xs-4">
@@ -214,18 +230,6 @@
 									<li class="list-group-item"> PhotonNoise per components per unit time<span class="badge">{{ photons_noise }}</span> </li>
 									<li class="list-group-item"> Atmospfheric Transmission <span class="badge">{{ atmospheric_transmission }}</span> </li>
 									<li class="list-group-item"> Efficiency <span class="badge">{{ efficiency }}</span> </li>
-								</ul>
-							</div>
-						</div>
-					</div>
-					<div class='panel-group'>
-						<div class="panel panel-info">
-							<div class="panel-heading">Debug Values</div>
-							<div class="panel-body">
-								<ul class="list-group">
-									{% for k, v in debug_values.items %}
-										<li class="list-group-item"> {{ k }} <span class="badge">{{ v }}</span> </li>
-									{% endfor %}
 								</ul>
 							</div>
 						</div>

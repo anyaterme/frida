@@ -187,3 +187,6 @@ def interpolate_old(wvl,specfl,new_wvl,unity='None'):
 	else:
 		return result * working_unit
 	#
+
+def e_to_ph(value):
+	return value*u.ph/u.electron

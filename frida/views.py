@@ -17,6 +17,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import traceback
 
 #from math import sqrt, pi, log10
 
@@ -40,10 +41,11 @@ def index(request):
 	list_filters = csv.DictReader(filter(lambda row: row[0] != '#', fp1))
 	list_filters_dict = []
 	for each_filter in list_filters:
-		my_filter = {}
-		my_filter["Code"] = each_filter["Code"]
-		my_filter["Name"] = each_filter["Name"]
-		list_filters_dict.append(my_filter)
+		if (os.path.exists(os.path.join(settings.FILTERS, each_filter["Transmission"]))):
+			my_filter = {}
+			my_filter["Code"] = each_filter["Code"]
+			my_filter["Name"] = each_filter["Name"]
+			list_filters_dict.append(my_filter)
 
 	#fp1.close()
 
@@ -67,7 +69,6 @@ def index(request):
 		my_pickles["sed_file"] = each_pickles["sed_file"]
 		list_pickles_dict.append(my_pickles)
 
-	print (list_pickles_dict)
 
 	context = {'list_filters':list_filters_dict, 'list_gratings':list_gratings_dict, 'list_pickles':list_pickles_dict}
 	return render(request, 'index.html', context)
@@ -141,16 +142,97 @@ def get_TargetInfo(request):
 		label_energy_type = 'Pickles, template: %s' % templatename
 
 	waveshift = None
-	if (request.POST.get("velocity_type",'redshift') == 'redshift'):
-		waveshift = ('redshift', float(request.POST.get('redshift_value', '0.')))
-	else:
-		waveshift = ('radial_velocity', float(request.POST.get('radial_value', '0.')))
+	try:
+		if (request.POST.get("velocity_type",'redshift') == 'redshift'):
+			waveshift = ('redshift', 0.)
+			waveshift = ('redshift', float(request.POST.get('redshift_value', '0')))
+		else:
+			waveshift = ('radial_velocity', 0.)
+			waveshift = ('radial_velocity', float(request.POST.get('radial_value', '0')))
+	except:
+		pass
 
 	# creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
 	target_info = TargetInfo(mag_target,band,mag_system,sed,waveshift)
 	return target_info
 
 def calculate_ima(request):
+	debug_values = {}
+	telescope = "GTC"
+	telescope_params = Telescope(telescope)
+	sky_conditions = get_SkyConditions(request)
+	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),float(request.POST.get("gs_separation")))
+	selected_scale = request.POST.get('scale','fine_scale')
+	#frida_setup = Instrument_static(request.POST.get('scale','fine_scale'),path=settings.INCLUDES)
+	# Filter
+	selected_filter = request.POST.get('filter')
+	msg_err = []
+	try:
+		obs_filter = Filter(selected_filter,path_list=settings.INCLUDES,path_filters=settings.FILTERS)
+	except Exception as e:
+		msg_err.append("%s" % e)
+		return render(request, "error.html", {'msg_err':msg_err})
+	lambda_eff=obs_filter.lambda_center()
+
+	target_info = get_TargetInfo(request)
+	a=Calculator_Image(target_info,selected_filter,sky_conditions,selected_scale,telescope_name=telescope)
+
+	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
+	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
+	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
+	fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core		FIX ME Where is the parameter?
+	pixscale = a.instrument.pixscale # in arcseconds
+	ee_aperture=aocor.compute_ee(psf,pixscale * u.arcsecond,fcore=fcore)
+
+
+	dit = float(request.POST.get('DIT_exp','1')) * u.second
+	Nexp = int(request.POST.get('N_exp','1'))
+	static_response, throughput = a.get_static_response()
+
+	calc_method = request.POST.get('type_results')
+	dit = float(request.POST.get('DIT_exp')) * u.second
+	Nexp = int(request.POST.get('N_exp'))
+	Nexp_min = 1
+	Nexp_max = 100.
+	Nexp_step = (Nexp_max-Nexp_min)/30
+	(texp_seq,snr_seq) = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,ee_aperture)
+
+	signal_noise= float(request.POST.get('signal_noise'))
+	if (calc_method=="SN_ratio"):
+		required_sn = signal_noise
+	else:
+		required_sn = snr_seq[-1]
+	try:
+		ndit = a.texp_signal_noise_img(required_sn,dit,ee_aperture)
+	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		print (traceback.print_exc())
+		print (exc_type, exc_obj, exc_tb.tb_frame.f_code.co_filename, exc_tb.tb_lineno)
+		msg_err.append("%s" % e)
+		return render(request, "error.html", {'msg_err':msg_err})
+
+	print ("***********", required_sn)
+
+
+
+	debug_values['obs_filter'] = str(obs_filter.__dict__)
+	debug_values['sky_conditions'] = sky_conditions
+	debug_values['target_info'] = target_info.__dict__
+	debug_values['lambda_eff'] = str(lambda_eff)
+	context = {}
+	context['static_response'] = static_response
+	context['throughput'] = throughput
+	context['atrans'] = a.atmostrans
+	context['sky_rad'] = a.skyemission_photons
+	context['global_effic'] = a.effic_total
+	context['wave_array'] = a.filter_wave.to(u.AA)
+	context['texp_array'] = texp_seq
+	context['snr'] = snr_seq
+	context['debug_values'] = debug_values
+
+	return render(request, 'calculate_ima.html', context)
+
+def calculate_ima_old(request):
 	"""
     Calculations for imaging mode. It reads parameters from the target, the sky conditions (), the instrument setup
     (pixel scale,  filter).
@@ -164,15 +246,6 @@ def calculate_ima(request):
 	debug_values = {}
 
 	sky_conditions = get_SkyConditions(request)
-	"""
-	#cond = Conditions()
-	sky_conditions={'seeing':0.9,'lambda_seeing':0.5,'airmass':1.2,'pwv':2.5}
-	try:
-		sky_conditions['seeing'] = float(request.POST.get("seeing"))
-		sky_conditions['airmass'] = float(request.POST.get("airmass"))
-	except:
-		pass
-    """
 
 	selected_scale = request.POST.get('scale')
 	frida_setup = Instrument_static(selected_scale,path=settings.INCLUDES)
@@ -191,33 +264,6 @@ def calculate_ima(request):
 	# creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
 	#target_info = TargetInfo(mag_target,band,mag_system,sed)
 	target_info = get_TargetInfo(request)
-	"""  OLD WAY
-	# Request parameters relative to astronomical target
-	mag_target = float(request.POST.get('spatial_integrated_brightness'))
-	band = request.POST.get("band_flux")
-	mag_system = request.POST.get('units_sib')
-	energy_type = request.POST.get('spectral_type')
-	debug_values["Brightness (Astronomical Source Definition)"] = mag_target
-	debug_values["Filter_Name (Astronomical Source Definition)"] = band
-	debug_values["Energy Distribution (Astronomical Source Definition)"] = energy_type
-
-	## Select geometry of source
-	source_type = request.POST.get('source_type')
-	if (source_type == 'extended'):
-		label_source_type = 'Extended source'
-	elif (source_type == 'point'):
-		label_source_type = 'Point source'
-
-	# create a tuple with the information relative to the Spectral Energy Distribution
-	if (energy_type == 'black_body'):
-		temperature= float(request.POST.get('temperature'))
-		sed = (energy_type,temperature)
-		label_energy_type = 'Black Body, T=%s K' % temperature
-	elif (energy_type == 'power_law'):
-		pl_index = float(request.POST.get('pl_index'))
-		sed = (energy_type,pl_index)
-		label_energy_type = 'Power Law, lambda^%s' % pl_index
-    """
 
 	telescope = "VLT"
 	telescope_params = Telescope(telescope)
@@ -225,14 +271,13 @@ def calculate_ima(request):
 	# Creates an object of type Calculator_Image
 	a=Calculator_Image(target_info,selected_filter,sky_conditions,selected_scale,telescope_name=telescope)
 
-
     ## call GTC_AO to compute Strehl ratio and Encircled Energy
 	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),float(request.POST.get("gs_separation")))
 
 	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
 	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
 	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
-	fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core
+	fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core		FIX ME Where is the parameter?
 	pixscale = frida_setup.pixscale # in arcseconds
 	ee_aperture=aocor.compute_ee(psf,pixscale * u.arcsecond,fcore=fcore)
 
@@ -250,16 +295,22 @@ def calculate_ima(request):
 		required_sn = signal_noise
 	else:
 		required_sn = snr_seq[-1]
-	ndit = a.texp_signal_noise_img(required_sn,dit,ee_aperture)
-	print (" Required S/N ",required_sn)
-	print ("Time required to reach S/N ",ndit,ndit*dit)
+	try:
+		ndit = a.texp_signal_noise_img(required_sn,dit,ee_aperture)
+	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		print (traceback.print_exc())
+		print (exc_type, exc_obj, exc_tb.tb_frame.f_code.co_filename, exc_tb.tb_lineno)
+		msg_err.append("%s" % e)
+		return render(request, "error.html", {'msg_err':msg_err})
+
+
 
 	################################
 	# Graphical output
 	# exposure time vs SNR
 	len_texp_seq = len(texp_seq)
 	m4 = np.zeros((len_texp_seq,2))
-	print ("texp, snr ",texp_seq[len_texp_seq-1],snr_seq[len_texp_seq-1])
 	m4[:,0] = texp_seq
 	m4[:,1] = snr_seq
 	m4 = str(m4.tolist())
@@ -271,13 +322,22 @@ def calculate_ima(request):
 	m2[:,1] = target_info.flambda_wave(obs_filter.wave)/1.e-16
 	m2 = str(m2.tolist())
 
+	source_type = request.POST.get('source_type')
+	if (source_type == 'extended'):
+		label_source_type = 'Extended source'
+	elif (source_type == 'point'):
+		label_source_type = 'Point source'
+	if (target_info.SED[0]== 'black_body'):
+		label_energy_type = 'Black Body, T=%s K' % target_info.SED[1]
+	elif (target_info.SED[0]== 'power_law'):
+		label_energy_type = 'Power Law, lambda^%s' % target_info.SED[1]
 
 	debug_values["FWHM_core"] = psf['FWHM_core']
 
 	context = {
 					'graph_title':'Image Mode',
 					'sed_flambda':m2,
-					'energy_type': label_energy_type,
+					#'energy_type': label_energy_type,
 					'source_type': label_source_type,
 					'sky_conditions' : sky_conditions,
 					'target_info': target_info,
@@ -290,16 +350,16 @@ def calculate_ima(request):
 					'lambda_center': obs_filter.lambda_center(),
 					'dit' : dit,
 					'ndit' : ndit,
-					'Object_magnitude': mag_target,
-					'Input_Band': band,
+					'Object_magnitude': target_info.Magnitude,
+					'Input_Band': target_info.Band,
 					'strehl_ratio':strehl['StrehlR'],
-					'encircled_energy': ee['EE'],
-					'Aperture_radius': aperture['radius'],
-					'Pixscale': pixscale,
-					'AreaNpix': aperture['Npix'],
+					'encircled_energy': ee_aperture["EE"],
+					'Aperture_radius': ee_aperture['Radius'],
+					'Pixscale': ee_aperture['Area_pixel'],
+					'AreaNpix': ee_aperture['Npix'],
 					'flux_obj': a.obj_flambda_lambcenter,
-					'detected_photons_from_source': str("%9.2E"% a.phi_obj_total),
-					'detected_photons_from_sky_sqarcsec' : str("%9.2E"% a.phi_sky_sqarc),
+					'detected_photons_from_source': "%9.2E %s"% (a.phi_obj_total.value,a.phi_obj_total.unit ),
+					'detected_photons_from_sky_sqarcsec' : "%9.2E %s"% (a.phi_sky_sqarc.value,a.phi_sky_sqarc.unit ),
 					'atmospheric_transmission': a.atmostrans[10],
 					'efficiency': a.effic_total,
 					'debug_values': debug_values,
