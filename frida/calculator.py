@@ -211,6 +211,7 @@ class Calculator_Image:
 			target_info = {'Magnitude':19,'MagSystem':,'Band':'J','sed':sed} ;
 			 sed is a tuple like ('PowerLaw',index_powerlaw), ('Blackbdoy',temperature_bb)
 		"""
+		self.debug_values = {}
 		sed = target_info.SED
 		temp_bb = sed[1]
 		input_band = target_info.Band   # definimos como banda de referencia
@@ -338,20 +339,17 @@ class Calculator_Image:
 		import scipy.integrate
 
 		h_nu = const.h*const.c/self.filter_wave
-		a = self.integrand_obj(flambda) / h_nu # include convolution with atmospheric and filter transmission
+		a = self.integrand_obj(flambda) # include convolution with atmospheric and filter transmission
+		self.debug_values['a'] = a[0]
+		self.debug_values['flambda'] = flambda[0]
 		photons_through_filter = scipy.integrate.simps(a,self.filter_wave)
-        units_photons_trough_filter = a.unit * self.filter_wave.unit
+		units_photons_trough_filter = a.unit * self.filter_wave.unit
 		#return (photons_through_filter*self.area_tel*self.refl_tel).value * u.ph * u.s**-1
 		return (photons_through_filter*self.area_tel*self.refl_tel).value * units_photons_trough_filter
 
 
 	def integrand_obj(self, flux_obj):
-		print ("Integrating Object Photon Flux")
-		print (" Wave   Fl_obj  Atm_trans  Filt_trans  Phot_Ener   Throughput")
 		ii = 150
-		print (self.filter_wave[ii], flux_obj[ii], self.atmostrans[ii], self.filter_trans[ii],self.energy_photon(self.filter_wave[ii]), self.throughput[ii])
-		#print ("%7.3F"% self.filter_wave[ii].value, "%9.2E"% flux_obj[ii].value, "%6.2F"% self.atmostrans[ii].value, "%6.2F"% self.filter_trans[ii].value,"%9.2E"% self.energy_photon(self.filter_wave[ii].value), "%6.2F"% self.throughput[ii].value)
-		#print ("%7.3F"% self.filter_wave[ii].value, "%9.2E"% flux_obj[ii].value, "%6.2F"% self.atmostrans[ii].value, "%6.2F"% self.filter_trans[ii].value,"%9.2E"% self.energy_photon(self.filter_wave[ii].value), "%6.2F"% self.throughput[ii].value)
 
 		return( flux_obj * self.atmostrans * self.filter_trans / self.energy_photon(self.filter_wave) * self.throughput)
 
@@ -393,10 +391,8 @@ class Calculator_Image:
 		:param aperture:
 		:return:
 		"""
-		print ("1")
 		nexp = np.arange(Nexp_min,Nexp_max,Nexp_step)
 		texp = nexp * dit
-		#print ("nexp ",nexp[0],nexp[-1])
 		phi_obj_apert = self.phi_obj_total * aperture['EE']
 		phi_sky_apert = self.phi_sky_sqarc * np.pi * aperture['Radius']**2
 
@@ -413,7 +409,6 @@ class Calculator_Image:
 		noise = np.sqrt(nexp*(noise2_obj.value+noise2_sky.value+noise2_read.value+noise2_dark.value)) ###FIX ME UNITSS????
 
 		##noise = np.sqrt(texp*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+ \ nexp*aperture['Npix']*self.detector['ron']**2)
-		self.debug_values = {}
 		self.debug_values['phi_sky_sqarc'] =self.phi_sky_sqarc
 		self.debug_values['phi_obj_total'] = self.phi_obj_total
 		self.debug_values['phi_obj_aperture'] = phi_obj_apert
