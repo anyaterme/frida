@@ -406,7 +406,7 @@
 		<div class="col-xs-12">
 			<ul class="list-group">
 			{% for value in debug_values %}
-				<li class="list-group-item">{{ value }}</li>
+			<li class="list-group-item">{{ value }} {{ debug_values|list_value:value }}</li>
 			{% endfor %}
 			</ul>
 		</div>

@@ -391,6 +391,7 @@ class Calculator_Image:
 		:param aperture:
 		:return:
 		"""
+		print ("1")
 		nexp = np.arange(Nexp_min,Nexp_max,Nexp_step)
 		texp = nexp * dit
 		#print ("nexp ",nexp[0],nexp[-1])
@@ -410,8 +411,15 @@ class Calculator_Image:
 		noise = np.sqrt(nexp*(noise2_obj.value+noise2_sky.value+noise2_read.value+noise2_dark.value)) ###FIX ME UNITSS????
 
 		##noise = np.sqrt(texp*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+ \ nexp*aperture['Npix']*self.detector['ron']**2)
+		self.debug_values = {}
+		self.debug_values['phi_sky_sqarc'] =self.phi_sky_sqarc
+		self.debug_values['phi_obj_total'] = self.phi_obj_total
+		self.debug_values['phi_obj_aperture'] = phi_obj_apert
+		self.debug_values['phi_sky_aperture'] = phi_sky_apert
 		signal = texp * phi_obj_apert
 		snr = signal / noise
+		self.debug_values['signal'] = signal
+		self.debug_values['noise'] = noise
 		return (texp,snr)
 
 	def texp_signal_noise_img(self,required_sn,dit,aperture):
@@ -424,6 +432,7 @@ class Calculator_Image:
 		:param aperture:
 		:return:
 		"""
+		print ("2")
 		phi_obj_apert = self.phi_obj_total * aperture['EE']
 		phi_sky_apert = self.phi_sky_sqarc * np.pi * aperture['Radius']**2
 		print "==========================="
@@ -435,7 +444,6 @@ class Calculator_Image:
 		##noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
 		noise = phi_obj_apert.value+phi_sky_apert.value+(e_to_ph(self.detector['darkc'])*aperture['Npix']).value 					#### FIX ME UNITS
 		noise = noise*u.ph*u.s**-1
-		print noise
 		noise_ndit = (dit*(noise)).value+(aperture['Npix']*e_to_ph(self.detector['ron'])**2).value
 
 		ndit = round((required_sn**2 * noise_ndit / phi_obj_apert**2 / dit**2).value)

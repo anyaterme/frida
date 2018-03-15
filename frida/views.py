@@ -263,10 +263,6 @@ def calculate_ima(request):
 
 
 
-	debug_values['obs_filter'] = str(obs_filter.__dict__)
-	debug_values['sky_conditions'] = sky_conditions
-	debug_values['target_info'] = target_info.__dict__
-	debug_values['lambda_eff'] = str(lambda_eff)
 	context = {}
 	context['static_response'] = static_response
 	context['throughput'] = throughput
@@ -276,7 +272,7 @@ def calculate_ima(request):
 	context['wave_array'] = a.filter_wave.to(u.AA)
 	context['texp_array'] = texp_seq
 	context['snr'] = snr_seq
-	context['debug_values'] = debug_values
+	context['debug_values'] = a.debug_values
 
 	return render(request, 'calculate_ima.html', context)
 
