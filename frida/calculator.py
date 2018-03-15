@@ -340,7 +340,9 @@ class Calculator_Image:
 		h_nu = const.h*const.c/self.filter_wave
 		a = self.integrand_obj(flambda) / h_nu # include convolution with atmospheric and filter transmission
 		photons_through_filter = scipy.integrate.simps(a,self.filter_wave)
-		return (photons_through_filter*self.area_tel*self.refl_tel).value * u.ph * u.s**-1
+        units_photons_trough_filter = a.unit * self.filter_wave.unit
+		#return (photons_through_filter*self.area_tel*self.refl_tel).value * u.ph * u.s**-1
+		return (photons_through_filter*self.area_tel*self.refl_tel).value * units_photons_trough_filter
 
 
 	def integrand_obj(self, flux_obj):
