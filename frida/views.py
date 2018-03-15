@@ -111,14 +111,16 @@ def get_TargetInfo(request):
 	:return: object TargetInfo
 	"""
 	debug_values = {}
+	error_values = {}
 	# Request parameters relative to astronomical target
 	mag_target = float(request.POST.get('spatial_integrated_brightness'))
 	band = request.POST.get("band_flux")
 	mag_system = request.POST.get('units_sib')
 	energy_type = request.POST.get('spectral_type')
-	debug_values["Brightness (Astronomical Source Definition)"] = mag_target
-	debug_values["Filter_Name (Astronomical Source Definition)"] = band
-	debug_values["Energy Distribution (Astronomical Source Definition)"] = energy_type
+#	debug_values["Brightness (Astronomical Source Definition)"] = mag_target
+#	debug_values["Filter_Name (Astronomical Source Definition)"] = band
+#	debug_values["Energy Distribution (Astronomical Source Definition)"] = energy_type
+	error = False
 
 	## Select morphology of source
 	source_morpho = request.POST.get('source_type')
@@ -126,34 +128,74 @@ def get_TargetInfo(request):
 		label_source_morpho = 'Extended source'
 	elif (source_morpho == 'point'):
 		label_source_morpho = 'Point source'
+#	debug_values["Morphology of source"] = label_source_morpho
 
 	# create a tuple with the information relative to the Spectral Energy Distribution
+	debug_values["Spectral Distribution"] = "Checking...."
+	sed = (energy_type,0)
 	if (energy_type == 'black_body'):
-		temperature= float(request.POST.get('temperature'))
-		sed = (energy_type,temperature)
-		label_energy_type = 'Black Body, T=%s K' % temperature
+		try:
+			temperature= float(request.POST.get('temperature'))
+			sed = (energy_type,temperature)
+			label_energy_type = 'Black Body, T=%s K' % temperature
+			debug_values['Spectral Distribution'] = label_energy_type
+		except:
+			error_values['Spectral Distribution'] = 'Black Body, but you has indicated wrong temperature'
+			error = True
+
 	elif (energy_type == 'power_law'):
-		pl_index = float(request.POST.get('pl_index'))
-		sed = (energy_type,pl_index)
-		label_energy_type = 'Power Law, lambda^%s' % pl_index
+		try:
+			pl_index = float(request.POST.get('pl_index'))
+			sed = (energy_type,pl_index)
+			label_energy_type = 'Power Law, lambda^%s' % pl_index
+			#debug_values['Spectral Distribution'] = label_energy_type
+		except Exception as e:
+			error_values['Spectral Distribution'] = 'Power Law, but you has indicated wrong lambda (%s)' % e
+			error = True
 	elif (energy_type == 'stellar_template'):
-		templatename = request.POST.get('star_type')
-		sed = ('pickles', templatename)
-		label_energy_type = 'Pickles, template: %s' % templatename
+		try:
+			templatename = request.POST.get('star_type')
+			sed = ('pickles', templatename)
+			label_energy_type = 'Pickles, template: %s' % templatename
+			debug_values['Spectral Distribution'] = label_energy_type
+		except:
+			error_values['Spectral Distribution'] = label_energy_type
+			error = True
 
 	waveshift = None
 	try:
 		if (request.POST.get("velocity_type",'redshift') == 'redshift'):
-			waveshift = ('redshift', 0.)
-			waveshift = ('redshift', float(request.POST.get('redshift_value', '0')))
+			try:
+				waveshift = ('redshift', 0.)
+				my_value= request.POST.get('redshift_value', 0)
+				if my_value == "":
+					my_value = 0
+				waveshift = ('redshift', float(my_value))
+				debug_values['Velocity Type'] = "Redshift, Z=%d" % float(my_value)
+			except Exception as e:
+				error_values['Velocity Type'] = "Redshift, but you has indicated wrong Z (%s)" % e
+				error = True
 		else:
-			waveshift = ('radial_velocity', 0.)
-			waveshift = ('radial_velocity', float(request.POST.get('radial_value', '0')))
+			try:
+				waveshift = ('radial_velocity', 0. * u.km / u.s )
+				my_value = request.POST.get('redshift_value', 0)
+				if my_value == "":
+					my_value = 0
+				waveshift = ('radial_velocity', float(my_value) * u.km / u.s)
+				debug_values['Velocity Type'] = "Radial Velocity, v=%d [Km/s]" % float(my_value)
+			except:
+				error_values['Velocity Type'] = "Redshift, but you has indicated wrong velocity"
+				error = True
 	except:
+		error_values['Velocity Type'] = "You must indicate velocity type"
+		error = True
 		pass
 
 	# creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
 	target_info = TargetInfo(mag_target,band,mag_system,sed,waveshift)
+	target_info.error = error
+	target_info.messages = debug_values
+	target_info.error_messages = error_values
 	return target_info
 
 def calculate_ima(request):
@@ -166,15 +208,21 @@ def calculate_ima(request):
 	#frida_setup = Instrument_static(request.POST.get('scale','fine_scale'),path=settings.INCLUDES)
 	# Filter
 	selected_filter = request.POST.get('filter')
-	msg_err = []
+	msg_err = {}
 	try:
 		obs_filter = Filter(selected_filter,path_list=settings.INCLUDES,path_filters=settings.FILTERS)
 	except Exception as e:
-		msg_err.append("%s" % e)
+		msg_err["ERROR GENERIC"] = ("%s" % e)
 		return render(request, "error.html", {'msg_err':msg_err})
 	lambda_eff=obs_filter.lambda_center()
 
-	target_info = get_TargetInfo(request)
+	try:
+		target_info = get_TargetInfo(request)
+	except Exception as e:
+		msg_err['ERROR GENERIC'] = "Please. review your parameters. %s" % e
+		return render(request, "error.html", {'msg_err':msg_err})
+	if (target_info.error):
+		return render(request, "error.html", {'msg_err':target_info.error_messages})
 	a=Calculator_Image(target_info,selected_filter,sky_conditions,selected_scale,telescope_name=telescope)
 
 	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
@@ -208,7 +256,7 @@ def calculate_ima(request):
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		print (traceback.print_exc())
 		print (exc_type, exc_obj, exc_tb.tb_frame.f_code.co_filename, exc_tb.tb_lineno)
-		msg_err.append("%s" % e)
+		msg_err["ERROR GENERIC"]=("%s" % e)
 		return render(request, "error.html", {'msg_err':msg_err})
 
 	print ("***********", required_sn)

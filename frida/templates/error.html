@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n fridatags %}
 {%block content%}
 {% for msg in msg_err %}
-	<div class="alert alert-danger">{{msg}}</div>
+<div class="alert alert-danger">{{msg}} {{ msg_err|list_value:msg }}</div>
 {% endfor %}
 {%endblock%}
