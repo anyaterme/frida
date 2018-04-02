@@ -204,7 +204,8 @@ def calculate_ima(request):
 	telescope = "GTC"
 	telescope_params = Telescope(telescope)
 	sky_conditions = get_SkyConditions(request)
-	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),float(request.POST.get("gs_separation")))
+	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),\
+                        float(request.POST.get("gs_separation"))*u.arccsec)
 	selected_scale = request.POST.get('scale','fine_scale')
 	#frida_setup = Instrument_static(request.POST.get('scale','fine_scale'),path=settings.INCLUDES)
 	# Filter
