@@ -4,7 +4,7 @@ h1.navbar-brand
 }
 .body-content
 {
-	padding-top:100px;
+	padding-top:70px;
 	padding-bottom:100px;
 }
 
@@ -13,9 +13,19 @@ footer
 	position:fixed;
 	width:100%;
 	bottom:0px;
-	height:50px;
+	height:30px;
 	background:#111;
 	color:white;
 	padding:10px;
 	text-align:right;
+}
+
+nav
+{
+	height:60px !important;
+}
+
+.navbar-brand
+{
+	padding: 0px 15px !important;
 }
