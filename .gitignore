@@ -4,5 +4,6 @@ log.txt
 *.swo
 media/
 docs/
+old/
 **.DS_Store
 db.sqlite3

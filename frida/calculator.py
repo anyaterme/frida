@@ -31,7 +31,7 @@ class GuideStar:
     :returns: class self. -- .Magnitude, .Separation 
     :raises: 
 	"""
-	def __init__ (self, gs_mag=8, gs_dis=0.):
+	def __init__ (self, gs_mag=8, gs_dis=0.*u.arcsec):
 		self.Magnitude = gs_mag
 		self.Separation = gs_dis
 
@@ -143,7 +143,7 @@ class TargetInfo:
 		result.append("Sed Wave: %s" % str(self.sed_wave))
 		result.append("Sed Flambda: %s" % str(self.sed_flambda))
 		result.append("===========================================")
-		print '\n'.join(result)
+		print ('\n'.join(result))
 		return result
 
 
@@ -174,9 +174,8 @@ class TargetInfo:
 		:param wave:
 		:return:
 		"""
-		energy_per_photon = const.h * const.c/ wave / u.photon
-		phot_lambda = self.flambda_wave(wave)/(energy_per_photon) #const.h/const.c*wave
-		return phot_lambda
+		phot_wave = self.flambda_wave(wave)/energy_photon(wave) #const.h/const.c*wave
+		return phot_wave
 
 
 #zeropoint=  {
@@ -205,13 +204,15 @@ class Calculator_Image:
 	obs_filter = None
 	atmosphere = None
 
-	def __init__(self,target_info,filter,atmospheric_cond=None,scale=None,telescope_name='GTC',instrument_name='FRIDA'):
+	def __init__(self,target_info,filter_name,atmospheric_cond=None,scale=None,\
+              telescope_name='GTC',instrument_name='FRIDA'):
 		"""
 			Celestial source parameters in a dictionary
 			target_info = {'Magnitude':19,'MagSystem':,'Band':'J','sed':sed} ;
 			 sed is a tuple like ('PowerLaw',index_powerlaw), ('Blackbdoy',temperature_bb)
 		"""
 		self.debug_values = {}
+		"""
 		sed = target_info.SED
 		temp_bb = sed[1]
 		input_band = target_info.Band   # definimos como banda de referencia
@@ -219,95 +220,144 @@ class Calculator_Image:
 		mag_ref = float(target_info.Magnitude)
 		input_normflux=bbody(input_lambda,temp_bb)  # calculamos el flujo en la banda de referencia
 		flux_scale =scale_to_vega(input_band,mag_ref,input_normflux)
-		#flux_scale=target_info.flux_scale
-
+		flux_scale=target_info.flux_scale
 		print ("flux scale",flux_scale)
+		"""
 
-		self.obs_filter_name=filter
 
 		# telescope
-		params_tel = Telescope(telescope_name)
-		self.area_tel = params_tel.area
-		self.refl_tel = params_tel.reflectivity
-		print ('Telescope is ',params_tel.name)
+		telescope = Telescope(telescope_name)
+		self.area_tel = telescope.area
+		self.refl_tel = telescope.reflectivity
+		print ('Telescope is ',telescope.name)
+		print ("  reflectivity is",self.refl_tel)
 
 
 		#### filter
-		filter_info = Filter(filter,path_list=settings.INCLUDES,path_filters=settings.FILTERS)
-		self.filter_wave =  filter_info.wave
-		self.filter_trans = filter_info.transmission
-		lambda_center = float(filter_info.lambda_center().value)
-		filter_width = filter_info.width()
+         ### wave,transmission are arrays with the bandpass
+		self.obs_filter_name=filter_name
+		obs_filter = Filter(filter_name,path_list=settings.INCLUDES,path_filters=settings.FILTERS)
+		lambda_center = obs_filter.lambda_center()
+		print("lambda_effective ",lambda_center)
+		filter_width = obs_filter.width()
 		print ("lambda_eff,bandwidth=",lambda_center,filter_width["width"],filter_width["cut_on"],filter_width["cut_off"])
+		self.filter_transavg = obs_filter.avg_transmission()
+		print ("filter_transmission_avg",obs_filter.avg_transmission())
+
+		# Atmosphere
+		atmphere = Atmosphere()
+
+		## do in nm
+		same_unit = obs_filter.wave_limits[0].unit
+		dwave_img  = min([atmphere.atmtrans_delta.to(same_unit),atmphere.skyrad_delta.to(same_unit)])
+
+		wave_img = np.arange(obs_filter.wave_limits[0].value,obs_filter.wave_limits[1].value,\
+                       dwave_img.value)
+		wave_img *= same_unit
+
+		atmos_trans = interpol2newwave(atmphere.atmtrans_perone,\
+                atmphere.atmtrans_wave,wave_img)
+
+		atmos_skyrad = interpol2newwave(atmphere.skyrad_photons,\
+                atmphere.skyrad_wave,wave_img)
+
+		filter_trans = interpol2newwave(obs_filter.transmission,\
+                obs_filter.wave,wave_img)
+
+		self.atmostrans = atmos_trans
+		self.skyemission_photons = atmos_skyrad
+		self.skymag = atmphere.compute_skymag(filter_name)
+
+		self.img_wave = wave_img
+		self.img_filter_trans = filter_trans
 
 
 		## instrument characteristics
 		instrument=Instrument_static(scale,instid=instrument_name)
-		self.instrument = instrument
-		static_response = instrument.compute_static_response(self.filter_wave)
+		#self.instrument = instrument
+		static_response = instrument.compute_static_response(wave_img)
 		self.static_response = static_response
-		self.throughput = static_response["collimator"] * static_response['camera'] * static_response['qe']
-		print ("Throughput ",self.throughput[1:5])
+		self.throughput = static_response["collimator"] * static_response['camera'] \
+            * static_response['qe'] * telescope.reflectivity
 		self.detector = instrument.detector
-
-		# Atmosphere
-		atmosphere = Atmosphere()
-		self.atmostrans = atmosphere.compute_skytrans(self.filter_wave)
-		self.skyemission_photons = atmosphere.compute_skyrad(self.filter_wave)
-		self.skymag = atmosphere.compute_skymag(self.obs_filter_name)
-
-		# compute average atmospheric transmission
-		atmospheric_trans_avg = atmosphere.compute_skytrans_avg(filter_info.wave[filter_width["index_above"]])
-		print ("atmos_trans_avg=",atmospheric_trans_avg)
-
-		collimator_transmission_avg = instrument.collimator_transmission.avg_response(filter_info.wave[filter_width["index_above"]])
-		camera_transmission_avg = instrument.camera_transmission.avg_response(filter_info.wave[filter_width["index_above"]])
-		detector_qe_avg = instrument.qe.avg_response(filter_info.wave[filter_width["index_above"]])
-		filter_transmission_avg = filter_info.avg_transmission()
-		print ("collimator_transmission_avg",collimator_transmission_avg)
-		print ("camera_transmission_avg",camera_transmission_avg)
-		print ("filter_transmission_avg",filter_transmission_avg)
-		print ("detector_qe_avg",detector_qe_avg)
-		print ("telescope reflectivity",self.refl_tel)
-		self.effic_total = self.refl_tel * collimator_transmission_avg * \
-				  filter_transmission_avg * camera_transmission_avg * detector_qe_avg
-		print ("Instrument - Global efficiency",self.effic_total)
-
+		self.pixscale = instrument.pixscale
+        
 
 
 		## compute the target f-lambda within the wavelength range determined by the filter transmission
-		obj_flambda_spec = target_info.flambda_wave(self.filter_wave)
-		obj_photons_spec = target_info.photons_wave(self.filter_wave)
-		ii = len(self.filter_wave)/2
-		print (" wave,obj_flambda,photons["+str(ii)+"]=",self.filter_wave[ii],obj_flambda_spec[ii], obj_photons_spec[ii])
+		obj_flambda_spec = target_info.flambda_wave(wave_img)
+		obj_photons_spec = target_info.photons_wave(wave_img)
+		ii = int(len(wave_img)/2)
+		print("QE ",static_response['qe'][ii-5:ii+5])
+		print("Collimator ",static_response['collimator'][ii-5:ii+5])
+		print("Camera ",static_response['camera'][ii-5:ii+5])
+		print (" wave,obj_flambda,photons["+str(ii)+"]=",wave_img[ii],obj_flambda_spec[ii], obj_photons_spec[ii])
 
+		'''
 
 		## compute the flux from the target and the number of photons per unit time
 		#self.obj_flambda = flux_scale * bbody(filter_info['lamb_eff'],temp_bb) # Units are
+		'''
 		self.obj_flambda_lambcenter = target_info.flambda_wave(lambda_center)
 		print ("obj_flambda_lambeff:",self.obj_flambda_lambcenter)
-		phi_obj_total2 = self.compute_photonrate_simple(self.obj_flambda_lambcenter,lambda_center,filter_width["width"],atmospheric_trans_avg*self.effic_total)
 
-		self.flambda_wave = target_info.flambda_wave
-		self.phi_obj_total = self.compute_photonrate_filter(target_info.flambda_wave(self.filter_wave))
+		avg_response = self.get_average_response()
+		print("avg_response[effic_static] ",avg_response["effic_static"])        
+		print("avg_response ",avg_response)        
+		phi_obj_total2 = self.compute_photonrate_simple(self.obj_flambda_lambcenter,\
+                lambda_center,filter_width["width"],avg_response["atm_trans"]*\
+                avg_response["effic_static"])
 
-		print("phi_obj_total [simple int-filter]",phi_obj_total2,self.phi_obj_total)
+		self.flambda_wave = target_info.flambda_wave(wave_img)
+		self.phi_obj_total = self.compute_target_photonrate_filter(target_info.flambda_wave(wave_img))
+
+		units_phi = u.electron / u.second
+		print("phi_obj_total [simple int-filter]",phi_obj_total2.to(units_phi),\
+            self.phi_obj_total.to(units_phi))
 
 
 		## compute the photon rate from the sky per arcsec^2
 		##sky_flambda = 10.**(phot_zp[self.obs_filter_name][2]-0.4*self.atmosphere['mag_sqarc'])
 		sky_flambda = self.get_skyflux_band(lambda_center)
-		phi_sky_sqarc_simple = self.compute_photonrate_simple(sky_flambda,lambda_center,\
-									   filter_width["width"],self.effic_total)
-		self.phi_sky_sqarc = self.compute_sky_photonrate_filter()
+		phi_sky_sqarc_simple = \
+              self.compute_photonrate_simple(avg_response['sky_rad'],\
+              lambda_center,filter_width["width"],avg_response["effic_static"],\
+              is_flux=False)
+		self.phi_sky_sqarc = self.compute_sky_photonrate_filter(atmos_skyrad)
 
-		print("phi_sky/pix/sec (simple  int-filter)",phi_sky_sqarc_simple*instrument.pixscale**2,\
-			  self.phi_sky_sqarc*instrument.pixscale**2)
+		print("phi_sky/pix/sec (simple  int-filter)",phi_sky_sqarc_simple,\
+			  self.phi_sky_sqarc)
+        
+		print("pixscale ",instrument.pixscale)
+         
+        	
+	def get_average_response(self):
+		'''
+           compute quantities averaged over filter transmission 
+           self.img_filter_trans
+           self.img_wave
+           self.static_response["collimator"]
+		''' 
+		coll_transavg = average_bandpass(self.static_response["collimator"],\
+                                   self.img_filter_trans,self.img_wave)
+		cam_transavg = average_bandpass(self.static_response["camera"],\
+                                   self.img_filter_trans,self.img_wave)
+		qe_avg = average_bandpass(self.static_response["qe"],\
+                                   self.img_filter_trans,self.img_wave)
+		effic_avg = self.refl_tel * coll_transavg * \
+				  self.filter_transavg * cam_transavg * qe_avg
+		atm_transavg = average_bandpass(self.atmostrans,\
+                                   self.img_filter_trans,self.img_wave)
+		sky_radavg = average_bandpass(self.skyemission_photons,\
+                                   self.img_filter_trans,self.img_wave)        
+		return {"collim":coll_transavg,"camera":cam_transavg,"qe":qe_avg,\
+           "effic_static":effic_avg,"atm_trans":atm_transavg,"sky_rad":sky_radavg}
 
 	def get_static_response(self):
 		return (self.static_response, self.throughput)
 
-	def compute_photonrate_simple(self,flux_filter,lambda_filter,width_filter,throughput):
+	def compute_photonrate_simple(self,flux_filter,lambda_filter,width_filter,\
+                    throughput,is_flux=True):
 		"""
 		compute the number of photons
 		INPUTS:
@@ -320,10 +370,11 @@ class Calculator_Image:
 				  [throughput] = No units
 					Results as ===> s^-1 m^-1 micron -> x1.E-6 -> s^-1
 		"""
-		phot_tot = flux_filter/const.h/const.c*lambda_filter*width_filter*self.area_tel*throughput  # units are photons/s
-		return (phot_tot.value * u.ph *u.s**-1)
+		phot_tot = flux_filter*width_filter*self.area_tel*throughput  # units are photons/s
+		if (is_flux): phot_tot /= energy_photon(lambda_filter)
+		return phot_tot
 
-	def compute_photonrate_filter(self,flambda):
+	def compute_target_photonrate_filter(self,flambda,Atm_absorption=True):
 		"""
 		compute the number of photons integrated upon filter passband
 		INPUTS:
@@ -336,50 +387,52 @@ class Calculator_Image:
 				  [throughput] = No units
 					Results as ===> ph^-1 s^-1 m^-1 micron -> x1.E-6 -> ph^-1 s^-1
 		"""
-		import scipy.integrate
 
-		h_nu = const.h*const.c/self.filter_wave
-		a = self.integrand_obj(flambda) # include convolution with atmospheric and filter transmission
-		self.debug_values['a'] = a[0]
-		self.debug_values['flambda'] = flambda[0]
-		photons_through_filter = scipy.integrate.simps(a,self.filter_wave)
-		units_photons_trough_filter = a.unit * self.filter_wave.unit
+		#a = self.integrand_obj(flambda) # include convolution with atmospheric and filter transmission
+		#self.debug_values['a'] = a[0]
+		#self.debug_values['flambda'] = flambda[0]
+		photons_wave = flambda * self.img_filter_trans * \
+            self.throughput / energy_photon(self.img_wave)
+		if (Atm_absorption): photons_wave *= self.atmostrans 
+         
+		photons_through_filter = self.sum_photons_filter(photons_wave)
+		#scipy.integrate.simps(integrand_obj.value,self.img_wave.value)
+		#photons_through_filter = scipy.integrate.simps(integrand_obj.value,self.img_wave.value)
+		#units_photons_trough_filter = integrand_obj.unit * self.img_wave.unit
 		#return (photons_through_filter*self.area_tel*self.refl_tel).value * u.ph * u.s**-1
-		return (photons_through_filter*self.area_tel*self.refl_tel).value * units_photons_trough_filter
+		return photons_through_filter*self.area_tel
 
-
-	def integrand_obj(self, flux_obj):
-		ii = 150
-
-		return( flux_obj * self.atmostrans * self.filter_trans / self.energy_photon(self.filter_wave) * self.throughput)
-
-	def energy_photon(self,wave):
-		"""
-		Compute the energy of a photon at a given wavelenght [in microns]
-		:param wave:
-		:return:
-		"""
-		return self.energy_photon_1mic/wave
-
-	def compute_sky_photonrate_filter(self):
+	def compute_sky_photonrate_filter(self,photon_flux):
 		"""
 		compute the number of photons integrated upon filter passband
 		INPUTS:
+		"""
+		"""
 		   Units: [flux_band] is expected in J s^-1 m^-2 micron^-1
 				  [h] = J s
 				  [lambda_band,width_band] = micron
 				  [telarea] = m^2
 				  [throughput] = No units
-					Results as ===> s^-1 m^-1 micron -> x1.E-6 -> s^-1
+					Results as ===> ph^-1 s^-1 m^-1 micron -> x1.E-6 -> ph^-1 s^-1
 		"""
-		import scipy.integrate
 
-		a = self.integrand_sky() # include convolution with filter transmission
-		photons_through_filter = scipy.integrate.simps(a,self.filter_wave)
-		return (photons_through_filter*self.area_tel*self.refl_tel).value * u.ph * u.s**-1
+		#a = self.integrand_obj(flambda) # include convolution with atmospheric and filter transmission
+		#self.debug_values['a'] = a[0]
+		#self.debug_values['flambda'] = flambda[0]
+		photons_wave = photon_flux * self.img_filter_trans * self.throughput 
+         
+		photons_through_filter = self.sum_photons_filter(photons_wave)
+		#scipy.integrate.simps(integrand_obj.value,self.img_wave.value)
+		#photons_through_filter = scipy.integrate.simps(integrand_obj.value,self.img_wave.value)
+		#units_photons_trough_filter = integrand_obj.unit * self.img_wave.unit
+		#return (photons_through_filter*self.area_tel*self.refl_tel).value * u.ph * u.s**-1
+		return photons_through_filter*self.area_tel
 
-	def integrand_sky(self):
-		return(self.skyemission_photons * self.filter_trans * self.throughput)
+	def sum_photons_filter(self,photons):
+		photons_filter = scipy.integrate.simps(photons.value,self.img_wave.value)
+		units_photons_trough_filter = photons.unit * self.img_wave.unit
+		return photons_filter * units_photons_trough_filter
+
 
 	def signal_noise_texp_img(self,Nexp_min,Nexp_max,Nexp_step,dit,aperture):
 		"""
@@ -394,29 +447,38 @@ class Calculator_Image:
 		nexp = np.arange(Nexp_min,Nexp_max,Nexp_step)
 		texp = nexp * dit
 		phi_obj_apert = self.phi_obj_total * aperture['EE']
-		phi_sky_apert = self.phi_sky_sqarc * np.pi * aperture['Radius']**2
+		phi_sky_apert = self.phi_sky_sqarc * aperture['Area']
+
+		unit_signal = u.electron
 
 		noise2_obj = dit*phi_obj_apert
 		noise2_sky = dit*phi_sky_apert
 		noise2_read = aperture['Npix']*self.detector['ron']**2
 		noise2_dark = dit*self.detector['darkc']
-		print "==========================="
-		print noise2_obj.unit
-		print noise2_sky.unit
-		print noise2_read.unit
-		print noise2_dark.unit
-		print "==========================="
-		noise = np.sqrt(nexp*(noise2_obj.value+noise2_sky.value+noise2_read.value+noise2_dark.value)) ###FIX ME UNITSS????
-
+		print("===========================")
+		print ("noise2_obj ",noise2_obj.to(unit_signal))
+		print ("noise2_sky ",noise2_sky.to(unit_signal))
+		print ("noise2_read ",noise2_read,noise2_read.value,noise2_read.unit)
+		print ("noise2_dark ",noise2_dark,noise2_dark.value,noise2_dark.unit)
+		print ("===========================")
+		noise = np.sqrt(nexp*(noise2_obj.to(unit_signal).value+\
+                        noise2_sky.to(unit_signal).value+noise2_read.value+\
+                        noise2_dark.value))
+        
 		##noise = np.sqrt(texp*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+ \ nexp*aperture['Npix']*self.detector['ron']**2)
 		self.debug_values['phi_sky_sqarc'] =self.phi_sky_sqarc
 		self.debug_values['phi_obj_total'] = self.phi_obj_total
-		self.debug_values['phi_obj_aperture'] = phi_obj_apert
+		self.debug_values['phi_obj_aperture'] = phi_obj_apert.to(u.electron/u.second)
 		self.debug_values['phi_sky_aperture'] = phi_sky_apert
 		signal = texp * phi_obj_apert
-		snr = signal / noise
-		self.debug_values['signal'] = signal
-		self.debug_values['noise'] = noise
+		snr = signal.to(unit_signal).value / noise
+		print("@signal_noise_texp_img - snr ",snr) 
+		self.debug_values['signal'] = signal.to(unit_signal)
+		#self.debug_values['noise'] = (noise * signal.unit).to(unit_signal)
+		self.debug_values['noise'] = noise * unit_signal
+		self.debug_values['snr'] = snr
+		print("@signal_noise_texp_img - noise ",self.debug_values['noise'][10:15]) 
+    
 		return (texp,snr)
 
 	def texp_signal_noise_img(self,required_sn,dit,aperture):
@@ -429,23 +491,31 @@ class Calculator_Image:
 		:param aperture:
 		:return:
 		"""
-		print ("2")
 		phi_obj_apert = self.phi_obj_total * aperture['EE']
-		phi_sky_apert = self.phi_sky_sqarc * np.pi * aperture['Radius']**2
-		print "==========================="
-		print phi_obj_apert.unit
-		print phi_sky_apert.unit
-		print e_to_ph(self.detector['darkc']),"***",aperture['Npix']
-		print e_to_ph(self.detector['ron'])**2,"****",aperture['Npix']
-		print "==========================="
-		##noise_ndit = dit*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+aperture['Npix']*self.detector['ron']**2
-		noise = phi_obj_apert.value+phi_sky_apert.value+(e_to_ph(self.detector['darkc'])*aperture['Npix']).value 					#### FIX ME UNITS
-		noise = noise*u.ph*u.s**-1
-		noise_ndit = (dit*(noise)).value+(aperture['Npix']*e_to_ph(self.detector['ron'])**2).value
+		phi_sky_apert = self.phi_sky_sqarc * aperture['Area']
 
-		ndit = round((required_sn**2 * noise_ndit / phi_obj_apert**2 / dit**2).value)
+		noise2_obj = dit*phi_obj_apert
+		noise2_sky = dit*phi_sky_apert
+		noise2_read = aperture['Npix']*self.detector['ron']**2
+		noise2_dark = dit*self.detector['darkc']
 
-		return (ndit)
+		unit_signal = u.electron
+
+		print ("===========================")
+		print (phi_obj_apert.unit)
+		print (phi_sky_apert.unit)
+		print (self.detector['darkc'],"***",aperture['Npix'])
+		print (self.detector['ron']**2,"****",aperture['Npix'])
+		print ("===========================")
+		noise2 = noise2_obj.to(unit_signal).value+\
+                        noise2_sky.to(unit_signal).value+noise2_read.value+\
+                        noise2_dark.value
+		signal2 = (phi_obj_apert * dit)**2
+		print("signal2 ",signal2)
+
+		nexp = round(required_sn**2 * noise2 / signal2.to(unit_signal*unit_signal).value)
+
+		return nexp
 
 
 	def get_skyflux_band(self,wave):
@@ -584,20 +654,20 @@ class Calculator_Spect:
 		nexp = np.arange(Nexp_min,Nexp_max,Nexp_step)
 		texp = len(nexp) * dit
 		#print ("nexp ",nexp[0],nexp[-1])
-		print aperture
+		print("aperture:",aperture)
 		selected_index = 0			##### FIXME... Cual seleccionamos?
 		phi_obj_apert = self.phi_obj_total * aperture['EE'][selected_index]
 		phi_sky_apert = self.phi_sky_sangle * np.pi * aperture['Radius'][selected_index]**2
-		print "==========================="
-		print phi_obj_apert.unit 
-		print phi_sky_apert.unit
+		print ("===========================")
+		print (phi_obj_apert.unit) 
+		print (phi_sky_apert.unit)
 		print (self.detector['darkc']*aperture['Npix'][selected_index]).unit
 		print (nexp*aperture['Npix'][selected_index]*self.detector['ron']**2).unit
-		print texp.unit
-		print "==========================="
+		print (texp.unit)
+		print ("===========================")
 		noise = np.sqrt(texp.value*(phi_obj_apert.value+phi_sky_apert.value+(self.detector['darkc']*aperture['Npix'][selected_index]).value)+ (texp*aperture['Npix'][selected_index]*self.detector['ron']**2).value)
 		signal = texp * phi_obj_apert
-		print signal.unit
+		print (signal.unit)
 		snr = signal / noise
 		return (texp,snr)
 

@@ -3,6 +3,7 @@ from math import ceil
 import os,re
 import csv
 import astropy.units as u
+import scipy.integrate
 
 
 def read_sed_pickles_files(fname_sed,path_sed='sed_library/pickles'):
@@ -190,3 +191,36 @@ def interpolate_old(wvl,specfl,new_wvl,unity='None'):
 
 def e_to_ph(value):
 	return value*u.ph/u.electron
+
+def interpol2newwave(spec,wave,newwave):
+ 
+   #return np.interp(wave,self.wave,self.response)
+   same_unit = newwave.unit     
+   _xnew = newwave.value
+   _xx = wave.to(same_unit).value
+   if hasattr(spec,'unit'):
+       _yy = spec.value
+       spec_unit = spec.unit     
+   else:
+       _yy = spec
+       spec_unit = 1
+         
+   _ynew = np.interp(_xnew,_xx,_yy) 
+   return _ynew*spec_unit 
+
+
+def average_bandpass(spec,bandpass,wave):
+ 
+   #return np.interp(wave,self.wave,self.response)
+   same_unit = wave.unit     
+   _xx = wave.value
+   if hasattr(spec,'unit'):
+       _yy = spec.value * bandpass
+       spec_unit = spec.unit     
+   else:
+       _yy = spec * bandpass
+       spec_unit = 1
+         
+   avg_spec = scipy.integrate.simps(_yy,_xx)/scipy.integrate.simps(bandpass,_xx)
+            
+   return avg_spec*spec_unit 

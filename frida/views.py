@@ -98,8 +98,9 @@ def get_SkyConditions(request):
 	:return: dict sky_conditions{'seeing','lambda_seeing','airmass','pwv'}
 	"""
 	# cond = Conditions()
-	sky_conditions = {'seeing': 0.9, 'lambda_seeing': 0.5 * u.micron, 'airmass': 1.2, 'pwv': 2.5}
-	sky_conditions['seeing'] = float(request.POST.get("seeing", sky_conditions['seeing']))
+	sky_conditions = {'seeing': 0.9 * u.arcsec, 'lambda_seeing': 0.5 * u.micron, \
+                   'airmass': 1.2, 'pwv': 2.5 * u.mm}
+	sky_conditions['seeing'] = float(request.POST.get("seeing", sky_conditions['seeing'])) * u.arcsec
 	sky_conditions['airmass'] = float(request.POST.get("airmass", sky_conditions['airmass']))
 	# (JAP) FALTA INCLUIR VAPOR DE AGUA
 	return sky_conditions
@@ -223,27 +224,35 @@ def calculate_ima(request):
 		return render(request, "error.html", {'msg_err':msg_err})
 	if (target_info.error):
 		return render(request, "error.html", {'msg_err':target_info.error_messages})
-	a=Calculator_Image(target_info,selected_filter,sky_conditions,selected_scale,telescope_name=telescope)
+	a=Calculator_Image(target_info,selected_filter,sky_conditions,selected_scale,\
+                    telescope_name=telescope)
+	static_response, throughput = a.get_static_response()
 
 	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
 	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
 	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
 	fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core		FIX ME Where is the parameter?
-	pixscale = a.instrument.pixscale # in arcseconds
-	ee_aperture=aocor.compute_ee(psf,pixscale * u.arcsecond,fcore=fcore)
+	pixscale = a.pixscale # in arcseconds
+	aperture=aocor.compute_ee(psf,pixscale * u.arcsecond,fcore=fcore)
+	## prueba JAP - redefinimos la apertura
+	rad_aperture=0.5*u.arcsec
+	area_aperture = np.pi*rad_aperture**2
+	area_pixel = (pixscale)**2
+	npix = (area_aperture/area_pixel).value
+	aperture={'EE': 0.5,'EE1': 0.5, 'Radius':rad_aperture, 'Npix':npix, 'Area':area_aperture,\
+                'Area_pixel':area_pixel}
 
 
 	dit = float(request.POST.get('DIT_exp','1')) * u.second
 	Nexp = int(request.POST.get('N_exp','1'))
-	static_response, throughput = a.get_static_response()
 
 	calc_method = request.POST.get('type_results')
 	dit = float(request.POST.get('DIT_exp')) * u.second
 	Nexp = int(request.POST.get('N_exp'))
-	Nexp_min = 1
-	Nexp_max = 100.
+	Nexp_min = min(1,Nexp-10)
+	Nexp_max = Nexp+20
 	Nexp_step = (Nexp_max-Nexp_min)/30
-	(texp_seq,snr_seq) = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,ee_aperture)
+	(texp_seq,snr_seq) = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,aperture)
 
 	signal_noise= float(request.POST.get('signal_noise'))
 	if (calc_method=="SN_ratio"):
@@ -251,7 +260,7 @@ def calculate_ima(request):
 	else:
 		required_sn = snr_seq[-1]
 	try:
-		ndit = a.texp_signal_noise_img(required_sn,dit,ee_aperture)
+		ndit = a.texp_signal_noise_img(required_sn,dit,aperture)
 	except Exception as e:
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		print (traceback.print_exc())
@@ -261,15 +270,23 @@ def calculate_ima(request):
 
 	print ("***********", required_sn)
 
+	print ("***********", a.img_wave.to(u.AA))
 
 
 	context = {}
-	context['static_response'] = static_response
+	context['Object_magnitude'] = target_info.Magnitude,
+	context['Input_Band'] = target_info.Band
+	context['strehl_ratio'] = strehl['StrehlR']
+	context['encircled_energy'] = aperture["EE"]
+	#context['Aperture_radius'] = ee_aperture['Radius']
+	context['pixscale'] = pixscale
+	context['AreaNpix'] = aperture['Npix']
+	#context['static_response'] = static_response
 	context['throughput'] = throughput
 	context['atrans'] = a.atmostrans
 	context['sky_rad'] = a.skyemission_photons
-	context['global_effic'] = a.effic_total
-	context['wave_array'] = a.filter_wave.to(u.AA)
+	context['global_effic'] = a.throughput 
+	context['wave_array'] = a.img_wave.to(u.AA)
 	context['texp_array'] = texp_seq
 	context['snr'] = snr_seq
 	context['debug_values'] = a.debug_values
