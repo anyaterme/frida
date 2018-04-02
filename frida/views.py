@@ -95,10 +95,10 @@ def get_SkyConditions(request):
 	"""
 	Obtain values about Sky conditions
 	:param request: input from html
-	:return: dict sky_conditions{'seeing','lambda_seeing','airmass','pwv'}
+	:return: dict sky_conditions{'seeing','wave_seeing','airmass','pwv'}
 	"""
 	# cond = Conditions()
-	sky_conditions = {'seeing': 0.9 * u.arcsec, 'lambda_seeing': 0.5 * u.micron, \
+	sky_conditions = {'seeing': 0.9 * u.arcsec, 'wave_seeing': 0.5 * u.micron, \
                    'airmass': 1.2, 'pwv': 2.5 * u.mm}
 	sky_conditions['seeing'] = float(request.POST.get("seeing", sky_conditions['seeing'])) * u.arcsec
 	sky_conditions['airmass'] = float(request.POST.get("airmass", sky_conditions['airmass']))
