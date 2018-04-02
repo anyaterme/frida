@@ -2,6 +2,14 @@ import numpy as np
 import astropy.constants as const
 import astropy.units as u
 
+def energy_photon(wave):
+	"""
+        Compute the energy of a photon at a given wavelenght [in microns]
+        	 :param wave:
+	      :return: energy of a photon, units are energy / photon
+	"""
+
+	return const.h * const.c / wave / u.photon
 
 def bbody(lamb, T):
     """ Blackbody as a function of wavelength ([lamb]=micron) and temperature ([T]=K).
