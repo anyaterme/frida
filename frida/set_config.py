@@ -6,7 +6,9 @@ import scipy.integrate
 import numpy as np
 import csv
 import os
-from frida.aux_functions import convolve2pulse,interpolate,read_grating_files,convolve2gauss
+from frida.aux_functions import convolve2pulse,convolve2gauss
+from frida.aux_functions import interpol2newwave,interpolate
+from frida.aux_functions import read_grating_files
 
 class Telescope:
 
@@ -76,7 +78,7 @@ class Spec_response:
 		if '[%]' in sprf_fn1:
 			sprf_value = sprf_value / 100.
 		self.wave = sprf_wave
-		self.value = sprf_value
+		self.response = sprf_value
 
 	def interpol2wave(self,wave):
 		#return np.interp(wave,self.wave,self.response)
@@ -95,23 +97,23 @@ class Instrument_static:
 	"""
 	def __init__ (self,scale='fine_scale',instid='FRIDA',path=settings.INCLUDES):
 		self.qe = Spec_response("detector_qe.dat",path=path)
-		self.qe.value = self.qe.value * u.electron/u.photon
+		self.qe.response = self.qe.response * u.electron/u.photon
 
 		if (scale == 'fine_scale'):
-			self.pixscale = 0.010
+			self.pixscale = 0.010 * u.arcsec
 			if (instid == "NACO"):
-				self.pixscale = 0.013
-			self.camera_transmission = Spec_response("finecamera_transmission.dat",path=path)
+				self.pixscale = 0.013 * u.arcsec
+			self.camera_trans = Spec_response("finecamera_transmission.dat",path=path)
 			print ("Selecting fine scale")
-			print ("camera _trans=",self.camera_transmission.value[0:3])
+			print ("camera _trans=",self.camera_trans.response[0:3])
 		elif (scale == 'medium_scale'):
-			self.pixscale = 0.02
-			self.camera_transmission = Spec_response("mediumcamera_transmission.dat",path=path)
+			self.pixscale = 0.02 * u.arcsec
+			self.camera_trans = Spec_response("mediumcamera_transmission.dat",path=path)
 		elif (scale == 'coarse_scale'):
-			self.pixscale = 0.04
-			self.camera_transmission = Spec_response("coarsecamera_transmission.dat",path=path)
+			self.pixscale = 0.04 * u.arcsec
+			self.camera_trans = Spec_response("coarsecamera_transmission.dat",path=path)
 
-		self.collimator_transmission = Spec_response("collimator_transmission.dat",path=path)
+		self.collimator_trans = Spec_response("collimator_transmission.dat",path=path)
 
 		## FRIDA Detector parameters
 		read_out_noise = 15. * u.electron   ## in e-
@@ -121,16 +123,16 @@ class Instrument_static:
 
 		self.detector = {"ron":read_out_noise,"gain":gain,"welldepth":welldepth,"darkc":dark_current}
 
-	def compute_static_response(self,wave):
+	def compute_static_response(self,nwave):
 		"""
 		Interpolate all values of qe, collimator and camera transmission
 		:param wave:
 		:return:
 		"""
-		interp_qe = np.interp(wave.to(u.micron),self.qe.wave,self.qe.value)
-		interp_camera = np.interp(wave.to(u.micron),self.camera_transmission.wave, self.camera_transmission.value)
-		interp_collim = np.interp(wave.to(u.micron),self.collimator_transmission.wave, self.collimator_transmission.value)
-		return {"qe":interp_qe*self.qe.value.unit,"collimator":interp_collim,"camera":interp_camera}
+		intp_qe = interpol2newwave(self.qe.response,self.qe.wave,nwave)
+		intp_camera = interpol2newwave(self.camera_trans.response,self.camera_trans.wave,nwave)
+		intp_collim = interpol2newwave(self.collimator_trans.response,self.collimator_trans.wave,nwave)
+		return {"qe":intp_qe,"collimator":intp_collim,"camera":intp_camera}
 
 def param_gratings():
 	#
@@ -318,6 +320,9 @@ class Grating:
 class Filter:
 	"""
 	This class includes any processing to be done with filters in imaging mode
+       wave - array containing the wavelength range around the 
+              transmision range
+       transmission - array containing the transmission
 	"""
 	def __init__ (self,filter_name,path_list=None,path_filters=None):
 		import csv
@@ -342,23 +347,34 @@ class Filter:
 		else:
 			ftrans = np.loadtxt(os.path.join(path_filters, myfilter["Transmission"]))
 			np.sort(ftrans,axis=0)
-			self.wave = ftrans[:,0] * u.Unit('micron')
+			self.wave = ftrans[:,0] * u.micron
 			self.transmission = ftrans[:,1]
-		print ("Wave transmision:",self.wave[0:4],self.transmission[0:4])
+			self.wave_limits = (min(self.wave),max(self.wave))
+			print ("Filter transmision:",self.wave[0:4],self.transmission[0:4])
+			print ("Filter min, max:",self.wave_limits[0],self.wave_limits[1])
 
 	def avg_transmission(self,threshold_fraction=2.):
+		'''
+          Compute the average transmission value over a threshold
+		'''         
+		wave_value = self.wave.value
 		trans = self.transmission
 		# compute transmision above threshold
 		threshold_trans = trans.max()/threshold_fraction
-		index_above = np.where(trans >= threshold_trans)
-		wave_above = self.wave[index_above]
-		trans_above = trans[index_above]
-		avg_trans = scipy.integrate.simps(trans_above,wave_above)/(wave_above[-1]-wave_above[0])
+		mask_above = [trans  >= threshold_trans]
+		avg_trans = scipy.integrate.simps(trans[mask_above],wave_value[mask_above])\
+             /(wave_value[mask_above][-1]-wave_value[mask_above][0])
 		return avg_trans
 
 	def lambda_center(self):
-		lambda_eff = scipy.integrate.simps(self.transmission*self.wave,self.wave)/scipy.integrate.simps(self.transmission,self.wave)
-		return lambda_eff * u.micron
+		'''
+          Compute the effective wavelength for a given filter transmission curve
+		'''         
+		wave_unit = self.wave.unit
+		wave_value = self.wave.value
+		lambda_eff = scipy.integrate.simps(self.transmission*wave_value,wave_value)/\
+            scipy.integrate.simps(self.transmission,wave_value)
+		return lambda_eff * wave_unit
 
 	def width(self,threshold_fraction=2.):
 		trans = self.transmission
@@ -380,39 +396,41 @@ class Atmosphere:
 
 	def __init__ (self, transmission="skytransmission_mean.dat",radiance="skyradiance_mean.dat",path=settings.INCLUDES):
 		f = np.loadtxt(os.path.join(path,transmission))
-		## Wavelenght units are nm, must be converted to microns
-		self.atmtrans_wave = f[:,0]/1.e3
+		## Wavelenght units are given in nm
+		self.atmtrans_wave = f[:,0] * u.nm
 		self.atmtrans_perone = f[:,1]
-		self.atmtrans_delta = abs(f[1,0] -f[0,0])/1.e3
+		self.atmtrans_delta = np.abs(self.atmtrans_wave[1]-self.atmtrans_wave[0])
+		print("atmtrans_delta:",self.atmtrans_delta)
 
 		f = np.loadtxt(os.path.join(path,radiance))
 		## Wavelenght units are nm, must be converted to microns
-		self.skyrad_wave = f[:,0]/1.e3
-		self.skyrad_photons = f[:,1]
-		self.skyrad_delta = abs(f[1,0] -f[0,0])/1.e3
+		self.skyrad_wave = f[:,0] * u.nm
+		self.skyrad_photons = f[:,1] * u.photon / u.s/(u.m)**2/u.micron/(u.arcsec)**2 
+		self.skyrad_delta = np.abs(self.skyrad_wave[1]-self.skyrad_wave[0])
+		print("skyrad_delta:",self.skyrad_delta)
 
 	def compute_skytrans(self,wave,kernel='gauss'):
 		# first check spacing of wave
-		print "ENTER HERE"
 		delta = abs(wave[1]-wave[0])
-		delta = delta.value
+		#delta = delta.value
+		print ("  @compute_skytrans - delta, atmtrans_delta",delta,self.atmtrans_delta)
 		if (self.atmtrans_delta < delta):
 			if (kernel == 'pulse'):
-				print 1
+				print("  @compute_skytrans - Using convolve pulse")
 				atmtrans_conv = convolve2pulse(self.atmtrans_wave,self.atmtrans_perone,2*delta)
 			elif (kernel == 'gauss'):
-				print 2
+				print("  @compute_skytrans - Using convolve gauss")
 				atmtrans_conv = convolve2gauss(self.atmtrans_wave,self.atmtrans_perone,2*delta)
 			atmtrans_interp = interpolate(self.atmtrans_wave,atmtrans_conv,wave)
 		else:
 			atmtrans_interp = interpolate(self.atmtrans_wave,self.atmtrans_perone,wave)
-		print atmtrans_interp
+		print(atmtrans_interp)
 		return atmtrans_interp
 
 	def compute_skyrad(self,wave,kernel='pulse'):
 		# first check spacing of wave
 		delta = abs(wave[1]-wave[0])
-		delta = delta.value
+		print ("  @compute_skyrad - delta, atmtrans_delta",delta,self.skyrad_delta)
 		if (self.skyrad_delta < delta):
 			if (kernel == 'pulse'):
 				skyrad_conv = convolve2pulse(self.skyrad_wave,self.skyrad_photons,2*delta)
