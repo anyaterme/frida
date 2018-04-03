@@ -232,7 +232,9 @@ def calculate_ima(request):
 	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
 	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
 	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
-	fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core		FIX ME Where is the parameter?
+	#fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core		FIX ME Where is the parameter?
+	fcore = float(request.POST.get('fcore', '1.5'))
+	a.debug_values['fcore'] = fcore
 	pixscale = a.pixscale # in arcseconds
 	aperture=aocor.compute_ee(psf,pixscale * u.arcsecond,fcore=fcore)
 	## prueba JAP - redefinimos la apertura
