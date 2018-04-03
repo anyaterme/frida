@@ -12,6 +12,13 @@ def list_value(dict, index):
 	return dict[index]
 
 @register.filter
+def ellipsis_text(text, size):
+	if (len(text) > size):
+		return("%s..." % text[:size])
+	else:
+		return text
+
+@register.filter
 def astro_unit_value(item, unit):
 	return item.to(unit).value
 

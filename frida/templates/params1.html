@@ -106,10 +106,11 @@
 					<div class="panel-heading">
 						<input type="radio" name="spectral_type" id="spectral_type" value="non-stellar-lib" onclick="check_collapse_from_heading_class(this,'panel-info');"> Library spectrum of a non-stellar object
 					</div>
-					<div class="panel-body collapse">
+					<div class="panel-body collapse form-inline">
 						<select class="form-control" name="st_non_stellar" id="st_non_stellar">
-							<option>elliptical galaxy</option>
-							<option>...</option>
+							{% for nonstellar in list_nonstellar %}
+							<option class="small" value='{{ nonstellar.sed_file}}' >{{ nonstellar.Label|ellipsis_text:17 }}</option>
+							{% endfor %}
 						</select>
 					</div>
 				</div>

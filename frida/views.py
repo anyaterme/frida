@@ -68,9 +68,17 @@ def index(request):
 		my_pickles["Label"] = each_pickles["Label"]
 		my_pickles["sed_file"] = each_pickles["sed_file"]
 		list_pickles_dict.append(my_pickles)
+	fp4 = open(os.path.join(settings.SED_LIBRARY, 'nonstellar','nonstellar_options.csv'))
+	list_nonstellar= csv.DictReader(filter(lambda row: row[0] != '#', fp4))
+	list_nonstellar_dict = []
+	for each_nonstellar in list_nonstellar:
+		my_nonstellar = {}
+		my_nonstellar["Label"] = each_nonstellar["Label"]
+		my_nonstellar["sed_file"] = each_nonstellar["sed_file"]
+		list_nonstellar_dict.append(my_nonstellar)
 
 
-	context = {'list_filters':list_filters_dict, 'list_gratings':list_gratings_dict, 'list_pickles':list_pickles_dict}
+	context = {'list_filters':list_filters_dict, 'list_gratings':list_gratings_dict, 'list_pickles':list_pickles_dict, 'list_nonstellar':list_nonstellar_dict}
 	return render(request, 'index.html', context)
 
 def calculate_draw(request):
@@ -158,6 +166,16 @@ def get_TargetInfo(request):
 			templatename = request.POST.get('star_type')
 			sed = ('pickles', templatename)
 			label_energy_type = 'Pickles, template: %s' % templatename
+			debug_values['Spectral Distribution'] = label_energy_type
+		except:
+			error_values['Spectral Distribution'] = label_energy_type
+			error = True
+
+	elif (energy_type == 'non-stellar-lib'):
+		try:
+			templatename = request.POST.get('st_non_stellar')
+			sed = ('nonstellar', templatename)
+			label_energy_type = 'Non-Stellar, template: %s' % templatename
 			debug_values['Spectral Distribution'] = label_energy_type
 		except:
 			error_values['Spectral Distribution'] = label_energy_type
