@@ -229,7 +229,7 @@
 			dataPoints: [
 				{% for my_value in sky_rad %}
 					{% with lambda=wave_array|list_value:forloop.counter0 %}
-					{ x: {{ lambda.value }}, y: {{my_value}} },
+					{ x: {{ lambda.value }}, y: {{my_value.value}} },
 					{% endwith %}
 				{% endfor %}
 			]
@@ -326,7 +326,7 @@
 			dataPoints: [
 				{% for my_value in snr %}
 					{% with lambda=texp_array|list_value:forloop.counter0 %}
-					{ x: {{ lambda|astro_unit_value:'s' }}, y: {{my_value.value}} },
+					{ x: {{ lambda|astro_unit_value:'s' }}, y: {{my_value}} },
 					{% endwith %}
 				{% endfor %}
 			]

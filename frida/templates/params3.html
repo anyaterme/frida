@@ -1,20 +1,20 @@
 <div class="row">
-	<div class="cool-xs-12 col-lg-6">
+	<div class="col-xs-12 col-md-6">
 		<div class="row">
-			<div class="col-xs-12 col-lg-6">
+			<div class="col-xs-12 col-md-6">
 				<div class="panel panel-primary">
 					<div class="panel-heading">
 						<strong>Observing mode: </strong> 
 					</div>
 					<div class="panel-body">
 						<div class="row">
-							<div class="col-lg-5 text-center"> <input type="radio" name="observation_mode" id="direct_imaging" value="DI" onchange="disable_ifu();" checked> Direct Imaging </div>
-							<div class="col-lg-7 text-center"> <input type="radio" name="observation_mode" id="ifs" value="IFS" onchange="enable_ifu()" > Integral Field Spectroscopy </div>
+							<div class="col-md-5 text-center"> <input type="radio" name="observation_mode" id="direct_imaging" value="DI" onchange="disable_ifu();" checked> Direct Imaging </div>
+							<div class="col-md-7 text-center"> <input type="radio" name="observation_mode" id="ifs" value="IFS" onchange="enable_ifu()" > Integral Field Spectroscopy </div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="col-xs-12 col-lg-6">
+			<div class="col-xs-12 col-md-6">
 				<div class="panel panel-primary imaging_dependent">
 					<div class="panel-heading">
 						<strong>Filter:</strong>
@@ -34,25 +34,25 @@
 				</div>
 				<div class="panel panel-primary spec_dependent hide">
 					<div class="panel-heading">
-						<strong>Grating:</strong>
+						<strong>Grating [&#8491;]:</strong>
 					</div>
 					<div class="panel-body">
-						<div class="row">
-							<div class="col-xs-12 col-lg-4 text-right">
+						<div class="row form-group">
+							<div class="col-xs-12 col-md-6 ">
 								<select class="form-control" name="grating" id="grating" onChange="change_grating_value();">
 									{% for grating in list_gratings %}
 										<option value='{{ grating.Name }}' aux='{{ grating.Central_Wave }}'>{{ grating.Name }}</option>
 									{% endfor %}
 								</select>
 							</div>
-							<div class="col-xs-12 col-lg-8 text-left">
-								<input type="text" class="form-control" id="rating_value" name="grating_value" > &#8491;
+							<div class="col-xs-12 col-md-6 text-left">
+								<input type="text" class="form-control" id="rating_value" name="grating_value" >
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="col-xs-12 col-lg-12">
+			<div class="col-xs-12 col-md-12">
 				<div class="panel panel-primary">
 					<div class="panel-heading">
 						<strong>Instrument scale:</strong>
@@ -72,20 +72,20 @@
 			</div>
 		</div>
 	</div>
-	<div class="col-xs-12 col-lg-6">
+	<div class="col-xs-12 col-md-6">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<strong>Calculation method:</strong> <a href="#" class="badge">more info</a>
 			</div>
 			<div class="panel-body">
-				<div class="col-xs-6">
+				<div class="col-xs-12">
 					<div class="panel panel-default">
 						<div class="panel-heading text-center ">
-							<input class="control" type="radio" name="type_results" value="SN_ratio"/> S/N ratio
+							<input class="form-control" type="radio" name="type_results" value="SN_ratio"/> S/N ratio
 						</div>
 						<div class="panel-body">
 							<div class="row">
-								<div class="col-xs-12 ">
+								<div class="col-xs-12 form-group">
 									<div class="col-xs-4">
 										<label for="signal_noise">S/N</label>
 									</div>
@@ -101,7 +101,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="col-xs-6">
+				<div class="col-xs-12">
 					<div class="panel panel-default">
 						<div class="panel-heading text-center ">
 							<input class="" type="radio" name="type_results" value="exposure_time"/> Exposure Time
@@ -121,7 +121,7 @@
 			</div>
 		</div>
 	</div>
-	<div class="col-xs-12 col-lg-12">
+	<div class="col-xs-12 col-md-12">
 		<div class="panel panel-primary hide" id="ifu_dependent">
 			<div class="panel-heading">
 				<strong>Analysis method:</strong> <a href="#" class="badge"> more info</a>
