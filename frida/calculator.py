@@ -198,7 +198,6 @@ class SkyConditions:
 ### added by JAP
 
 class Calculator_Image:
-
 	energy_photon_1mic = 1.985e-19  ### Watt=[kg m^2 s^-2]
 
 	obs_filter = None
@@ -467,7 +466,7 @@ class Calculator_Image:
         
 		##noise = np.sqrt(texp*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+ \ nexp*aperture['Npix']*self.detector['ron']**2)
 		self.debug_values['phi_sky_sqarc'] =self.phi_sky_sqarc
-		self.debug_values['phi_obj_total'] = self.phi_obj_total
+		self.debug_values['phi_obj_total'] = self.phi_obj_total.to(u.electron/u.second)
 		self.debug_values['phi_obj_aperture'] = phi_obj_apert.to(u.electron/u.second)
 		self.debug_values['phi_sky_aperture'] = phi_sky_apert
 		signal = texp * phi_obj_apert
