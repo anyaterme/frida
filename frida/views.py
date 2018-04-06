@@ -302,7 +302,7 @@ def calculate_ima(request):
 	#context['Aperture_radius'] = ee_aperture['Radius']
 	context['pixscale'] = pixscale
 	context['AreaNpix'] = aperture['Npix']
-	#context['static_response'] = static_response
+	context['static_response'] = static_response
 	context['throughput'] = throughput
 	context['atrans'] = a.atmostrans
 	context['sky_rad'] = a.skyemission_photons
