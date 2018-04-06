@@ -256,12 +256,12 @@ def calculate_ima(request):
 	pixscale = a.pixscale # in arcseconds
 	aperture=aocor.compute_ee(psf,pixscale * u.arcsecond,fcore=fcore)
 	## prueba JAP - redefinimos la apertura
-	rad_aperture=0.5*u.arcsec
-	area_aperture = np.pi*rad_aperture**2
-	area_pixel = (pixscale)**2
-	npix = (area_aperture/area_pixel).value
-	aperture={'EE': 0.5,'EE1': 0.5, 'Radius':rad_aperture, 'Npix':npix, 'Area':area_aperture,\
-                'Area_pixel':area_pixel}
+	#rad_aperture=0.5*u.arcsec
+	#area_aperture = np.pi*rad_aperture**2
+	#area_pixel = (pixscale)**2
+	#npix = (area_aperture/area_pixel).value
+	#aperture={'EE': 0.5,'EE1': 0.5, 'Radius':rad_aperture, 'Npix':npix, 'Area':area_aperture,\
+     #           'Area_pixel':area_pixel}
 
 
 	dit = float(request.POST.get('DIT_exp','1')) * u.second

@@ -26,9 +26,9 @@ def compute_r0(wave_in,seeing_ref,wave_ref=0.5 * u.micron):
     r0 = r0_ref * (wave_in/wave_ref)**(6./5)
     return r0
 
-def compute_seeing_lambda(in_lambda,seeing_ref_lambda,ref_lambda=0.5):
-    seeing = seeing_ref_lambda * (ref_lambda/in_lambda) **(1./5)
-    return seeing
+def compute_seeing_lambda(wave_in,seeing_wave_ref,wave_ref= 0.5*u.micron):
+    seeing = seeing_wave_ref * (wave_ref/wave_in) **(1./5)
+    return seeing.to('arcsec')
 
 class GTC_AO:
     """
@@ -210,7 +210,7 @@ class GTC_AO:
         print("sig_readnoise=",np.sqrt(sigma2_readnoise+0.))
         print("sig_anisop=",np.sqrt(sigma2_anisop+0.))
         sigma2_total = sigma2_static + sigma2_scint + sigma2_bandwidth + sigma2_fitting + \
-                   sigma2_photnoise  + sigma2_anisop  + sigma2_readnoise
+                   sigma2_photnoise  + sigma2_readnoise + sigma2_anisop 
         print("sig2_total=",np.sqrt(sigma2_total+0.))
         strehl = np.exp(-sigma2_total) * strehl_tt
         print("Strehl=",strehl)
@@ -239,8 +239,8 @@ class GTC_AO:
         # raper_core=raper_ref/sigma_core
 
         raper2_ref = raper_ref * raper_ref
-        sigma2_halo = psf["sigma_halo"] * psf["sigma_halo"]
-        sigma2_core = psf["sigma_core"] * psf["sigma_core"]
+        sigma2_halo = psf["sigma2_halo"]
+        sigma2_core = psf["sigma2_core"]
         print("=========================")
         print(raper2_ref.unit) 
         print(sigma2_halo.unit) 
@@ -251,14 +251,15 @@ class GTC_AO:
 
         A_core = psf['Amp_core']
         A_halo = psf['Amp_halo']
-        fcore = psf['rat_core2halo']
+        
+        ee_core = doublepi * A_core * sigma2_core * \
+             (1 - np.exp(-raper2_ref/2./sigma2_core))
+        
+        ee_halo = doublepi * A_halo * sigma2_halo * \
+             (1 - np.exp(-raper2_ref/2./sigma2_halo))
+             
+        ee = ee_core + ee_halo 
 
-        ee = (A_halo * sigma2_halo * (1 - np.exp(-raper2_ref.value / 2. / sigma2_halo.value)) + \
-              A_core * sigma2_core * (1 - np.exp(-raper2_ref.value / 2. / sigma2_core.value))) / \
-             (A_halo * sigma2_halo + A_core * sigma2_core)
-
-        ee1 = 1. - 1. / (sigma2_core * fcore + sigma2_halo) * (sigma2_halo * np.exp(-raper2_ref.value / 2. / sigma2_halo.value) + \
-                                                               fcore * sigma2_core * np.exp(-raper2_ref / 2. / sigma2_core))
         area_per_pixel = pixscale*pixscale
         ## check if spaxel is set, then assume a spaxel as 2x1 pixel, according to FRIDA specs.
         if (spaxel >0):
@@ -267,7 +268,7 @@ class GTC_AO:
         area_apert=np.pi*raper_ref**2 ## in arcsec
         npix_apert = area_apert / area_per_pixel
 
-        return {'EE': ee,'EE1': ee1, 'Radius':raper_ref, 'Npix':npix_apert, 'Area':area_apert,\
+        return {'EE': ee,'EE-core': ee_core,'EE-halo': ee_halo, 'Radius':raper_ref, 'Npix':npix_apert, 'Area':area_apert,\
                 'Area_pixel':area_per_pixel}
 
     def compute_ee_box(self, psf,fcore=1.5,slit_width=2):
@@ -303,34 +304,37 @@ class GTC_AO:
 
         return {'EE': ee,'EE1': ee1, 'ApertRad':raper_ref}
 
-
-    def compute_psf(self,lamb_mic,strehl):
+    def compute_psf(self,wave,strehl):
         """
-
+        The PSF is normalized to have area equals unity.
         :param strehl: Strehl ratio
         :param sigma_core: Width of the core Gaussian (diffraction limit core)
         :param sigma_halo: Width of the halo Gaussian (seeing)
         :return:
+            
         """
         
-        fwhm_core = 0.0242 * lamb_mic * (10.4 * u.m/ self.diam_telescope)
+        fwhm_core = 0.0242 * u.arcsec * (wave/u.micron) * (10.4 * u.m/ self.diam_telescope)
         ## seeing is assumed to be measured at 5000AA = 0.5 microns
-        fwhm_halo = compute_seeing_lambda(lamb_mic,self.seeing_input,self.wave_seeing_input)
-        sigma_halo = fwhm_halo / 2.35
-        sigma_core = fwhm_core / 2.35
+        fwhm_halo = compute_seeing_lambda(wave,self.seeing_input,self.wave_seeing_input)
 
-        rat2_sigma = (sigma_halo / sigma_core) ** 2
+        # homogeneize units to arcsec 
+        fwhm_core = fwhm_core.to('arcsec')
+        fwhm_halo = fwhm_halo.to('arcsec')
+  
+        sigma2_halo = (fwhm_halo / 2.35)**2
+        sigma2_core = (fwhm_core / 2.35)**2
 
+        amp_core_norm = 1. / doublepi / (sigma2_halo - sigma2_core) * \
+            (strehl*sigma2_halo/sigma2_core -1.)
 
-        fcore = (strehl * rat2_sigma - (1 * (rat2_sigma.unit))) / (1 - strehl)
+        amp_halo_norm = 1. / doublepi / sigma2_halo * (1. - (strehl*sigma2_halo-sigma2_core)/\
+                                         (sigma2_halo - sigma2_core))
 
-
-        amp_core_norm = 1. / doublepi / sigma_core ** 2 / (1 + rat2_sigma / fcore)
-
-        amp_halo_norm = 1. / doublepi / sigma_core ** 2 / (fcore + rat2_sigma)
-
-        return {"Amp_core": amp_core_norm, "Amp_halo": amp_halo_norm, "rat_core2halo": fcore,\
-                "sigma_core":sigma_core,"sigma_halo":sigma_halo,"FWHM_core":fwhm_core,"FWHM_halo":fwhm_halo}
+        return {"Model_PSF":'2-Gaussians',\
+            "Amp_core": amp_core_norm, "Amp_halo": amp_halo_norm, \
+            "sigma2_core":sigma2_core,"sigma2_halo":sigma2_halo,\
+            "FWHM_core":fwhm_core.to('arcsec'),"FWHM_halo":fwhm_halo.to('arcsec')}
 
     def set_aperture_circular(self,pixscale,radius,spaxel=0):
 
