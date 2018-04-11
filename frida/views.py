@@ -278,7 +278,11 @@ def calculate_ima(request):
 	Nexp_min = min(1,Nexp-10)
 	Nexp_max = Nexp+20
 	Nexp_step = (Nexp_max-Nexp_min)/30
-	(texp_seq,snr_seq) = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,aperture)
+	signal_noise_seq = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,aperture)
+	texp_seq = signal_noise_seq['texp']
+	snr_seq = signal_noise_seq['SNR']
+	signal_seq = signal_noise_seq['signal']
+
 
 	## JAP - FIXME no esta claro que sea necesario 
 	signal_noise= float(request.POST.get('signal_noise'))

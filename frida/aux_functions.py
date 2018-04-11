@@ -120,6 +120,64 @@ def interpolate(wvl, specfl, new_wvl, unity='None'):
 		print ("ERROR in interpolate: ", e)
 		return None
 
+
+def poisson_mean(number,events):
+    unit_number = number.unit
+    aux = np.random.poisson(number.value,events).mean() * unit_number
+    print('poisson_mean@aux=',aux)
+    return aux
+    
+def normal_mean(center,sigma,events):
+    unit_center = center.unit
+    return np.random.normal(center.value,sigma.to(unit_center).value,events).mean() * unit_center
+    
+
+def build_im_signal_with_noise(im_obj,sky_pixel,\
+                ron,darkc,dit,Nexp=1,SubtractBck=True):
+    """
+    Produce a 2D image starting from an image with the object, using 2048x2048 pixels with the 
+    a given pixel scale. 
+    It is modelled as the sum of 2 Gaussian functions: one for the core 
+    (width depends linearly on the wavelength) plus one for halo (~seeing)
+    :param strehl: Strehl ratio
+    :param sigma_core: Width of the core Gaussian (diffraction limit core)
+    :param sigma_halo: Width of the halo Gaussian (seeing)
+    :return:
+        
+    """
+    #im_obj_unit = 
+    print("build_im_signal_with_noise@im_obj.unit",im_obj.unit)
+    print("build_im_signal_with_noise@sky_pixel.unit",sky_pixel.unit)
+    #sky_pixel_unit = sky_pixel.unit
+    #sky_pixel = sky_pixel.value
+    #im_obj = im_obj.value
+    
+    (Nx,Ny) = im_obj.shape
+    noise2d_obj = 0.*im_obj*dit
+    noise2d_sky = 0.*im_obj*dit
+    noise2d_ron = 0.*im_obj*dit
+    noise2d_dark = 0.*im_obj*dit
+    for j  in range(Nx):
+        for i in range(Ny):
+            print('executing i,j',i,j)
+            noise2d_obj[i,j] = poisson_mean(dit*im_obj[i,j],Nexp)
+            noise2d_sky[i,j] = poisson_mean(dit*sky_pixel,Nexp)
+            noise2d_dark[i,j] = poisson_mean(dit*darkc,Nexp)
+            noise2d_ron[i,j] = normal_mean(0.*ron.unit,ron,Nexp)
+            
+            
+    noise2d_mean = noise2d_obj 
+    noise2d_mean += noise2d_sky 
+    noise2d_mean += noise2d_dark 
+    noise2d_mean += noise_ron 
+    if (SubtractBck): 
+        noise2d_mean -= dit*sky_pixel 
+        noise2d_mean -= dit*darkc 
+    
+    return noise2d_mean
+
+
+
 def interpolate_old(wvl,specfl,new_wvl,unity='None'):
 	#
 	#	   Interpolation to a given wvl array. Returned values

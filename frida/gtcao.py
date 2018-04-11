@@ -13,7 +13,6 @@ def extrap(x, xp, yp):
     y[x > xp[-1]] = yp[-1] + (x[x > xp[-1]] - xp[-1]) * (yp[-1] - yp[-2]) / (xp[-1] - xp[-2])
     return y
 
-
 def compute_r0(wave_in,seeing_ref,wave_ref=0.5 * u.micron):
     """
     Compute Fried parameter at any wavelength, given seeing at a reference wavelength
@@ -29,6 +28,40 @@ def compute_r0(wave_in,seeing_ref,wave_ref=0.5 * u.micron):
 def compute_seeing_lambda(wave_in,seeing_wave_ref,wave_ref= 0.5*u.micron):
     seeing = seeing_wave_ref * (wave_ref/wave_in) **(1./5)
     return seeing.to('arcsec')
+
+def build_psf2d_2gauss(psf_2gauss,pixscale,Nx=2048,Ny=2048):
+    """
+    Produce a 2D image with a centred PSF, using 2048x2048 pixels with the 
+    a given pixel scale. 
+    It is modelled as the sum of 2 Gaussian functions: one for the core 
+    (width depends linearly on the wavelength) plus one for halo (~seeing)
+    :param strehl: Strehl ratio
+    :param sigma_core: Width of the core Gaussian (diffraction limit core)
+    :param sigma_halo: Width of the halo Gaussian (seeing)
+    :return:
+        
+    """
+    im_psf = np.array([np.zeros(Nx),np.zeros(Ny)])
+    
+    center = np.array([Nx/2.,Ny/2.])-0.5
+    x = (np.arange(Nx)-Nx/2+0.5)*pixscale
+    y = (np.arange(Ny)-Ny/2+0.5)*pixscale
+    xv, yv = np.meshgrid(x, y, sparse=False, indexing='xy')
+    rho = np.sqrt(xv*xv+yv*yv)
+    
+    amp_core = psf_2gauss["Amp_core"]
+    amp_halo = psf_2gauss["Amp_halo"]
+    sigma_core = psf_2gauss["FWHM_core"]/2.35
+    sigma_halo = psf_2gauss["FWHM_halo"]/2.35
+    
+    halo2d = amp_halo * np.exp(-rho**2/2/sigma_halo**2)
+    core2d = amp_core * np.exp(-rho**2/2/sigma_core**2)
+
+    psf2d  = halo2d+core2d
+
+    return psf2d
+
+
 
 class GTC_AO:
     """
@@ -268,7 +301,8 @@ class GTC_AO:
         area_apert=np.pi*raper_ref**2 ## in arcsec
         npix_apert = area_apert / area_per_pixel
 
-        return {'EE': ee,'EE-core': ee_core,'EE-halo': ee_halo, 'Radius':raper_ref, 'Npix':npix_apert, 'Area':area_apert,\
+        return {'EE': ee,'EE-core': ee_core,'EE-halo': ee_halo, 'Radius':raper_ref, \
+                'Npix':npix_apert, 'Area':area_apert,\
                 'Area_pixel':area_per_pixel}
 
     def compute_ee_box(self, psf,fcore=1.5,slit_width=2):
