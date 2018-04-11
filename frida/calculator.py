@@ -328,6 +328,7 @@ class Calculator_Image:
 			  self.phi_sky_sqarc)
         
 		print("pixscale ",instrument.pixscale)
+		self.instrument = instrument
          
         	
 	def get_average_response(self):
@@ -510,9 +511,10 @@ class Calculator_Image:
                         noise2_sky.to(unit_signal).value+noise2_read.value+\
                         noise2_dark.value
 		signal2 = (phi_obj_apert * dit)**2
-		print("signal2 ",signal2)
+		signal2 = signal2.to(unit_signal*unit_signal)
+		noise2 = noise2 * (unit_signal*unit_signal)
 
-		nexp = round(required_sn**2 * noise2 / signal2.to(unit_signal*unit_signal).value)
+		nexp = np.ceil(required_sn**2 * noise2 / signal2)
 
 		return nexp
 

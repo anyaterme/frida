@@ -22,38 +22,11 @@
 			
 		function drawChart() {
 
-//			var jsonData = {{ result }};
-//			jsonData.unshift(['index','values']);
-//			// Create our data table out of JSON data loaded from server.
-//			var data = new google.visualization.arrayToDataTable(jsonData);
-//			var options = {title:'Test', width: 600, height: 400, explorer:{maxZoomOut:2, keepInBounds:true, actions:['dragToZoom', 'rightClickToReset']}};
-//			// Instantiate and draw our chart, passing in some options.
-//			var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-//			chart.draw(data, options);
-
-//			var m2 = {{ m2 }};
-//			m2.unshift(['index','values']);
-//			var data = new google.visualization.arrayToDataTable(m2);
-//			var options = {title:'Test', width: 600, height: 400, explorer:{maxZoomOut:2, keepInBounds:true, actions:['dragToZoom', 'rightClickToReset']}};
-//			// Instantiate and draw our chart, passing in some options.
-//			var chart = new google.visualization.LineChart(document.getElementById('chart_div2'));
-//			chart.draw(data, options);
-
-//			var data = {{ skyradiance }};
-//			data.unshift(['index','Radiance']);
-//			var data = new google.visualization.arrayToDataTable(data);
-//			var options = {title:'Skyradiance Mean', width: 600, height: 400, explorer:{maxZoomOut:2, keepInBounds:true, actions:['dragToZoom', 'rightClickToReset']}, vAxes:{0:{title:'Radiance in ph/s/m^2/micron/arcsec^2'}}, hAxes:{0:{title:'Wavelenght (nm)'}}};
-//			//var options = {title:'Skyradiance Mean', width: 600, height: 400, explorer:{maxZoomOut:2, keepInBounds:true, actions:['dragToZoom', 'rightClickToReset']}};
-//			// Instantiate and draw our chart, passing in some options.
-//			var chart = new google.visualization.LineChart(document.getElementById('chart_div3'));
-//			chart.draw(data, options);
 
 			var data = {{ sed_flambda }};
 			data.unshift(['wave','flambda']);
 			var data = new google.visualization.arrayToDataTable(data);
 			var options = {title:'Scaled SED above atmosphere', width: 600, height: 400, explorer:{maxZoomOut:2, keepInBounds:true, actions:['dragToZoom', 'rightClickToReset']}, vAxes:{0:{title:'F_lambda erg/s/cm^2/AA [/1e-16]'}}, hAxes:{0:{title:'Wavelenght (nm)'}}};
-			//var options = {title:'Skyradiance Mean', width: 600, height: 400, explorer:{maxZoomOut:2, keepInBounds:true, actions:['dragToZoom', 'rightClickToReset']}};
-			// Instantiate and draw our chart, passing in some options.
 			var chart = new google.visualization.LineChart(document.getElementById('chart_div3'));
 			chart.draw(data, options);
 
@@ -61,7 +34,6 @@
 			data.unshift(['Time','S/N']);
 			var data = new google.visualization.arrayToDataTable(data);
 			var options = {title:'FRIDA Exposure time calculator {{ graph_title }}', width: 600, height: 400, explorer:{maxZoomOut:2, keepInBounds:true, actions:['dragToZoom', 'rightClickToReset']}, vAxes:{0:{title:'S/N'}}, hAxes:{0:{title:'Time(s)'}}};
-			// Instantiate and draw our chart, passing in some options.
 			var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
 			chart.draw(data, options);
 		}

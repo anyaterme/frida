@@ -157,7 +157,7 @@ def get_TargetInfo(request):
 			pl_index = float(request.POST.get('pl_index'))
 			sed = (energy_type,pl_index)
 			label_energy_type = 'Power Law, lambda^%s' % pl_index
-			#debug_values['Spectral Distribution'] = label_energy_type
+			debug_values['Spectral Distribution'] = label_energy_type
 		except Exception as e:
 			error_values['Spectral Distribution'] = 'Power Law, but you has indicated wrong lambda (%s)' % e
 			error = True
@@ -215,6 +215,8 @@ def get_TargetInfo(request):
 	target_info.error = error
 	target_info.messages = debug_values
 	target_info.error_messages = error_values
+	target_info.energy_type = label_energy_type
+	target_info.source_type= label_source_morpho
 	return target_info
 
 def calculate_ima(request):
@@ -282,6 +284,9 @@ def calculate_ima(request):
 		required_sn = snr_seq[-1]
 	try:
 		ndit = a.texp_signal_noise_img(required_sn,dit,aperture)
+		print ("**** NDIT *********", ndit)
+		if (calc_method == "SN_ratio"):
+			Nexp = ndit[0]
 	except Exception as e:
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		print (traceback.print_exc())
@@ -296,6 +301,10 @@ def calculate_ima(request):
 
 	context = {}
 	context['Object_magnitude'] = target_info.Magnitude,
+	context['target_info'] = target_info
+	context['sky_conditions'] = sky_conditions
+	context['guide_star'] = guide_star
+	context['frida_setup'] = a.instrument
 	context['Input_Band'] = target_info.Band
 	context['strehl_ratio'] = strehl['StrehlR']
 	context['encircled_energy'] = aperture["EE"]
@@ -311,6 +320,10 @@ def calculate_ima(request):
 	context['texp_array'] = texp_seq
 	context['snr'] = snr_seq
 	context['debug_values'] = a.debug_values
+	context['signal_noise_req'] = required_sn
+	context['total_exposure_time'] = dit * Nexp
+	context['dit'] = dit
+	context['ndit'] = Nexp
 
 	return render(request, 'calculate_ima.html', context)
 
