@@ -253,17 +253,20 @@ def calculate_ima(request):
 	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
 	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
 	#fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core		FIX ME Where is the parameter?
+	a.debug_values['Strehl='] = strehl['StrehlR'] 
+	a.debug_values['FWHM_core='] = psf['FWHM_core'] 
+	a.debug_values['FWHM_seeing='] = psf['FWHM_halo'] 
+
+
 	fcore = float(request.POST.get('fcore', '1.5'))
-	a.debug_values['fcore'] = fcore
+	a.debug_values['fcore='] = fcore
+
 	pixscale = a.pixscale # in arcseconds
-	aperture=aocor.compute_ee(psf,pixscale * u.arcsecond,fcore=fcore)
-	## prueba JAP - redefinimos la apertura
-	#rad_aperture=0.5*u.arcsec
-	#area_aperture = np.pi*rad_aperture**2
-	#area_pixel = (pixscale)**2
-	#npix = (area_aperture/area_pixel).value
-	#aperture={'EE': 0.5,'EE1': 0.5, 'Radius':rad_aperture, 'Npix':npix, 'Area':area_aperture,\
-     #           'Area_pixel':area_pixel}
+	aperture=aocor.compute_ee(psf,pixscale,fcore=fcore)
+	a.debug_values['Radius='] = aperture['Radius'] 
+	a.debug_values['EE='] = aperture['EE'] 
+	a.debug_values['EE-core='] = aperture['EE-core'] 
+	a.debug_values['EE-halo='] = aperture['EE-halo'] 
 
 
 	dit = float(request.POST.get('DIT_exp','1')) * u.second
@@ -277,6 +280,7 @@ def calculate_ima(request):
 	Nexp_step = (Nexp_max-Nexp_min)/30
 	(texp_seq,snr_seq) = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,aperture)
 
+	## JAP - FIXME no esta claro que sea necesario 
 	signal_noise= float(request.POST.get('signal_noise'))
 	if (calc_method=="SN_ratio"):
 		required_sn = signal_noise
@@ -297,6 +301,25 @@ def calculate_ima(request):
 	print ("***********", required_sn)
 
 	print ("***********", a.img_wave.to(u.AA))
+
+	## compute image using PSF information 
+	im_psf2d =build_psf2d_2gauss(psf,a.pixscale)
+	if hasattr(im_psf2d,'unit'):
+         print('units im_psf2d ',im_psf2d.unit)
+	else:
+         print('no units im_psf2d ')
+	## now scale with the signal, psf is normalize to have area unity 
+	im_signal_obj = a.phi_obj_total*im_psf2d*aperture['Area_pixel']
+	## now scale with the signal, psf is normalize to have area unity 
+	print('phi_sky_sqarc.unit',a.phi_sky_sqarc)
+	print('Unit aperture[Area_pixel]=',aperture['Area_pixel'].unit)
+     
+	signal_sky_pixel = a.phi_sky_sqarc*aperture['Area_pixel']
+     ## now scale with the signal, psf is normalize to have area unity 
+	#im_psf2d =build_im_signal_with_noise(im_signal_obj,signal_sky_pixel,\
+    #            a.detector["ron"],a.detector["darkc"],dit,Nexp=1)
+    
+	print ("***********", required_sn)
 
 
 	context = {}
@@ -327,139 +350,6 @@ def calculate_ima(request):
 
 	return render(request, 'calculate_ima.html', context)
 
-def calculate_ima_old(request):
-	"""
-    Calculations for imaging mode. It reads parameters from the target, the sky conditions (), the instrument setup
-    (pixel scale,  filter).
-    Depending on the choice it computes S/N ratio for a range of exposure times or determine the exposure time to reach
-    a desired S/N ratio.
-
-	:param request:
-	:return:
-    """
-
-	debug_values = {}
-
-	sky_conditions = get_SkyConditions(request)
-
-	selected_scale = request.POST.get('scale')
-	frida_setup = Instrument_static(selected_scale,path=settings.INCLUDES)
-
-	selected_filter = request.POST.get('filter')
-	msg_err = []
-	try:
-		obs_filter = Filter(selected_filter,path_list=settings.INCLUDES,path_filters=settings.FILTERS)
-	except Exception as e:
-		msg_err.append("%s" % e)
-		return render(request, "error.html", {'msg_err':msg_err})
-		
-	lambda_eff=obs_filter.lambda_center()
-
-
-	# creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
-	#target_info = TargetInfo(mag_target,band,mag_system,sed)
-	target_info = get_TargetInfo(request)
-
-	telescope = "VLT"
-	telescope_params = Telescope(telescope)
-
-	# Creates an object of type Calculator_Image
-	a=Calculator_Image(target_info,selected_filter,sky_conditions,selected_scale,telescope_name=telescope)
-
-    ## call GTC_AO to compute Strehl ratio and Encircled Energy
-	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),float(request.POST.get("gs_separation")))
-
-	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
-	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
-	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
-	fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core		FIX ME Where is the parameter?
-	pixscale = frida_setup.pixscale # in arcseconds
-	ee_aperture=aocor.compute_ee(psf,pixscale * u.arcsecond,fcore=fcore)
-
-	calc_method = request.POST.get('type_results')
-
-	dit = float(request.POST.get('DIT_exp')) * u.second
-	Nexp = int(request.POST.get('N_exp'))
-	Nexp_min = 1
-	Nexp_max = 100.
-	Nexp_step = (Nexp_max-Nexp_min)/30
-	(texp_seq,snr_seq) = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,ee_aperture)
-
-	signal_noise= float(request.POST.get('signal_noise'))
-	if (calc_method=="SN_ratio"):
-		required_sn = signal_noise
-	else:
-		required_sn = snr_seq[-1]
-	try:
-		ndit = a.texp_signal_noise_img(required_sn,dit,ee_aperture)
-	except Exception as e:
-		exc_type, exc_obj, exc_tb = sys.exc_info()
-		print (traceback.print_exc())
-		print (exc_type, exc_obj, exc_tb.tb_frame.f_code.co_filename, exc_tb.tb_lineno)
-		msg_err.append("%s" % e)
-		return render(request, "error.html", {'msg_err':msg_err})
-
-
-
-	################################
-	# Graphical output
-	# exposure time vs SNR
-	len_texp_seq = len(texp_seq)
-	m4 = np.zeros((len_texp_seq,2))
-	m4[:,0] = texp_seq
-	m4[:,1] = snr_seq
-	m4 = str(m4.tolist())
-
-	# wavelength vs SED above atmosphere
-	nele = len(obs_filter.wave)
-	m2 = np.zeros((nele,2))
-	m2[:,0] = obs_filter.wave
-	m2[:,1] = target_info.flambda_wave(obs_filter.wave)/1.e-16
-	m2 = str(m2.tolist())
-
-	source_type = request.POST.get('source_type')
-	if (source_type == 'extended'):
-		label_source_type = 'Extended source'
-	elif (source_type == 'point'):
-		label_source_type = 'Point source'
-	if (target_info.SED[0]== 'black_body'):
-		label_energy_type = 'Black Body, T=%s K' % target_info.SED[1]
-	elif (target_info.SED[0]== 'power_law'):
-		label_energy_type = 'Power Law, lambda^%s' % target_info.SED[1]
-
-	debug_values["FWHM_core"] = psf['FWHM_core']
-
-	context = {
-					'graph_title':'Image Mode',
-					'sed_flambda':m2,
-					#'energy_type': label_energy_type,
-					'source_type': label_source_type,
-					'sky_conditions' : sky_conditions,
-					'target_info': target_info,
-					'guide_star': guide_star,
-					'frida_setup': frida_setup,
-					'filter': obs_filter,
-					'signal_noise_req': required_sn,
-					'total_exposure_time': dit*ndit,
-					'signal_noise':m4,
-					'lambda_center': obs_filter.lambda_center(),
-					'dit' : dit,
-					'ndit' : ndit,
-					'Object_magnitude': target_info.Magnitude,
-					'Input_Band': target_info.Band,
-					'strehl_ratio':strehl['StrehlR'],
-					'encircled_energy': ee_aperture["EE"],
-					'Aperture_radius': ee_aperture['Radius'],
-					'Pixscale': ee_aperture['Area_pixel'],
-					'AreaNpix': ee_aperture['Npix'],
-					'flux_obj': a.obj_flambda_lambcenter,
-					'detected_photons_from_source': "%9.2E %s"% (a.phi_obj_total.value,a.phi_obj_total.unit ),
-					'detected_photons_from_sky_sqarcsec' : "%9.2E %s"% (a.phi_sky_sqarc.value,a.phi_sky_sqarc.unit ),
-					'atmospheric_transmission': a.atmostrans[10],
-					'efficiency': a.effic_total,
-					'debug_values': debug_values,
-					}
-	return render(request, 'result.html', context)
 
 
 def calculate_ifs(request,telescope=settings.TELESCOPE):

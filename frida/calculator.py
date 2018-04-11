@@ -211,18 +211,6 @@ class Calculator_Image:
 			 sed is a tuple like ('PowerLaw',index_powerlaw), ('Blackbdoy',temperature_bb)
 		"""
 		self.debug_values = {}
-		"""
-		sed = target_info.SED
-		temp_bb = sed[1]
-		input_band = target_info.Band   # definimos como banda de referencia
-		input_lambda= phot_zp[input_band]["bwidth"]   # calculamos el flujo de referencia
-		mag_ref = float(target_info.Magnitude)
-		input_normflux=bbody(input_lambda,temp_bb)  # calculamos el flujo en la banda de referencia
-		flux_scale =scale_to_vega(input_band,mag_ref,input_normflux)
-		flux_scale=target_info.flux_scale
-		print ("flux scale",flux_scale)
-		"""
-
 
 		# telescope
 		telescope = Telescope(telescope_name)
@@ -281,7 +269,6 @@ class Calculator_Image:
 		self.detector = instrument.detector
 		self.pixscale = instrument.pixscale
         
-
 
 		## compute the target f-lambda within the wavelength range determined by the filter transmission
 		obj_flambda_spec = target_info.flambda_wave(wave_img)
@@ -479,7 +466,8 @@ class Calculator_Image:
 		self.debug_values['snr'] = snr
 		print("@signal_noise_texp_img - noise ",self.debug_values['noise'][10:15]) 
     
-		return (texp,snr)
+		return {'texp':texp,'SNR':snr,'noise':noise * unit_signal,\
+             'signal':signal.to(unit_signal)}
 
 	def texp_signal_noise_img(self,required_sn,dit,aperture):
 		"""
