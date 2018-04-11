@@ -324,16 +324,17 @@ class Filter:
               transmision range
        transmission - array containing the transmission
 	"""
-	def __init__ (self,filter_name,path_list=None,path_filters=None):
+	def __init__ (self,filter_code,path_list=None,path_filters=None):
 		import csv
 		fp = open(os.path.join(path_list, 'filters.dat'))
 		list_filters= csv.DictReader(filter(lambda row: row[0] != '#', fp))
 		myfilter = None
+		print ("Filter Name:", filter_code)
 		for each_filter in list_filters:
 			if myfilter is None:
 				if os.path.isfile(os.path.join(path_filters, each_filter["Transmission"])):
 					myfilter = each_filter
-			if each_filter["Name"] == filter_name :
+			if each_filter["Code"] == filter_code :
 				myfilter = each_filter
 				print("Filter Code: ", myfilter["Code"])
 				print("Filter_Transmission File: ",myfilter["Transmission"])
@@ -346,10 +347,13 @@ class Filter:
 			##FIXME Add Default Values
 		else:
 			ftrans = np.loadtxt(os.path.join(path_filters, myfilter["Transmission"]))
-			np.sort(ftrans,axis=0)
+			#ftrans = np.sort(ftrans,axis=0)
+			ftrans=np.asarray(sorted(ftrans, key=lambda row: row[0]))
 			self.wave = ftrans[:,0] * u.micron
-			self.transmission = ftrans[:,1]
-			self.wave_limits = (min(self.wave),max(self.wave))
+			self.info = myfilter
+			self.transmission = ftrans[:,1] * 0.01
+			#self.wave_limits = (min(self.wave),max(self.wave))
+			self.wave_limits = (float(myfilter["cut-on"]) *0.95 * u.micron, float(myfilter["cut-off"]) * 1.05 * u.micron) 
 			print ("Filter transmision:",self.wave[0:4],self.transmission[0:4])
 			print ("Filter min, max:",self.wave_limits[0],self.wave_limits[1])
 

@@ -78,6 +78,20 @@
 		},
 		{
 			type: "spline",
+			name: "Filter",
+			showInLegend: true,
+			xValueFormatString: "#####.## AA",
+			yValueFormatString: "0.### ",
+			dataPoints: [
+				{% for filter_trans_value in filter_trans %}
+					{% with lambda=filter_trans_wave|list_value:forloop.counter0 %}
+					{ x: {{ lambda.value }}, y: {{filter_trans_value}} },
+					{% endwith %}
+				{% endfor %}
+			]
+		},
+		{
+			type: "spline",
 			name: "Throughput",
 			showInLegend: true,
 			xValueFormatString: "#####.## AA",
@@ -237,56 +251,7 @@
 		]
 	};
 	$("#sky_radContainer").CanvasJSChart(options_sky_rad);
-	{% comment %}
-	var options_photons_obj= {
-		exportEnabled: true,
-		animationEnabled: false,
-		zoomEnabled:true,
-		theme:"light2",
-		title:{
-			text: "Photons"
-		},
-		subtitles: [{
-			text: "Click Legend to Hide or Unhide Data Series"
-		}],
-		axisX: {
-			title: "\u03BB [\u212B]"
-		},
-		axisY: {
-			title: "[{{photons_obj.unit}}]",
-			titleFontColor: "#4F81BC",
-			lineColor: "#4F81BC",
-			labelFontColor: "#4F81BC",
-			tickColor: "#4F81BC",
-			includeZero: false,
-			valueFormatString: "#.000E+0"
-		},
-		toolTip: {
-			shared: true
-		},
-		legend: {
-			cursor: "pointer",
-			itemclick: toggleDataSeries
-		},
-		data: [{
-			type: "spline",
-			name: "Photons",
-			showInLegend: true,
-			xValueFormatString: "#####.## AA",
-			yValueFormatString: "#.000E+0",
-			dataPoints: [
-				{% for my_value in photons_obj %}
-					{% with lambda=wave_array|list_value:forloop.counter0 %}
-					{ x: {{ lambda|astro_unit_value:'AA' }}, y: {{my_value.value}} },
-					{% endwith %}
-				{% endfor %}
-			]
-		}
-		]
-	};
-	$("#photons_objContainer").CanvasJSChart(options_photons_obj);
 
-	{% endcomment %}
 	var options_snr= {
 		exportEnabled: true,
 		animationEnabled: false,
@@ -376,7 +341,7 @@
 						<ul class="list-group">
 							<li class="list-group-item active">Instrument Setup</li>
 							<li class="list-group-item"> Angular resolution scale <span class="badge">{{ frida_setup.AngularResolution }} mas/pix </span> </li>
-							<li class="list-group-item"> Camera Filter <span class="badge"> {{ filter.Name }}</span> </li>
+							<li class="list-group-item"> Camera Filter <span class="badge"> {{ obs_filter.info.Name }}</span> </li>
 							<li class="list-group-item"> Reference star/target Separation <span class="badge"> {{ guide_star.Separation }}</span> </li>
 						</ul>
 					</div>
@@ -526,26 +491,6 @@
 			</div>
 		</div>
 	</div>
-	{% comment %}
-	<div class="row">
-		<div class="col-md-6 col-xs-12">
-			<div class="panel panel-primary">
-				<div class="panel-heading">Global Effic</div>
-				<div class="panel-body">
-					<div id="global_efficContainer" style="height: 400px; max-width: 920px; width:100%; margin: 0px auto;"></div>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-6 col-xs-12">
-			<div class="panel panel-primary">
-				<div class="panel-heading">Photons</div>
-				<div class="panel-body">
-					<div id="photons_objContainer" style="height: 400px; max-width: 920px; width:100%; margin: 0px auto;"></div>
-				</div>
-			</div>
-		</div>
-	</div>
-	{% endcomment %}
 	<div class="row">
 		<div class="col-xs-12">
 			<ul class="list-group">

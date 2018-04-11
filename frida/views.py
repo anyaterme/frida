@@ -27,7 +27,7 @@ import traceback
 from frida.set_config import *
 from frida.compute_flux import define_photzp
 from frida.calculator import SkyConditions, GuideStar, TargetInfo, Calculator_Image, Calculator_Spect
-from frida.gtcao import GTC_AO
+from frida.gtcao import *
 #from django.http import JsonResponse
 
 # Create your views here.
@@ -329,6 +329,8 @@ def calculate_ima(request):
 	context = {}
 	context['Object_magnitude'] = target_info.Magnitude,
 	context['target_info'] = target_info
+	context['filter_trans_wave'] = a.img_wave.to(u.AA)
+	context['filter_trans'] = a.img_filter_trans 
 	context['sky_conditions'] = sky_conditions
 	context['guide_star'] = guide_star
 	context['frida_setup'] = a.instrument
@@ -346,6 +348,9 @@ def calculate_ima(request):
 	context['wave_array'] = a.img_wave.to(u.AA)
 	context['texp_array'] = texp_seq
 	context['snr'] = snr_seq
+	context["obs_filter"] = obs_filter
+	a.debug_values['Filter Wave'] = a.img_wave.to(u.AA)
+	a.debug_values['Filter Trans Wave'] = a.img_filter_trans
 	context['debug_values'] = a.debug_values
 	context['signal_noise_req'] = required_sn
 	context['total_exposure_time'] = dit * Nexp

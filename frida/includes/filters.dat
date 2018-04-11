@@ -1,6 +1,6 @@
 #Units in micras
 Name,Code,Transmission,cut-on,cut-off,lambda_center
-"Y","Y","filterY_cold.dat",0.970,1.070,1.020,20
+"Y","Y","filterY_cold.dat",0.960,1.086,1.020,20
 "J","J","filterJ_cold.dat",1.170,1.330,1.25,20
 "H","H","filterH_cold.dat",1.490,1.780,1.635,5
 "Ks","Ks","filterKs_cold.dat",1.990,2.310,2.145,5

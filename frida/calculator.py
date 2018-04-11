@@ -242,12 +242,15 @@ class Calculator_Image:
                        dwave_img.value)
 		wave_img *= same_unit
 
+		print ("############### ATMOS_TRANS")
 		atmos_trans = interpol2newwave(atmphere.atmtrans_perone,\
                 atmphere.atmtrans_wave,wave_img)
 
+		print ("############### ATMOS_SKYRAD")
 		atmos_skyrad = interpol2newwave(atmphere.skyrad_photons,\
                 atmphere.skyrad_wave,wave_img)
 
+		print ("############### OBS_FILTER")
 		filter_trans = interpol2newwave(obs_filter.transmission,\
                 obs_filter.wave,wave_img)
 
@@ -378,6 +381,9 @@ class Calculator_Image:
 		#a = self.integrand_obj(flambda) # include convolution with atmospheric and filter transmission
 		#self.debug_values['a'] = a[0]
 		#self.debug_values['flambda'] = flambda[0]
+		print ("compute_target_photonrate_filter@img_filter_trans", self.img_filter_trans)
+		print ("compute_target_photonrate_filter@flambda ", flambda)
+		print ("compute_target_photonrate_filter@img_wave", self.img_wave)
 		photons_wave = flambda * self.img_filter_trans * \
             self.throughput / energy_photon(self.img_wave)
 		if (Atm_absorption): photons_wave *= self.atmostrans 
@@ -540,7 +546,8 @@ class Calculator_Image:
 			print("## ", each_band, current_wave)
 
 			matrix.append([current_wave, current_mag])
-		matrix = np.sort(np.array(matrix), axis=0)
+		#matrix = np.sort(np.array(matrix), axis=0)
+		matrix=np.asarray(sorted(matrix, key=lambda row: row[0]))
 		phot_zp_interp = interpolate(matrix[:,0], matrix[:,1], wave)
 		skyflux = 10.**(phot_zp_interp-0.4*self.skymag)
 
