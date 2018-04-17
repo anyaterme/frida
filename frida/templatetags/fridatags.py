@@ -22,6 +22,11 @@ def ellipsis_text(text, size):
 def astro_unit_value(item, unit):
 	return item.to(unit).value
 
+@register.filter
+def astro_unit(item, unit):
+	return item.to(unit)
+
+
 @register.simple_tag
 def ajax_send_form_reverse(action, form, div):
 	url = reverse(action)

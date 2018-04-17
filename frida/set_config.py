@@ -354,6 +354,7 @@ class Filter:
 			self.transmission = ftrans[:,1] * 0.01
 			#self.wave_limits = (min(self.wave),max(self.wave))
 			self.wave_limits = (float(myfilter["cut-on"]) *0.95 * u.micron, float(myfilter["cut-off"]) * 1.05 * u.micron) 
+			self.wave_median = self.wave_limits[0] + np.abs(self.wave_limits[1]-self.wave_limits[0])/2.
 			print ("Filter transmision:",self.wave[0:4],self.transmission[0:4])
 			print ("Filter min, max:",self.wave_limits[0],self.wave_limits[1])
 

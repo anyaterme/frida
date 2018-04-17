@@ -287,6 +287,7 @@ def calculate_ima(request):
 	texp_seq = signal_noise_seq['texp']
 	snr_seq = signal_noise_seq['SNR']
 	signal_seq = signal_noise_seq['signal']
+	a.debug_values['texp'] = texp_seq
 
 
 	## JAP - FIXME no esta claro que sea necesario 
@@ -294,7 +295,7 @@ def calculate_ima(request):
 	if (calc_method=="SN_ratio"):
 		required_sn = signal_noise
 	else:
-		required_sn = snr_seq[-1]
+		required_sn = snr_seq[np.where(texp_seq == Nexp * dit)]
 	try:
 		ndit = a.texp_signal_noise_img(required_sn,dit,aperture)
 		print ("**** NDIT *********", ndit)
@@ -332,6 +333,7 @@ def calculate_ima(request):
 
 
 	context = {}
+	a.debug_values['index_texp'] =  snr_seq[np.where(texp_seq == Nexp * dit)]
 	context['Object_magnitude'] = target_info.Magnitude,
 	context['target_info'] = target_info
 	context['filter_trans_wave'] = a.img_wave.to(u.AA)
@@ -342,11 +344,13 @@ def calculate_ima(request):
 	context['Input_Band'] = target_info.Band
 	context['strehl_ratio'] = strehl['StrehlR']
 	context['encircled_energy'] = aperture["EE"]
-	#context['Aperture_radius'] = ee_aperture['Radius']
+	context['Aperture_radius'] = aperture['Radius']
 	context['pixscale'] = pixscale
 	context['AreaNpix'] = aperture['Npix']
 	context['static_response'] = static_response
 	context['throughput'] = throughput
+	context['throughput_lambda'] = throughput[(np.abs(a.img_wave-obs_filter.wave_median)).argmin()]
+	a.debug_values['throughput_lambda_index'] =(np.abs(obs_filter.wave-obs_filter.wave_median)).argmin()
 	context['atrans'] = a.atmostrans
 	context['sky_rad'] = a.skyemission_photons
 	context['global_effic'] = a.throughput 
