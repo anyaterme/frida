@@ -355,7 +355,7 @@
 				<div class="col-xs-12 col-md-6" >
 					<div class="col-xs-12">
 						<ul class="list-group">
-							<li class="list-group-item list-group-item-danger">Trasmission Model</li>
+							<li class="list-group-item list-group-item-danger">Transmission Model</li>
 							<li class="list-group-item"> 
 								Signal to Noise <span class="badge">{{ signal_noise_req }}</span>
 							</li>
@@ -368,10 +368,6 @@
 							<li class="list-group-item"> 
 								Total exposure time <span class="badge">{{ total_exposure_time }}</span>
 							</li>
-						</ul>
-					</div>
-					<div class="col-xs-12">
-						<ul class="list-group">
 							<li class="list-group-item"> 
 								Max. intensity at central pixel per DIT (object+sky)  <span class="badge">{{ signal_noise_req }}</span>
 							</li>
@@ -381,10 +377,6 @@
 							<li class="list-group-item"> 
 								Detector saturation limit (e<sup>-</sup>) <span class="badge">{{ ndit }}</span>
 							</li>
-						</ul>
-					</div>
-					<div class="col-xs-12">
-						<ul class="list-group">
 							<li class="list-group-item"> 
 								Aperture Radius (defining the S/N reference area) <span class="badge">{{ signal_noise_req }}</span>
 							</li>
@@ -397,10 +389,6 @@
 							<li class="list-group-item"> 
 								Total number of e<sup>-</sup> in Aperture per DIT (object only, 1 DIT) <span class="badge">{{ total_exposure_time }}</span>
 							</li>
-						</ul>
-					</div>
-					<div class="col-xs-12">
-						<ul class="list-group">
 							<li class="list-group-item"> 
 								Background (1 DIT) <span class="badge">{{ signal_noise_req }}</span>
 							</li>
@@ -430,26 +418,27 @@
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-xs-6" >
-					<div id='chart_div'> </div>
-					<div id='chart_div3'> </div>
+				<div class="col-xs-12 col-md-6">
+					<div class="col-xs-12">
+						<ul class="list-group">
+							<li class="list-group-item list-group-item-info">Intermediate Values</li>
+							<li class="list-group-item"> Encircled Energy <span class="badge">{{ encircled_energy }}</span> </li>
+							<li class="list-group-item"> Aperture radius <span class="badge">{{ Aperture_radius }}</span> </li>
+							<li class="list-group-item"> Npix <span class="badge">{{ AreaNpix }}</span> </li>
+							<li class="list-group-item"> pixscale <span class="badge">{{ Pixscale }}</span> </li>
+							<li class="list-group-item"> Target Photons / s <span class="badge">{{ detected_photons_from_source }}</span> </li>
+							<li class="list-group-item"> Sky Photons  /(s sqr.arcsec)<span class="badge">{{ detected_photons_from_sky_sqarcsec }}</span> </li>
+							<li class="list-group-item"> PhotonNoise per components per unit time<span class="badge">{{ photons_noise }}</span> </li>
+							<li class="list-group-item"> Atmospfheric Transmission <span class="badge">{{ atmospheric_transmission }}</span> </li>
+							<li class="list-group-item"> Efficiency <span class="badge">{{ efficiency }}</span> </li>
+						</ul>
+					</div>
 				</div>
-				<div class="col-xs-6" id="chart_div2">
-					<div class='panel-group'>
+				<div class="col-xs-12 col-md-6">
+					<div class="col-xs-12" >
 						<div class="panel panel-info">
-							<div class="panel-heading">Intermediate Values</div>
+							<div class="panel-heading">Image</div>
 							<div class="panel-body">
-								<ul class="list-group">
-									<li class="list-group-item"> Encircled Energy <span class="badge">{{ encircled_energy }}</span> </li>
-									<li class="list-group-item"> Aperture radius <span class="badge">{{ Aperture_radius }}</span> </li>
-									<li class="list-group-item"> Npix <span class="badge">{{ AreaNpix }}</span> </li>
-									<li class="list-group-item"> pixscale <span class="badge">{{ Pixscale }}</span> </li>
-									<li class="list-group-item"> Target Photons / s <span class="badge">{{ detected_photons_from_source }}</span> </li>
-									<li class="list-group-item"> Sky Photons  /(s sqr.arcsec)<span class="badge">{{ detected_photons_from_sky_sqarcsec }}</span> </li>
-									<li class="list-group-item"> PhotonNoise per components per unit time<span class="badge">{{ photons_noise }}</span> </li>
-									<li class="list-group-item"> Atmospfheric Transmission <span class="badge">{{ atmospheric_transmission }}</span> </li>
-									<li class="list-group-item"> Efficiency <span class="badge">{{ efficiency }}</span> </li>
-								</ul>
 							</div>
 						</div>
 					</div>
