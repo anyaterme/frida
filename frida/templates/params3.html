@@ -1,20 +1,20 @@
 <div class="row">
-	<div class="col-xs-12 col-md-12">
+	<div class="col-xs-12 col-md-3">
 		<div class="row">
-			<div class="col-xs-12 col-md-6">
+			<div class="col-xs-12 col-md-12">
 				<div class="panel panel-primary">
 					<div class="panel-heading">
 						<strong>Observing mode: </strong> 
 					</div>
 					<div class="panel-body">
 						<div class="row">
-							<div class="col-md-5 text-center"> <input type="radio" name="observation_mode" id="direct_imaging" value="DI" onchange="disable_ifu();" checked> Direct Imaging </div>
-							<div class="col-md-7 text-center"> <input type="radio" name="observation_mode" id="ifs" value="IFS" onchange="enable_ifu()" > Integral Field Spectroscopy </div>
+							<div class="col-md-12 "> <input type="radio" name="observation_mode" id="direct_imaging" value="DI" onchange="disable_ifu();" checked> Direct Imaging </div>
+							<div class="col-md-12 "> <input type="radio" name="observation_mode" id="ifs" value="IFS" onchange="enable_ifu()" > Integral Field Spectroscopy </div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="col-xs-12 col-md-4 col-md-offset-2">
+			<div class="col-xs-12 col-md-12">
 				<div class="panel panel-primary imaging_dependent">
 					<div class="panel-heading">
 						<strong>Filter:</strong>
@@ -53,27 +53,27 @@
 						<strong>Instrument scale:</strong>
 					</div>
 					<div class="panel-body">
-						<div class="col-xs-4 text-center">
-							<input type="radio" name="scale" id="Fine Scale (10 mas/pix)" value="fine_scale" checked> Fine Scale (10 mas/pix)
+						<div class="col-xs-12 ">
+							<input type="radio" name="scale" id="Fine Scale (10 mas/pix)" value="fine_scale" checked> Fine (10 mas/pix)
 						</div>
-						<div class="col-xs-4 text-center">
-							<input type="radio" name="scale" id="Medium Scale (20 mas/pix)" value="medium_scale"> Medium Scale (20 mas/pix)
+						<div class="col-xs-12 ">
+							<input type="radio" name="scale" id="Medium Scale (20 mas/pix)" value="medium_scale"> Medium (20 mas/pix)
 						</div>
-						<div class="col-xs-4 text-center">
-							<input type="radio" name="scale" id="Coarse Scale (40 mas/pix)" value="coarse_scale"> Coarse Scale (40 mas/pix)
+						<div class="col-xs-12 ">
+							<input type="radio" name="scale" id="Coarse Scale (40 mas/pix)" value="coarse_scale"> Coarse (40 mas/pix)
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class="col-xs-12 col-md-12">
+	<div class="col-xs-12 col-md-9">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<strong>Calculation method:</strong> <a href="#" class="badge">more info</a>
 			</div>
 			<div class="panel-body">
-				<div class="col-xs-12 col-md-3 col-lg-2">
+				<div class="col-xs-12 col-md-4 col-lg-2">
 					<div class="panel panel-default">
 						<div class="panel-heading text-center ">
 							<input class="" type="radio" name="type_results" value="SN_ratio"/> S/N ratio
@@ -86,7 +86,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="col-xs-12 col-md-3 col-lg-2">
+				<div class="col-xs-12 col-md-4 col-lg-2">
 					<div class="panel panel-default">
 						<div class="panel-heading text-center ">
 							<input class="" type="radio" name="type_results" value="exposure_time"/> Exposure Time
@@ -99,9 +99,18 @@
 						</div>
 					</div>
 				</div>
-				<div class="col-xs-12 col-md-6 col-lg-8 imaging_dependent">
+				<div class="col-xs-12 col-md-4 col-lg-2 ifu-dependent hide">
 					<div class="panel panel-default">
-						<div class="panel-heading text-center ">Both </div>
+						<div class="panel-heading">&nbsp;</div>
+						<div class="panel-body">
+							<label for="dit_pattern"> &lambda; ref</label>
+							<input class="form-control" type="number" name="ifs_lambda_ref" id="ifs_lambda_ref" value="1" />
+						</div>
+					</div>
+				</div>
+				<div class="col-xs-12 col-md-12 col-lg-6 ">
+					<div class="panel panel-default">
+						<div class="panel-heading text-center ">&nbsp;</div>
 						<div class="panel-body">
 							<div class="col-xs-12 col-md-4">
 								<label for="fcore"> FCore </label>

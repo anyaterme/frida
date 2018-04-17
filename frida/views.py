@@ -398,12 +398,10 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	grating_effic = a.get_grating_effic()
 	sky_rad = a.get_sky_rad()
 
-	context= {'debug_values':debug_values, "static_response":static_response, "throughput":throughput, "wave_array":wave_array, 'atrans': atrans, 'grating_effic':grating_effic, 'sky_rad':sky_rad}
 
 	phot_zp = define_photzp()
 	photons_obj = target_info.photons_wave(wave_array)
 	photunit=u.photon/(u.s * u.cm**2 * u.angstrom)
-	context['photons_obj'] = photons_obj.to(photunit)
 
 	detector = frida_setup.detector
 	phi_obj_total = photons_obj * atrans * telescope_params.area * telescope_params.reflectivity * grating_effic * throughput
@@ -427,12 +425,21 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	noise = np.sqrt(shot_noise2 + dark_noise2 + read_noise2)
 	signal = texp * dwave * phi_obj_apert
 	snr = signal.to("electron").value / noise
-	context["snr"] = snr
 	debug_values.append("SNR => %s" % str(snr))
 
 
+	context= {'debug_values':debug_values, "static_response":static_response, "throughput":throughput, "wave_array":wave_array, 'atrans': atrans, 'grating_effic':grating_effic, 'sky_rad':sky_rad, 'grating':selected_grating}
+
+
+
+
+	context['guide_star'] = guide_star
+	context['photons_obj'] = photons_obj.to(photunit)
+	context['frida_setup'] = frida_setup
+
 	debug_values = debug_values + target_info.debug()
 	context['debug_values'] = debug_values
+	context["snr"] = snr
 
 	return render (request, "calculate_ifs.html", context)
 
