@@ -135,8 +135,10 @@ def get_TargetInfo(request):
 	source_morpho = request.POST.get('source_type')
 	if (source_morpho == 'extended'):
 		label_source_morpho = 'Extended source'
+		extended = True         
 	elif (source_morpho == 'point'):
 		label_source_morpho = 'Point source'
+		extended = False        
 #	debug_values["Morphology of source"] = label_source_morpho
 
 	# create a tuple with the information relative to the Spectral Energy Distribution
@@ -211,12 +213,13 @@ def get_TargetInfo(request):
 		pass
 
 	# creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
-	target_info = TargetInfo(mag_target,band,mag_system,sed,waveshift)
+	target_info = TargetInfo(mag_target,band,mag_system,sed,waveshift,extended=extended)
 	target_info.error = error
 	target_info.messages = debug_values
 	target_info.error_messages = error_values
 	target_info.energy_type = label_energy_type
 	target_info.source_type= label_source_morpho
+    
 	return target_info
 
 def calculate_ima(request):
@@ -256,18 +259,20 @@ def calculate_ima(request):
 	a.debug_values['Strehl='] = strehl['StrehlR'] 
 	a.debug_values['FWHM_core='] = psf['FWHM_core'] 
 	a.debug_values['FWHM_seeing='] = psf['FWHM_halo'] 
+	pixscale = a.pixscale # in arcseconds
 
-
+	## Calculating output for Point source Extended source'
 	fcore = float(request.POST.get('fcore', '1.5'))
 	a.debug_values['fcore='] = fcore
-
-	pixscale = a.pixscale # in arcseconds
-	aperture=aocor.compute_ee(psf,pixscale,fcore=fcore)
+	## the aperture will be modified according to the geometry of the target
+	## if extended it will as reference area 1 pixel, fcore will be the
+	aperture=aocor.compute_ee(psf,pixscale,fcore=fcore,\
+                               source_type=target_info.source_type)
 	a.debug_values['Radius='] = aperture['Radius'] 
 	a.debug_values['EE='] = aperture['EE'] 
 	a.debug_values['EE-core='] = aperture['EE-core'] 
 	a.debug_values['EE-halo='] = aperture['EE-halo'] 
-
+	## Calculating output for 'Extended source'
 
 	dit = float(request.POST.get('DIT_exp','1')) * u.second
 	Nexp = int(request.POST.get('N_exp','1'))
@@ -318,7 +323,7 @@ def calculate_ima(request):
 	print('phi_sky_sqarc.unit',a.phi_sky_sqarc)
 	print('Unit aperture[Area_pixel]=',aperture['Area_pixel'].unit)
      
-	signal_sky_pixel = a.phi_sky_sqarc*aperture['Area_pixel']
+	#signal_sky_pixel = a.phi_sky_sqarc*aperture['Area_pixel']
      ## now scale with the signal, psf is normalize to have area unity 
 	#im_psf2d =build_im_signal_with_noise(im_signal_obj,signal_sky_pixel,\
     #            a.detector["ron"],a.detector["darkc"],dit,Nexp=1)

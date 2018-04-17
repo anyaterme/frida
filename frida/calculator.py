@@ -49,7 +49,9 @@ class TargetInfo:
     :returns: class self. -- .Magnitude, .Separation 
     :raises: 
 	"""
-	def __init__ (self,mag_target,band,mag_system,sed,waveshift=('radial_velocity', 0.), wave_ini=8500*u.angstrom,wave_end=25000.*u.angstrom,dwave=2.*u.angstrom):
+	def __init__ (self,mag_target,band,mag_system,sed,waveshift=('radial_velocity', 0.), \
+               wave_ini=8500*u.angstrom,wave_end=25000.*u.angstrom,dwave=2.*u.angstrom,\
+               extended=False):
 		self.Magnitude = mag_target
 		self.Band = band
 		self.MagSystem = mag_system
@@ -130,6 +132,8 @@ class TargetInfo:
 		self.flux_scale = flux_scale
 		self.sed_wave = sed_wave[mask]
 		self.sed_flambda = sed_flambda[mask]
+		if (extended):
+		    self.sed_flambda /= u.arcsec**2 
 
 	def debug(self):
 		result = []
@@ -301,8 +305,9 @@ class Calculator_Image:
 		self.phi_obj_total = self.compute_target_photonrate_filter(target_info.flambda_wave(wave_img))
 
 		units_phi = u.electron / u.second
-		print("phi_obj_total [simple int-filter]",phi_obj_total2.to(units_phi),\
-            self.phi_obj_total.to(units_phi))
+		if (target_info.source_type == "Extended source"): units_phi /= u.arcsec**2
+		print("phi_obj_total [int-filter]",self.phi_obj_total.to(units_phi))
+		print("phi_obj_total [simple]",phi_obj_total2.to(units_phi))
 
 
 		## compute the photon rate from the sky per arcsec^2
@@ -314,12 +319,12 @@ class Calculator_Image:
               is_flux=False)
 		self.phi_sky_sqarc = self.compute_sky_photonrate_filter(atmos_skyrad)
 
-		print("phi_sky/pix/sec (simple  int-filter)",phi_sky_sqarc_simple,\
+		print("phi_sky/arcsec2/sec (simple  int-filter)",phi_sky_sqarc_simple,\
 			  self.phi_sky_sqarc)
         
 		print("pixscale ",instrument.pixscale)
 		self.instrument = instrument
-         
+		self.source_type = target_info.source_type
         	
 	def get_average_response(self):
 		'''
@@ -426,6 +431,42 @@ class Calculator_Image:
 		units_photons_trough_filter = photons.unit * self.img_wave.unit
 		return photons_filter * units_photons_trough_filter
 
+	def signal_noise_dit(self,dit,aperture):
+		"""
+		Compute the Signal and Noise contributions for a DIT
+		:param dit:
+		:param aperture:
+		:return:
+		"""
+		# compute number of target photons within the area of the aperture
+		if (self.source_type == 'Point source'): 
+		   phi_obj_apert = self.phi_obj_total * aperture['EE']
+		elif (self.source_type == 'Extended source'): 
+		   phi_obj_apert = self.phi_obj_total * aperture['Area']
+		else: 
+		   print("@signal_noise_dit- WARNING: Source type unknown")
+		   phi_obj_apert = self.phi_obj_total
+
+		phi_obj_apert *= dit
+
+		# compute number of sky photons within the area of the aperture
+		phi_sky_apert = self.phi_sky_sqarc * aperture['Area'] * dit
+		noise2_obj = phi_obj_apert
+		noise2_sky = phi_sky_apert
+		noise2_read = aperture['Npix']*self.detector['ron']**2
+		noise2_dark = aperture['Npix']*dit*self.detector['darkc']
+		unit_signal = u.electron
+		print("===========================")
+		print ("noise2_obj ",noise2_obj.to(unit_signal))
+		print ("noise2_sky ",noise2_sky.to(unit_signal))
+		print ("noise2_read ",noise2_read)
+		print ("noise2_dark ",noise2_dark)
+		print ("===========================")
+		return {'phot_obj':phi_obj_apert,'phot_sky':phi_sky_apert,\
+            'noise2_obj':noise2_obj,'noise2_sky':noise2_sky,\
+            'noise2_read':noise2_read,'noise2_dark':noise2_dark}
+
+
 
 	def signal_noise_texp_img(self,Nexp_min,Nexp_max,Nexp_step,dit,aperture):
 		"""
@@ -439,15 +480,18 @@ class Calculator_Image:
 		"""
 		nexp = np.arange(Nexp_min,Nexp_max,Nexp_step)
 		texp = nexp * dit
-		phi_obj_apert = self.phi_obj_total * aperture['EE']
-		phi_sky_apert = self.phi_sky_sqarc * aperture['Area']
+		sn_apert_dit=self.signal_noise_dit(dit,aperture)
+		phi_obj_apert = sn_apert_dit['phot_obj']
+		phi_sky_apert = sn_apert_dit['phot_sky']
 
+		print("@signal_noise_texp_img-units phi_obj_apert ",phi_obj_apert.unit)
+		print("@signal_noise_texp_img-units phi_sky_apert ",phi_sky_apert.unit)
 		unit_signal = u.electron
 
-		noise2_obj = dit*phi_obj_apert
-		noise2_sky = dit*phi_sky_apert
-		noise2_read = aperture['Npix']*self.detector['ron']**2
-		noise2_dark = dit*self.detector['darkc']
+		noise2_obj = sn_apert_dit['noise2_obj']
+		noise2_sky = sn_apert_dit['noise2_sky']
+		noise2_read = sn_apert_dit['noise2_read']
+		noise2_dark = sn_apert_dit['noise2_dark']
 		print("===========================")
 		print ("noise2_obj ",noise2_obj.to(unit_signal))
 		print ("noise2_sky ",noise2_sky.to(unit_signal))
@@ -460,10 +504,10 @@ class Calculator_Image:
         
 		##noise = np.sqrt(texp*(phi_obj_apert+phi_sky_apert+self.detector['darkc']*aperture['Npix'])+ \ nexp*aperture['Npix']*self.detector['ron']**2)
 		self.debug_values['phi_sky_sqarc'] =self.phi_sky_sqarc
-		self.debug_values['phi_obj_total'] = self.phi_obj_total.to(u.electron/u.second)
-		self.debug_values['phi_obj_aperture'] = phi_obj_apert.to(u.electron/u.second)
+		self.debug_values['phi_obj_total'] = self.phi_obj_total
+		self.debug_values['phi_obj_aperture'] = phi_obj_apert.to(u.electron)
 		self.debug_values['phi_sky_aperture'] = phi_sky_apert
-		signal = texp * phi_obj_apert
+		signal = nexp * phi_obj_apert
 		snr = signal.to(unit_signal).value / noise
 		print("@signal_noise_texp_img - snr ",snr) 
 		self.debug_values['signal'] = signal.to(unit_signal)
@@ -485,13 +529,15 @@ class Calculator_Image:
 		:param aperture:
 		:return:
 		"""
-		phi_obj_apert = self.phi_obj_total * aperture['EE']
-		phi_sky_apert = self.phi_sky_sqarc * aperture['Area']
+		sn_apert_dit=self.signal_noise_dit(dit,aperture)
+		# return phot_obj, phot_sky per aperture and dit        
+		phi_obj_apert = sn_apert_dit['phot_obj']
+		phi_sky_apert = sn_apert_dit['phot_sky']
 
-		noise2_obj = dit*phi_obj_apert
-		noise2_sky = dit*phi_sky_apert
-		noise2_read = aperture['Npix']*self.detector['ron']**2
-		noise2_dark = dit*self.detector['darkc']
+		noise2_obj = sn_apert_dit['noise2_obj']
+		noise2_sky = sn_apert_dit['noise2_sky']
+		noise2_read = sn_apert_dit['noise2_read']
+		noise2_dark = sn_apert_dit['noise2_dark']
 
 		unit_signal = u.electron
 
@@ -504,7 +550,7 @@ class Calculator_Image:
 		noise2 = noise2_obj.to(unit_signal).value+\
                         noise2_sky.to(unit_signal).value+noise2_read.value+\
                         noise2_dark.value
-		signal2 = (phi_obj_apert * dit)**2
+		signal2 = phi_obj_apert**2
 		signal2 = signal2.to(unit_signal*unit_signal)
 		noise2 = noise2 * (unit_signal*unit_signal)
 

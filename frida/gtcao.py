@@ -257,7 +257,8 @@ class GTC_AO:
             'wvnumber':wvnumber_in}
 
 
-    def compute_ee(self, psf, pixscale, fcore=1.5, spaxel=0):
+    def compute_ee(self, psf, pixscale, fcore=1.5, spaxel=0,\
+                   source_type='Point source'):
         """
         :param strehl:
         :param seeing:
@@ -266,32 +267,37 @@ class GTC_AO:
         :param fcore:
         :return:
         """
-
-        raper_ref = fcore * psf["FWHM_core"]
-
+        if (source_type == "Point source"):
+           raper_ref = fcore * psf["FWHM_core"]
+        else:
+           raper_ref = fcore * pixscale
+            
         # raper_core=raper_ref/sigma_core
 
-        raper2_ref = raper_ref * raper_ref
+        raper2_ref = raper_ref**2
         sigma2_halo = psf["sigma2_halo"]
         sigma2_core = psf["sigma2_core"]
         print("=========================")
-        print(raper2_ref.unit) 
-        print(sigma2_halo.unit) 
-        print(sigma2_core.unit) 
+        print("raper2_ref=",raper2_ref) 
+        print("sigma2_halo=",sigma2_halo) 
+        print("sigma2_core=",sigma2_core) 
         print("=========================") 
 
         #psf = compute_psf(strehl, sigma_core, sigma_halo)
 
-        A_core = psf['Amp_core']
-        A_halo = psf['Amp_halo']
-        
-        ee_core = doublepi * A_core * sigma2_core * \
-             (1 - np.exp(-raper2_ref/2./sigma2_core))
-        
-        ee_halo = doublepi * A_halo * sigma2_halo * \
-             (1 - np.exp(-raper2_ref/2./sigma2_halo))
-             
-        ee = ee_core + ee_halo 
+        if (source_type == "Point source"):
+            A_core = psf['Amp_core']
+            A_halo = psf['Amp_halo']
+            ee_core = doublepi * A_core * sigma2_core * \
+                 (1 - np.exp(-raper2_ref/2./sigma2_core))        
+            ee_halo = doublepi * A_halo * sigma2_halo * \
+                 (1 - np.exp(-raper2_ref/2./sigma2_halo))             
+            ee = ee_core + ee_halo 
+        else: 
+            ee_core = 1.              
+            ee_halo = 0.              
+            ee = ee_core + ee_halo 
+            ## extended source
 
         area_per_pixel = pixscale*pixscale
         ## check if spaxel is set, then assume a spaxel as 2x1 pixel, according to FRIDA specs.
