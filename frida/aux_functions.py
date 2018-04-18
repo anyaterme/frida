@@ -285,3 +285,4 @@ def average_bandpass(spec,bandpass,wave):
    avg_spec = scipy.integrate.simps(_yy,_xx)/scipy.integrate.simps(bandpass,_xx)
             
    return avg_spec*spec_unit 
+

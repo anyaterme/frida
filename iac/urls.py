@@ -17,10 +17,14 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.views.generic.base import RedirectView
 from frida import urls as frida_urls
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
 	url(r'^$', RedirectView.as_view(url='/frida')),
     url(r'^admin/', include(admin.site.urls)),
 	url(r'^frida/', include(frida_urls))
 ]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

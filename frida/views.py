@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.files import File
 from django.http import HttpResponse
 import os
-import datetime
+import datetime, random, string
 import sys
 
 import numpy as np
@@ -298,7 +298,6 @@ def calculate_ima(request):
 		required_sn = snr_seq[np.where(texp_seq == Nexp * dit)]
 	try:
 		ndit = a.texp_signal_noise_img(required_sn,dit,aperture)
-		print ("**** NDIT *********", ndit)
 		if (calc_method == "SN_ratio"):
 			Nexp = ndit[0]
 	except Exception as e:
@@ -308,18 +307,20 @@ def calculate_ima(request):
 		msg_err["ERROR GENERIC"]=("%s" % e)
 		return render(request, "error.html", {'msg_err':msg_err})
 
-	print ("***********", required_sn)
-
-	print ("***********", a.img_wave.to(u.AA))
-
 	## compute image using PSF information 
 	im_psf2d =build_psf2d_2gauss(psf,a.pixscale)
+
 	if hasattr(im_psf2d,'unit'):
          print('units im_psf2d ',im_psf2d.unit)
 	else:
          print('no units im_psf2d ')
 	## now scale with the signal, psf is normalize to have area unity 
 	im_signal_obj = a.phi_obj_total*im_psf2d*aperture['Area_pixel']
+	plt.imshow(im_signal_obj)
+	name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+	f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'w')
+	plt.savefig(f)
+	f.close()
 	## now scale with the signal, psf is normalize to have area unity 
 	print('phi_sky_sqarc.unit',a.phi_sky_sqarc)
 	print('Unit aperture[Area_pixel]=',aperture['Area_pixel'].unit)
@@ -329,9 +330,6 @@ def calculate_ima(request):
 	#im_psf2d =build_im_signal_with_noise(im_signal_obj,signal_sky_pixel,\
     #            a.detector["ron"],a.detector["darkc"],dit,Nexp=1)
     
-	print ("***********", required_sn)
-
-
 	context = {}
 	a.debug_values['index_texp'] =  snr_seq[np.where(texp_seq == Nexp * dit)]
 	context['Object_magnitude'] = target_info.Magnitude,
@@ -350,6 +348,7 @@ def calculate_ima(request):
 	context['static_response'] = static_response
 	context['throughput'] = throughput
 	context['throughput_lambda'] = throughput[(np.abs(a.img_wave-obs_filter.wave_median)).argmin()]
+	context['img_name'] = '%s.png' % name
 	a.debug_values['throughput_lambda_index'] =(np.abs(obs_filter.wave-obs_filter.wave_median)).argmin()
 	context['atrans'] = a.atmostrans
 	context['sky_rad'] = a.skyemission_photons

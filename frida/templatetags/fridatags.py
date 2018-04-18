@@ -8,6 +8,11 @@ import datetime
 register = template.Library()
 
 @register.filter
+def percentage(value, decimals=0):
+	value = round(value*100, decimals)
+	return value
+
+@register.filter
 def list_value(dict, index):
 	return dict[index]
 
@@ -19,7 +24,9 @@ def ellipsis_text(text, size):
 		return text
 
 @register.filter
-def astro_unit_value(item, unit):
+def astro_unit_value(item, unit=None):
+	if unit is None:
+		unit =item.unit
 	return item.to(unit).value
 
 @register.filter
