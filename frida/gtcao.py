@@ -70,13 +70,8 @@ class GTC_AO:
 
     def __init__(self,sky_conditions,guide_star, diam_telescope=10. * u.m,\
                  v0= 10 * u.m/u.s):
-        ##sky_conditions={'seeing':0.9,'airmass':1.2}
         self.seeing_input = sky_conditions['seeing']
         self.wave_seeing_input = sky_conditions['wave_seeing']
-        #self.airmass = sky_conditions['airmass']
-        ##guide_star={'MagnitudeR':8,'Separation':0.}
-        #self.mag_gs = guide_star['magnitudeR']
-        #self.sep_gs = guide_star['separation']
         self.mag_gs = guide_star.Magnitude
         self.sep_gs = guide_star.Separation
 

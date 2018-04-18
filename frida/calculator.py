@@ -246,15 +246,12 @@ class Calculator_Image:
                        dwave_img.value)
 		wave_img *= same_unit
 
-		print ("############### ATMOS_TRANS")
 		atmos_trans = interpol2newwave(atmphere.atmtrans_perone,\
                 atmphere.atmtrans_wave,wave_img)
 
-		print ("############### ATMOS_SKYRAD")
 		atmos_skyrad = interpol2newwave(atmphere.skyrad_photons,\
                 atmphere.skyrad_wave,wave_img)
 
-		print ("############### OBS_FILTER")
 		filter_trans = interpol2newwave(obs_filter.transmission,\
                 obs_filter.wave,wave_img)
 

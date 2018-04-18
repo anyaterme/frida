@@ -126,9 +126,6 @@ def get_TargetInfo(request):
 	band = request.POST.get("band_flux")
 	mag_system = request.POST.get('units_sib')
 	energy_type = request.POST.get('spectral_type')
-#	debug_values["Brightness (Astronomical Source Definition)"] = mag_target
-#	debug_values["Filter_Name (Astronomical Source Definition)"] = band
-#	debug_values["Energy Distribution (Astronomical Source Definition)"] = energy_type
 	error = False
 
 	## Select morphology of source
@@ -139,7 +136,6 @@ def get_TargetInfo(request):
 	elif (source_morpho == 'point'):
 		label_source_morpho = 'Point source'
 		extended = False        
-#	debug_values["Morphology of source"] = label_source_morpho
 
 	# create a tuple with the information relative to the Spectral Energy Distribution
 	debug_values["Spectral Distribution"] = "Checking...."
@@ -199,7 +195,7 @@ def get_TargetInfo(request):
 		else:
 			try:
 				waveshift = ('radial_velocity', 0. * u.km / u.s )
-				my_value = request.POST.get('redshift_value', 0)
+				my_value = request.POST.get('radial_value', 0)
 				if my_value == "":
 					my_value = 0
 				waveshift = ('radial_velocity', float(my_value) * u.km / u.s)
@@ -316,7 +312,17 @@ def calculate_ima(request):
          print('no units im_psf2d ')
 	## now scale with the signal, psf is normalize to have area unity 
 	im_signal_obj = a.phi_obj_total*im_psf2d*aperture['Area_pixel']
-	plt.imshow(im_signal_obj)
+
+	## create png
+	im_np_array = np.asarray(im_signal_obj)
+	index_max = np.unravel_index(im_np_array.argmax(),im_np_array.shape)
+	limit_window = (128,128)
+	drop_img = im_np_array[index_max[0]-limit_window[0]/2:index_max[0]+limit_window[0]/2,index_max[1]-limit_window[1]/2:index_max[1]+limit_window[1]/2]
+#	while np.sum(drop_img) > 0.9*np.sum(im_np_array):
+#		limit_window = limit_window/2
+#		drop_img = im_np_array[index_max[0]-limit_window[0]/2:index_max[0]+limit_window[0]/2,index_max[1]-limit_window[1]/2:index_max[1]+limit_window[1]/2]
+	print ("######", limit_window)
+	plt.imshow(drop_img, cmap='hot')
 	name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 	f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'w')
 	plt.savefig(f)
