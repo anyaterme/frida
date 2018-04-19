@@ -224,6 +224,10 @@ class GTC_AO:
 
         ## error due to separation of guide star relative to the pointing
         ##sigma_anisop = (dist_gs/theta_isoplan_ref)**(5./3)*(lamb_ref/lamb_mic)**2
+        print("wave_ref=",self.wave_ref)
+        print("wave_in=",wave_in)
+        print("theta_isoplan_ref_eff=",self.theta_isoplan_ref_eff)
+        print("sep_gs=", self.sep_gs)
         theta_isoplan_eff = self.theta_isoplan_ref_eff * (wave_in/self.wave_ref) ** 6/5
         sigma2_anisop = (self.sep_gs / theta_isoplan_eff) ** (5. / 3.) ## * (self.lambda_vis_mic / lamb_mic) ** 2
 

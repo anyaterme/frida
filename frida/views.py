@@ -325,7 +325,7 @@ def calculate_ima(request):
 	plt.imshow(drop_img, cmap='hot')
 	name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 	f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'w')
-	plt.savefig(f)
+	plt.savefig(f, dit=2000)
 	f.close()
 	## now scale with the signal, psf is normalize to have area unity 
 	print('phi_sky_sqarc.unit',a.phi_sky_sqarc)
@@ -393,7 +393,7 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	target_info = get_TargetInfo(request)
 
     ## call GTC_AO to compute Strehl ratio and Encircled Energy
-	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),float(request.POST.get("gs_separation")))
+	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),float(request.POST.get("gs_separation"))*u.arcsec)
 
 	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
 
@@ -425,7 +425,14 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	dit = float(request.POST.get('DIT_exp',1)) * u.s
 	nexp = int(request.POST.get('N_exp',1)) 
 	texp = nexp * dit
-	aperture = {"EE":0.5,"Npix":27}		##FIXME. What is this param in web?  ==> GTCAO
+#	aperture = {"EE":0.5,"Npix":27}		##FIXME. What is this param in web?  ==> GTCAO
+	lambda_eff = float(request.POST.get('ifs_lambda_ref',5000.)) * u.AA
+	## From calculate_ima
+	fcore = float(request.POST.get('fcore', '1.5'))
+	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
+	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
+	aperture=aocor.compute_ee(psf,frida_setup.pixscale,fcore=fcore, source_type=target_info.source_type)
+	## EndFrom
 	phi_obj_apert = phi_obj_total * aperture["EE"]
 	dwave = a.grating_info.delt_wave
 	shot_noise2 = (texp * dwave * (phi_obj_apert + phi_sky_apert).to(electron_per_s_unit)).value
@@ -434,7 +441,13 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	noise = np.sqrt(shot_noise2 + dark_noise2 + read_noise2)
 	signal = texp * dwave * phi_obj_apert
 	snr = signal.to("electron").value / noise
+	print("snr=", snr)
 	debug_values.append("SNR => %s" % str(snr))
+
+	## JAP - FIXME no esta claro que sea necesario 
+	calc_method = request.POST.get('type_results')
+	signal_noise= float(request.POST.get('signal_noise'))
+	required_sn = signal_noise
 
 
 	context= {'debug_values':debug_values, "static_response":static_response, "throughput":throughput, "wave_array":wave_array, 'atrans': atrans, 'grating_effic':grating_effic, 'sky_rad':sky_rad, 'grating':selected_grating}
@@ -445,6 +458,17 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	context['guide_star'] = guide_star
 	context['photons_obj'] = photons_obj.to(photunit)
 	context['frida_setup'] = frida_setup
+	context['target_info'] = target_info
+	context['sky_conditions'] = sky_conditions
+	context['signal_noise_req'] = required_sn
+	context['total_exposure_time'] = dit * nexp
+	context['Aperture_radius'] = aperture['Radius']
+	context['encircled_energy'] = aperture["EE"]
+	context['lambda_eff'] = lambda_eff
+	context['throughput_lambda'] = throughput[(np.abs(wave_array-lambda_eff)).argmin()]
+	context['dit'] = dit
+	context['ndit'] = nexp
+	context['strehl_ratio'] = strehl['StrehlR']
 
 	debug_values = debug_values + target_info.debug()
 	context['debug_values'] = debug_values
