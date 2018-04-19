@@ -4,6 +4,7 @@ log.txt
 *.swo
 media/
 docs/
+frida/images/*.png
 old/
 **.DS_Store
 db.sqlite3
