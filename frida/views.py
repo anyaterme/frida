@@ -317,12 +317,14 @@ def calculate_ima(request):
 	im_np_array = np.asarray(im_signal_obj)
 	index_max = np.unravel_index(im_np_array.argmax(),im_np_array.shape)
 	limit_window = (128,128)
-	drop_img = im_np_array[index_max[0]-limit_window[0]/2:index_max[0]+limit_window[0]/2,index_max[1]-limit_window[1]/2:index_max[1]+limit_window[1]/2]
+	row_limit = round(limit_window[0]/2)
+	col_limit = round(limit_window[1]/2)
+	crop_img = im_np_array[index_max[0]-row_limit:index_max[0]+row_limit,index_max[1]-col_limit:index_max[1]+col_limit]
 #	while np.sum(drop_img) > 0.9*np.sum(im_np_array):
 #		limit_window = limit_window/2
 #		drop_img = im_np_array[index_max[0]-limit_window[0]/2:index_max[0]+limit_window[0]/2,index_max[1]-limit_window[1]/2:index_max[1]+limit_window[1]/2]
 	print ("######", limit_window)
-	plt.imshow(drop_img, cmap='hot')
+	plt.imshow(crop_img, cmap='hot')
 	name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 	f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'w')
 	plt.savefig(f, dit=2000)
