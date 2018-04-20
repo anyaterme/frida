@@ -316,22 +316,21 @@ def calculate_ima(request):
 	im_signal_obj = a.phi_obj_total*im_psf2d*aperture['Area_pixel']
 
 	## create png
-	plt.imshow(im_signal_obj.value, cmap='hot')
-	name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-	print('file name=',name)
-	f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'w')
-	plt.savefig(f, dit=2000)
-	f.close()
-	## now scale with the signal, psf is normalize to have area unity 
+	context = {}
+	name = None
+	if request.POST.get("2d_psf", "off") == "on":
+		plt.imshow(im_signal_obj.value, cmap='hot')
+		name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+		print('file name=',name)
+		f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'w')
+		plt.savefig(f, dit=2000)
+		f.close()
+		context['img_name'] = '%s.png' % name
+		## now scale with the signal, psf is normalize to have area unity 
 	print('phi_sky_sqarc.unit',a.phi_sky_sqarc)
 	print('Unit aperture[Area_pixel]=',aperture['Area_pixel'].unit)
      
-	#signal_sky_pixel = a.phi_sky_sqarc*aperture['Area_pixel']
-     ## now scale with the signal, psf is normalize to have area unity 
-	#im_psf2d =build_im_signal_with_noise(im_signal_obj,signal_sky_pixel,\
-    #            a.detector["ron"],a.detector["darkc"],dit,Nexp=1)
     
-	context = {}
 	context['Object_magnitude'] = target_info.Magnitude,
 	context['target_info'] = target_info
 	context['filter_trans_wave'] = a.img_wave.to(u.AA)
@@ -348,7 +347,6 @@ def calculate_ima(request):
 	context['static_response'] = static_response
 	context['throughput'] = throughput
 	context['throughput_lambda'] = throughput[(np.abs(a.img_wave-obs_filter.wave_median)).argmin()]
-	context['img_name'] = '%s.png' % name
 	a.debug_values['throughput_lambda_index'] =(np.abs(obs_filter.wave-obs_filter.wave_median)).argmin()
 	context['atrans'] = a.atmostrans
 	context['sky_rad'] = a.skyemission_photons

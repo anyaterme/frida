@@ -160,13 +160,14 @@
 			</div>
 		</div>
 	</div>
-	<div class="col-xs-12 form-inline">
+	{% comment %}
+	<div class="col-xs-12 form-inline spec_dependent hide">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<strong>Output:</strong>
 			</div>
 			<div class="panel-body">
-				<div class="row spec_dependent hide" >
+				<div class="row" >
 					<div class="col-xs-12">
 						For spectroscopy, 
 						<input type="radio" name="radio7" id="radio7" value="autoscale">
@@ -180,8 +181,18 @@
 						<br/> <br/>
 					</div>
 				</div>
-				<div class="row imaging_dependent" id="naco">
-					<div class="col-xs-4 text-center"> <input type="checkbox" name="2d_psf" disabled/> 2-D PSF image (jpg and FITS) (point source only)</div>
+			</div>
+		</div>
+	</div>
+	{% endcomment %}
+	<div class="col-xs-12 form-inline imaging_dependent">
+		<div class="panel panel-primary">
+			<div class="panel-heading">
+				<strong>Output:</strong>
+			</div>
+			<div class="panel-body">
+				<div class="row " id="naco">
+					<div class="col-xs-4 text-center"> <input type="checkbox" name="2d_psf" /> 2-D PSF image (jpg and FITS) (point source only)</div>
 					<div class="col-xs-4 text-center"> <input type="checkbox" name="enc_energy_aperture_radius" disabled/> Encircled Energy as a function of Aperture Radius (point source only)</div>
 					<div class="col-xs-4 text-center"> <input type="checkbox" name="sn_as_exp_time" disabled/> S/N as a function of Exposure Time </div>
 				</div>
