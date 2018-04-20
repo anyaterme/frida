@@ -244,9 +244,11 @@ def calculate_ima(request):
 		return render(request, "error.html", {'msg_err':msg_err})
 	if (target_info.error):
 		return render(request, "error.html", {'msg_err':target_info.error_messages})
-	a=Calculator_Image(target_info,selected_filter,sky_conditions,selected_scale,\
+	a=Calculator_Image(target_info,selected_filter,scale=selected_scale,\
                     telescope_name=telescope)
 	static_response, throughput = a.get_static_response()
+
+	print('@calculate_ima -> lambda_eff=',lambda_eff)    
 
 	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
 	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
@@ -283,7 +285,6 @@ def calculate_ima(request):
 	texp_seq = signal_noise_seq['texp']
 	snr_seq = signal_noise_seq['SNR']
 	signal_seq = signal_noise_seq['signal']
-	a.debug_values['texp'] = texp_seq
 
 
 	## JAP - FIXME no esta claro que sea necesario 
@@ -304,8 +305,9 @@ def calculate_ima(request):
 		return render(request, "error.html", {'msg_err':msg_err})
 
 	## compute image using PSF information 
-	im_psf2d =build_psf2d_2gauss(psf,a.pixscale)
-
+	limit_window = (128,128)
+	print ("######", limit_window)
+	im_psf2d =build_psf2d_2gauss(psf,a.pixscale,Nx=limit_window[0],Ny=limit_window[1])
 	if hasattr(im_psf2d,'unit'):
          print('units im_psf2d ',im_psf2d.unit)
 	else:
@@ -314,18 +316,9 @@ def calculate_ima(request):
 	im_signal_obj = a.phi_obj_total*im_psf2d*aperture['Area_pixel']
 
 	## create png
-	im_np_array = np.asarray(im_signal_obj)
-	index_max = np.unravel_index(im_np_array.argmax(),im_np_array.shape)
-	limit_window = (128,128)
-	row_limit = int(limit_window[0]/2)
-	col_limit = int(limit_window[1]/2)
-	crop_img = im_np_array[index_max[0]-row_limit:index_max[0]+row_limit,index_max[1]-col_limit:index_max[1]+col_limit]
-#	while np.sum(drop_img) > 0.9*np.sum(im_np_array):
-#		limit_window = limit_window/2
-#		drop_img = im_np_array[index_max[0]-limit_window[0]/2:index_max[0]+limit_window[0]/2,index_max[1]-limit_window[1]/2:index_max[1]+limit_window[1]/2]
-	print ("######", limit_window)
-	plt.imshow(crop_img, cmap='hot')
+	plt.imshow(im_signal_obj.value, cmap='hot')
 	name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+	print('file name=',name)
 	f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'w')
 	plt.savefig(f, dit=2000)
 	f.close()
@@ -339,7 +332,6 @@ def calculate_ima(request):
     #            a.detector["ron"],a.detector["darkc"],dit,Nexp=1)
     
 	context = {}
-	a.debug_values['index_texp'] =  snr_seq[np.where(texp_seq == Nexp * dit)]
 	context['Object_magnitude'] = target_info.Magnitude,
 	context['target_info'] = target_info
 	context['filter_trans_wave'] = a.img_wave.to(u.AA)
@@ -380,101 +372,89 @@ def calculate_ima(request):
 def calculate_ifs(request,telescope=settings.TELESCOPE):
 	debug_values = ["test ==> test_content"]
 
-	sky_conditions = get_SkyConditions(request)
-
 	telescope_params = Telescope(telescope)
+	sky_conditions = get_SkyConditions(request)
+	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),\
+                        float(request.POST.get("gs_separation"))*u.arcsec)
 
-	selected_scale = request.POST.get('scale')
-	frida_setup = Instrument_static(scale=selected_scale,instid=settings.INSTRUMENT,path=settings.INCLUDES)
+	selected_scale = request.POST.get('scale','fine_scale')
+    
+	#frida_setup = Instrument_static(scale=selected_scale,instid=settings.INSTRUMENT,path=settings.INCLUDES)
 
 	selected_grating = request.POST.get('grating')
-	central_wave_grating = request.POST.get('grating_value',None)
-	spectrograph_setup = {'Grating':selected_grating,'Central_wave':float(central_wave_grating)*u.AA}
+	central_wave_grating = float(request.POST.get('grating_value',None))*u.AA
+	spectrograph_setup = {'Grating':selected_grating,'Central_wave':central_wave_grating}
 
 	# creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
 	target_info = get_TargetInfo(request)
 
-    ## call GTC_AO to compute Strehl ratio and Encircled Energy
-	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),float(request.POST.get("gs_separation"))*u.arcsec)
-
-	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
-
+	print('@calculate_ifs -> central_wave_grating=',central_wave_grating)    
 	# Creates an object of type Calculator_Spect
-	a=Calculator_Spect(target_info,sky_conditions,spectrograph_setup,selected_scale,telescope=telescope_params, instrument=frida_setup, aocor = aocor)
+	a=Calculator_Spect(target_info,spectrograph_setup,scale=selected_scale,\
+            telescope_name=telescope)
 
-	static_response, throughput = a.get_static_response()
-	wave_array = a.grating_info.wave_array()
+	wave_array = a.wave_array
+	atrans = a.atm_trans
+	grating_effic = a.grating_effic
+	sky_rad = a.sky_rad
+    
+	pixscale = a.pixscale
 
-	atrans = a.get_atrans()
-	grating_effic = a.get_grating_effic()
-	sky_rad = a.get_sky_rad()
+    ## call GTC_AO to compute Strehl ratio and Encircled Energy
+	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
+	strehl = aocor.compute_strehl(central_wave_grating,sky_conditions['airmass'])
+	psf = aocor.compute_psf(central_wave_grating,strehl['StrehlR'])
 
-
-	phot_zp = define_photzp()
-	photons_obj = target_info.photons_wave(wave_array)
-	photunit=u.photon/(u.s * u.cm**2 * u.angstrom)
-
-	detector = frida_setup.detector
-	phi_obj_total = photons_obj * atrans * telescope_params.area * telescope_params.reflectivity * grating_effic * throughput
-
-	electron_per_s_unit=u.electron/(u.s * u.angstrom)
-
-	## compute sky emission and atmospheric absorption  (done within compute_sky_photonrate_spect)
-	area_reference = np.pi*(50 * u.marcsec)**2
-	phi_sky_apert = sky_rad * telescope_params.area * telescope_params.reflectivity * grating_effic * throughput * area_reference
-
-	## compute S/N
-	dit = float(request.POST.get('DIT_exp',1)) * u.s
-	nexp = int(request.POST.get('N_exp',1)) 
-	texp = nexp * dit
-#	aperture = {"EE":0.5,"Npix":27}		##FIXME. What is this param in web?  ==> GTCAO
-	lambda_eff = float(request.POST.get('ifs_lambda_ref',5000.)) * u.AA
-	## From calculate_ima
+	## Calculating output for Point source Extended source'
 	fcore = float(request.POST.get('fcore', '1.5'))
-	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
-	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
-	aperture=aocor.compute_ee(psf,frida_setup.pixscale,fcore=fcore, source_type=target_info.source_type)
-	## EndFrom
-	phi_obj_apert = phi_obj_total * aperture["EE"]
-	dwave = a.grating_info.delt_wave
-	shot_noise2 = (texp * dwave * (phi_obj_apert + phi_sky_apert).to(electron_per_s_unit)).value
-	dark_noise2 = (texp * detector['darkc'] * aperture['Npix']).value
-	read_noise2 = (nexp * aperture['Npix'] * detector['ron'] ** 2).value
-	noise = np.sqrt(shot_noise2 + dark_noise2 + read_noise2)
-	signal = texp * dwave * phi_obj_apert
-	snr = signal.to("electron").value / noise
-	print("snr=", snr)
-	debug_values.append("SNR => %s" % str(snr))
+	a.debug_values['fcore='] = fcore
+	## the aperture will be modified according to the geometry of the target
+	## if extended it will as reference area 1 pixel, fcore will be the
+	aperture=aocor.compute_ee(psf,pixscale,fcore=fcore,\
+                source_type=target_info.source_type,spaxel=True)
 
-	## JAP - FIXME no esta claro que sea necesario 
+	dit = float(request.POST.get('DIT_exp','1')) * u.second
+	Nexp = int(request.POST.get('N_exp','1'))
+
 	calc_method = request.POST.get('type_results')
 	signal_noise= float(request.POST.get('signal_noise'))
 	required_sn = signal_noise
+	dit = float(request.POST.get('DIT_exp','10')) * u.second
+	Nexp = int(request.POST.get('N_exp','1'))
+	signal_noise= float(request.POST.get('signal_noise'))
 
+	signal_noise_seq = a.signal_noise_texp_spect(Nexp,dit,aperture)
+	texp_seq = signal_noise_seq['texp']
+	snr_seq = signal_noise_seq['SNR']
+	signal_seq = signal_noise_seq['signal']
+    
+	print("@calculate_ifs -> snr_seq",snr_seq)
 
-	context= {'debug_values':debug_values, "static_response":static_response, "throughput":throughput, "wave_array":wave_array, 'atrans': atrans, 'grating_effic':grating_effic, 'sky_rad':sky_rad, 'grating':selected_grating}
+	context= {'debug_values':debug_values, "static_response":a.static_response, \
+           "throughput":a.throughput, "wave_array":wave_array, 'atrans': atrans, \
+           'grating_effic':grating_effic, 'sky_rad':sky_rad}
 
+	photunit = u.electron/u.second/u.Angstrom
 
-
-
+	lambda_ref = central_wave_grating
 	context['guide_star'] = guide_star
-	context['photons_obj'] = photons_obj.to(photunit)
-	context['frida_setup'] = frida_setup
+	context['photons_obj'] = a.phi_obj_spect.to(photunit)
+	context['frida_setup'] = a.instrument
 	context['target_info'] = target_info
 	context['sky_conditions'] = sky_conditions
-	context['signal_noise_req'] = required_sn
-	context['total_exposure_time'] = dit * nexp
+	context['signal_noise_req'] = signal_noise
+	context['total_exposure_time'] = dit * Nexp
 	context['Aperture_radius'] = aperture['Radius']
 	context['encircled_energy'] = aperture["EE"]
-	context['lambda_eff'] = lambda_eff
-	context['throughput_lambda'] = throughput[(np.abs(wave_array-lambda_eff)).argmin()]
+	context['lambda_eff'] = lambda_ref
+	context['throughput_lambda'] = a.throughput[(np.abs(wave_array-lambda_ref)).argmin()]
 	context['dit'] = dit
-	context['ndit'] = nexp
+	context['ndit'] = Nexp
 	context['strehl_ratio'] = strehl['StrehlR']
+	context["snr"] = snr_seq
 
 	debug_values = debug_values + target_info.debug()
 	context['debug_values'] = debug_values
-	context["snr"] = snr
 
 	return render (request, "calculate_ifs.html", context)
 
