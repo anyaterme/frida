@@ -317,8 +317,8 @@ def calculate_ima(request):
 	im_np_array = np.asarray(im_signal_obj)
 	index_max = np.unravel_index(im_np_array.argmax(),im_np_array.shape)
 	limit_window = (128,128)
-	row_limit = round(limit_window[0]/2)
-	col_limit = round(limit_window[1]/2)
+	row_limit = int(limit_window[0]/2)
+	col_limit = int(limit_window[1]/2)
 	crop_img = im_np_array[index_max[0]-row_limit:index_max[0]+row_limit,index_max[1]-col_limit:index_max[1]+col_limit]
 #	while np.sum(drop_img) > 0.9*np.sum(im_np_array):
 #		limit_window = limit_window/2
