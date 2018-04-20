@@ -207,8 +207,8 @@ class Calculator_Image:
 	obs_filter = None
 	atmosphere = None
 
-	def __init__(self,target_info,filter_name,atmospheric_cond=None,scale=None,\
-              telescope_name='GTC',instrument_name='FRIDA'):
+	def __init__(self,target_info,filter_name,atmospheric_cond=None,\
+              scale='fine_scale',telescope_name='GTC',instrument_name='FRIDA'):
 		"""
 			Celestial source parameters in a dictionary
 			target_info = {'Magnitude':19,'MagSystem':,'Band':'J','sed':sed} ;
@@ -606,44 +606,92 @@ class Calculator_Spect:
 	obs_filter = None
 	atmosphere = None
 
-	def __init__(self,target_info,sky_conditions,spectrograph_setup,scale,Atmospheric_Cond=None,telescope=None,instrument=None, aocor=None):
+	def __init__(self,target_info,spectrograph_setup,atmospheric_Cond=None,\
+              scale='fine_scale', telescope_name='GTC',instrument_name='FRIDA'):
 		"""
 			Celestial source parameters in a dictionary
 			target_info = {'Magnitude':19,'MagSystem':,'Band':'J','sed':sed} ;
 			sed is a tuple like ('PowerLaw',index_powerlaw), ('Blackbdoy',temperature_bb)
 		"""
+		self.debug_values = {}
+
+		# telescope parameters
+		telescope = Telescope(telescope_name)
+		self.area_tel = telescope.area
+		self.refl_tel = telescope.reflectivity
+        
 		# Setup the wavelength array from spectrograph_setup
 		#### grating
-		self.grating_info = Grating(spectrograph_setup['Grating'],cent_wave=spectrograph_setup['Central_wave'])
-		self.telescope_params = telescope
-		self.instrument = instrument
-		self.aocor = aocor
+		grating_info = Grating(spectrograph_setup['Grating'],cent_wave=spectrograph_setup['Central_wave'])
+        
+		wave_array = grating_info.wave_array()
+		self.wave_array = wave_array
+        
+		self.atm_trans = grating_info.interp_spect('AtmosTrans',wave_array)
+		self.sky_rad = grating_info.interp_spect('SkyRad',wave_array)
 
-	def get_static_response(self):
-		wave_array = self.grating_info.wave_array()
-		static_response = self.instrument.compute_static_response(wave_array)
+		self.grating_effic = grating_info.interp_spect('GratingEffic',wave_array)
+
+
+		flambda_wave = target_info.flambda_wave(wave_array)
+		self.obj_photons_obj = target_info.photons_wave(wave_array)
+
+        
+		instrument = Instrument_static(scale,instid=instrument_name)
+		static_response = instrument.compute_static_response(wave_array)
 		self.static_response = static_response
-		self.throughput = static_response["collimator"] * static_response['camera'] * static_response['qe']
-		return (self.static_response, self.throughput)
+		self.throughput = static_response["collimator"] * static_response['camera'] \
+                  * static_response['qe'] * telescope.reflectivity
+		self.detector = instrument.detector
+		self.pixscale = instrument.pixscale
+        
 
+		phi_obj_spect = self.compute_photonrate_spect(flambda_wave)
+    
+		phi_sky_spect_sqarc = self.compute_sky_photonrate_spect()
+
+		electron_per_s_unit=u.electron/(u.s * u.angstrom)
+
+		if (target_info.source_type == "Point source"): 
+		   self.phi_obj_spect = phi_obj_spect.to(electron_per_s_unit)
+		elif (target_info.source_type == "Extended source"):   
+		   self.phi_obj_spect = phi_obj_spect.to(electron_per_s_unit/u.arcsec**2)
+
+		self.phi_sky_spect_sqarc = phi_sky_spect_sqarc.to(electron_per_s_unit/u.arcsec**2)
+
+		print("@Calculator_Spect-phi_obj_spect=",self.phi_obj_spect)
+		print("@Calculator_Spect-phi_sky_spect_sqarc=",self.phi_sky_spect_sqarc)
+
+		self.instrument = instrument
+		self.instrument = instrument
+		self.source_type = target_info.source_type
+
+		## compute sky emission and atmospheric absorption  (done within compute_sky_photonrate_spect)
+        
+	''' 
+	def get_static_response(self):
+		wave_array = self.wave_array()
+		static_response = self.instrument.compute_static_response(wave_array)
+		static_response = static_response
+		throughput = static_response["collimator"] * static_response['camera'] * static_response['qe']
+		return {self.static_response, self.throughput)
+    
 	def get_atrans(self):
-		wave_array = self.grating_info.wave_array()
+		wave_array = self.wave_array()
 		atrans = self.grating_info.interp_spect('AtmosTrans',wave_array)
 		return (atrans)
 
 	def get_sky_rad(self):
-		wave_array = self.grating_info.wave_array()
+		wave_array = self.wave_array()
 		sky_rad = self.grating_info.interp_spect('SkyRad',wave_array)
 		return (sky_rad)
 
 	def get_grating_effic(self):
-		wave_array = self.grating_info.wave_array()
+		wave_array = self.wave_array()
 		grating_effic = self.grating_info.interp_spect('GratingEffic',wave_array)
 		return (grating_effic)
+    '''
 		
-
-
-
 	def compute_sky_photonrate_spect(self):
 		"""
 		compute the number of photons integrated upon filter passband
@@ -656,11 +704,12 @@ class Calculator_Spect:
 					Results as ===> s^-1 m^-1 micron -> x1.E-6 -> s^-1
 		"""
 
-		photons_deltalambda = self.skyemission_photons * self.grating_trans \
-					 * self.throughput	* self.area_tel * self.refl_tel
+		photons_deltalambda = self.sky_rad * self.grating_effic
+		photons_deltalambda *= self.throughput
+		photons_deltalambda *= self.area_tel
 		return photons_deltalambda
 
-	def compute_photonrate_spect(self):
+	def compute_photonrate_spect(self,flambda,Atm_absorption=True):
 		"""
 		compute the number of target photons in a wavelength range determined by the selected grating/central wave
 		INPUTS:
@@ -673,15 +722,49 @@ class Calculator_Spect:
 				  [throughput] = No units
 					Results as ===> s^-1 m^-1 micron -> x1.E-6 -> s^-1
 		"""
-		photons_deltalambda = self.obj_photons_wave  
-		photons_deltalambda *= self.atmostrans
-		photons_deltalambda *= self.grating_trans
+		photons_deltalambda = flambda * self.grating_effic / energy_photon(self.wave_array)  
+		if (Atm_absorption): photons_deltalambda *= self.atm_trans
 		photons_deltalambda *= self.throughput
 		photons_deltalambda *= self.area_tel
-		photons_deltalambda *= self.refl_tel
 		return photons_deltalambda
 
-	def signal_noise_texp_spect(self,Nexp_min, Nexp_max, Nexp_step,dit,aperture,nexp=1):
+	def signal_noise_dit(self,dit,aperture):
+		"""
+		Compute the Signal and Noise contributions for a DIT
+		:param dit:
+		:param aperture:
+		:return:
+		"""
+		# compute number of target photons within the area of the aperture
+		if (self.source_type == 'Point source'): 
+		   phi_obj_apert = self.phi_obj_spect * aperture['EE']
+		elif (self.source_type == 'Extended source'): 
+		   phi_obj_apert = self.phi_obj_spect * aperture['Area']
+		else: 
+		   print("@signal_noise_dit- WARNING: Source type unknown")
+		   phi_obj_apert = self.phi_obj_spect
+
+		phi_obj_apert *= dit
+
+		# compute number of sky photons within the area of the aperture
+		phi_sky_apert = self.phi_sky_spect_sqarc * aperture['Area'] * dit
+		noise2_obj = phi_obj_apert
+		noise2_sky = phi_sky_apert
+		noise2_read = aperture['Npix']*self.detector['ron']**2
+		noise2_dark = aperture['Npix']*dit*self.detector['darkc']
+		unit_signal = u.electron/u.Angstrom
+		print("===========================")
+		print ("noise2_obj ",noise2_obj.to(unit_signal))
+		print ("noise2_sky ",noise2_sky.to(unit_signal))
+		print ("noise2_read ",noise2_read)
+		print ("noise2_dark ",noise2_dark)
+		print ("===========================")
+		return {'phot_obj':phi_obj_apert,'phot_sky':phi_sky_apert,\
+            'noise2_obj':noise2_obj,'noise2_sky':noise2_sky,\
+            'noise2_read':noise2_read,'noise2_dark':noise2_dark}
+
+
+	def signal_noise_texp_spect(self,nexp,dit,aperture):
 		"""
 		Compute the S/N ratio as function of exposure time
 		:param dit: detector integration time of individual exposure
@@ -689,28 +772,39 @@ class Calculator_Spect:
 		:param nexp=1: number of exposures
 		:return:
 		"""
-		dit = dit * u.s
-		nexp = np.arange(Nexp_min,Nexp_max,Nexp_step)
-		texp = len(nexp) * dit
+		texp = nexp * dit
 		#print ("nexp ",nexp[0],nexp[-1])
 		print("aperture:",aperture)
-		selected_index = 0			##### FIXME... Cual seleccionamos?
-		phi_obj_apert = self.phi_obj_total * aperture['EE'][selected_index]
-		phi_sky_apert = self.phi_sky_sangle * np.pi * aperture['Radius'][selected_index]**2
-		print ("===========================")
-		print (phi_obj_apert.unit) 
-		print (phi_sky_apert.unit)
-		print (self.detector['darkc']*aperture['Npix'][selected_index]).unit
-		print (nexp*aperture['Npix'][selected_index]*self.detector['ron']**2).unit
-		print (texp.unit)
-		print ("===========================")
-		noise = np.sqrt(texp.value*(phi_obj_apert.value+phi_sky_apert.value+(self.detector['darkc']*aperture['Npix'][selected_index]).value)+ (texp*aperture['Npix'][selected_index]*self.detector['ron']**2).value)
-		signal = texp * phi_obj_apert
-		print (signal.unit)
-		snr = signal / noise
-		return (texp,snr)
+		sn_apert_dit = self.signal_noise_dit(dit,aperture)
+		phi_obj_spect_apert = sn_apert_dit['phot_obj']
+		phi_sky_spect_apert = sn_apert_dit['phot_sky']
+        
+		print("@signal_noise_texp_spect-units phi_obj_apert ",phi_obj_spect_apert.unit)
+		print("@signal_noise_texp_spect-units phi_sky_apert ",phi_sky_spect_apert.unit)
+		unit_signal_spect = u.electron/u.angstrom        
 
-### end added by JAP
+		noise2_obj = sn_apert_dit['noise2_obj']
+		noise2_sky = sn_apert_dit['noise2_sky']
+		noise2_read = sn_apert_dit['noise2_read']
+		noise2_dark = sn_apert_dit['noise2_dark']
+		print("===========================")
+		print ("noise2_obj ",noise2_obj.to(unit_signal_spect))
+		print ("noise2_sky ",noise2_sky.to(unit_signal_spect))
+		print ("noise2_read ",noise2_read)
+		print ("noise2_dark ",noise2_dark)
+		print ("===========================")
+		noise = np.sqrt(nexp*(noise2_obj.to(unit_signal_spect).value+\
+                        noise2_sky.to(unit_signal_spect).value+\
+                        noise2_read.to(u.electron**2).value+\
+                        noise2_dark.to(u.electron).value))
+
+		signal = nexp * phi_obj_spect_apert
+		print ('@signal_noise_texp_spect -> signal',signal.to(unit_signal_spect))
+		print ('@signal_noise_texp_spect -> noise',noise)
+		snr = signal.to(unit_signal_spect).value / noise
+		return {'texp':texp,'SNR':snr,'noise':noise * unit_signal_spect,\
+             'signal':signal.to(unit_signal_spect)}
+
 
 path_absolute = os.path.realpath(__file__).split("/")
 path_absolute[len(path_absolute)-1] = ""
