@@ -70,8 +70,13 @@ class GTC_AO:
 
     def __init__(self,sky_conditions,guide_star, diam_telescope=10. * u.m,\
                  v0= 10 * u.m/u.s):
+        ##sky_conditions={'seeing':0.9,'airmass':1.2}
         self.seeing_input = sky_conditions['seeing']
         self.wave_seeing_input = sky_conditions['wave_seeing']
+        #self.airmass = sky_conditions['airmass']
+        ##guide_star={'MagnitudeR':8,'Separation':0.}
+        #self.mag_gs = guide_star['magnitudeR']
+        #self.sep_gs = guide_star['separation']
         self.mag_gs = guide_star.Magnitude
         self.sep_gs = guide_star.Separation
 
@@ -224,10 +229,6 @@ class GTC_AO:
 
         ## error due to separation of guide star relative to the pointing
         ##sigma_anisop = (dist_gs/theta_isoplan_ref)**(5./3)*(lamb_ref/lamb_mic)**2
-        print("wave_ref=",self.wave_ref)
-        print("wave_in=",wave_in)
-        print("theta_isoplan_ref_eff=",self.theta_isoplan_ref_eff)
-        print("sep_gs=", self.sep_gs)
         theta_isoplan_eff = self.theta_isoplan_ref_eff * (wave_in/self.wave_ref) ** 6/5
         sigma2_anisop = (self.sep_gs / theta_isoplan_eff) ** (5. / 3.) ## * (self.lambda_vis_mic / lamb_mic) ** 2
 
@@ -256,7 +257,7 @@ class GTC_AO:
             'wvnumber':wvnumber_in}
 
 
-    def compute_ee(self, psf, pixscale, fcore=1.5, spaxel=0,\
+    def compute_ee(self, psf, pixscale, fcore=1.5, spaxel=False,\
                    source_type='Point source'):
         """
         :param strehl:
@@ -300,8 +301,7 @@ class GTC_AO:
 
         area_per_pixel = pixscale*pixscale
         ## check if spaxel is set, then assume a spaxel as 2x1 pixel, according to FRIDA specs.
-        if (spaxel >0):
-            area_per_pixel = area_per_pixel *2.
+        if (spaxel): area_per_pixel *= 2.
 
         area_apert=np.pi*raper_ref**2 ## in arcsec
         npix_apert = area_apert / area_per_pixel
@@ -375,11 +375,10 @@ class GTC_AO:
             "sigma2_core":sigma2_core,"sigma2_halo":sigma2_halo,\
             "FWHM_core":fwhm_core.to('arcsec'),"FWHM_halo":fwhm_halo.to('arcsec')}
 
-    def set_aperture_circular(self,pixscale,radius,spaxel=0):
+    def set_aperture_circular(self,pixscale,radius,spaxel=False):
 
         area_pixel = pixscale*pixscale
-        if (spaxel >0):
-            area_pixel = area_pixel * 2.
+        if (spaxel): area_pixel *=  2.
         area_apert=np.pi*radius**2 ## in arcsec
         npix_apert = area_apert / area_pixel
 
