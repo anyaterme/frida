@@ -377,7 +377,7 @@
 					<li class="list-group-item active">Instrument Setup</li>
 					<li class="list-group-item"> Angular resolution scale <span class="badge">{{ frida_setup.pixscale|astro_unit_value:'mas' }} mas/pix </span> </li>
 					<li class="list-group-item"> Reference star/target Separation <span class="badge"> {{ guide_star.Separation }}</span> </li>
-					<li class="list-group-item"> Grating <span class="badge"> {{ grating }}</span> </li>
+					<li class="list-group-item"> Grating <span class="badge"> {{ grating.Grating }} [{{grating.Central_wave}}] </span> </li>
 				</ul>
 			</div>
 			<div class="col-xs-12 col-md-12" >
@@ -437,7 +437,7 @@
 						Strehl Ratio (Target)  <span class="badge">{{ strehl_ratio.0|percentage|floatformat }}%</span>
 					</li>
 					<li class="list-group-item"> 
-						Encircled Energy (Target)  <span class="badge">{{ encircled_energy.0|percentage|floatformat }}%</span>
+						Encircled Energy (Target)  <span class="badge">{{ encircled_energy|percentage|floatformat }}%</span>
 					</li>
 					<li class="list-group-item"> 
 						<i class="fa fa-warning text-danger"></i> Estimated {{ filter.Name }}-band ( {{ target_info.lambda_band }} ) on-axis Strehl Ratio  <span class="badge">{{ ndit }}</span>
@@ -452,6 +452,7 @@
 			</div>
 		</div>
 	</div>
+	{% comment %}
 	<div class="row">
 		<div class="col-xs-12 col-md-6" id="chart_div2">
 			<div class='panel-group'>
@@ -481,6 +482,7 @@
 			</div>
 		</div>
 	</div>
+	{% endcomment %}
 	<div class="row">
 		<div class="col-md-6 col-xs-12">
 			<div class="panel panel-primary">
@@ -535,6 +537,7 @@
 			</div>
 		</div>
 	</div>
+	{% comment %}
 	<div class="row">
 		<div class="col-xs-12">
 			<ul class="list-group">
@@ -544,6 +547,7 @@
 			</ul>
 		</div>
 	</div>
+	{% endcomment %}
 <script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
 <script src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script>
 {% endblock %}

@@ -438,7 +438,7 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 
 	lambda_ref = central_wave_grating
 	context['guide_star'] = guide_star
-	context['photons_obj'] = a.phi_obj_spect.to(photunit)
+	context['photons_obj'] = a.phi_obj_spect
 	context['frida_setup'] = a.instrument
 	context['target_info'] = target_info
 	context['sky_conditions'] = sky_conditions
@@ -448,10 +448,12 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	context['encircled_energy'] = aperture["EE"]
 	context['lambda_eff'] = lambda_ref
 	context['throughput_lambda'] = a.throughput[(np.abs(wave_array-lambda_ref)).argmin()]
+	context['grating'] = spectrograph_setup
 	context['dit'] = dit
 	context['ndit'] = Nexp
 	context['strehl_ratio'] = strehl['StrehlR']
 	context["snr"] = snr_seq
+	context['AreaNpix'] = aperture['Npix']
 
 	debug_values = debug_values + target_info.debug()
 	context['debug_values'] = debug_values

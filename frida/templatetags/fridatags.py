@@ -13,7 +13,7 @@ def percentage(value, decimals=0):
 		value = round(value*100, decimals)
 		return value
 	except:
-		return "ERROR percentage"
+		return -1
 
 @register.filter
 def list_value(dict, index):
