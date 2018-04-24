@@ -31,6 +31,16 @@ from frida.gtcao import *
 #from django.http import JsonResponse
 
 # Create your views here.
+def debug(msg=None, variable=None):
+	if msg is None and variable is None:
+		print ("%s @ HERE" % sys._getframe(1).f_code.co_name)
+	elif variable is None:
+		print ("%s @ %s"  % (sys._getframe(1).f_code.co_name, msg))
+	elif msg is None:
+		print ("%s @ %s"  % (sys._getframe(1).f_code.co_name, variable))
+	else:
+		print ("%s @ %s : %s"  % (sys._getframe(1).f_code.co_name, msg, variable))
+
 def index(request):
 	import csv
 
@@ -413,6 +423,7 @@ def calculate_ima(request):
 def calculate_ifs(request,telescope=settings.TELESCOPE):
 	debug_values = ["test ==> test_content"]
 
+	dit_pattern = float(request.POST.get('dit_pattern', "1."))
 	telescope_params = Telescope(telescope)
 	sky_conditions = get_SkyConditions(request)
 	guide_star = GuideStar(float(request.POST.get("gs_magnitude")),\
@@ -516,7 +527,10 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	context['ndit'] = Nexp
 	context['strehl_ratio'] = strehl['StrehlR']
 	context["snr"] = snr_seq
+	context["signal"] = signal_seq
+	debug('signal_seq', signal_seq)
 	context['AreaNpix'] = aperture['Npix']
+	context['dit_pattern'] = dit_pattern
 
 	debug_values = debug_values + target_info.debug()
 	context['debug_values'] = debug_values

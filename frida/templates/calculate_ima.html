@@ -343,9 +343,16 @@
 			<div class="col-xs-12">
 				<ul class="list-group">
 					<li class="list-group-item active">Instrument Setup</li>
-					<li class="list-group-item"> Angular resolution scale <span class="badge">{{ frida_setup.pixscale|astro_unit_value:'mas' }} mas/pix </span> </li>
-					<li class="list-group-item"> Reference star/target Separation <span class="badge"> {{ guide_star.Separation }}</span> </li>
+					<li class="list-group-item"> Angular resolution scale <span class="badge">{{ frida_setup.pixscale|astro_unit_value:'mas'|floatformat:0 }} mas/pix </span> </li>
 					<li class="list-group-item"> Camera Filter <span class="badge"> {{ obs_filter.info.Name }}</span> </li>
+				</ul>
+			</div>
+			<div class="col-xs-12 col-md-12" >
+				<ul class="list-group">
+					<li class="list-group-item active">Observation Setup</li>
+					<li class="list-group-item"> DIT <span class="badge">{{dit}}</span> </li>
+					<li class="list-group-item"> RON <span class="badge">{{frida_setup.detector.ron}}</span> </li>
+					<li class="list-group-item"> DIT pattern<span class="badge">{{dit_pattern}}</span> </li>
 				</ul>
 			</div>
 			{% if img_name != None %}
@@ -410,9 +417,6 @@
 					</li>
 					<li class="list-group-item"> 
 						<i class="fa fa-warning text-danger"></i> Estimated {{ filter.Name }}-band ( {{ target_info.lambda_band }} ) on-axis Strehl Ratio  <span class="badge">{{ ndit }}</span>
-					</li>
-					<li class="list-group-item"> 
-						Pixel scale in arcsec/pixel <span class="badge">{{ frida_setup.pixscale|astro_unit_value:'mas'|floatformat }} mas</span>
 					</li>
 					<li class="list-group-item"> 
 						Overall transmission at {{ obs_filter.wave_median|astro_unit:'AA'}}<span class="badge">{{ throughput_lambda|astro_unit_value|floatformat:2 }} {{throughput_lambda.unit}}</span>
