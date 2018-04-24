@@ -376,13 +376,10 @@
 						Total exposure time <span class="badge">{{ total_exposure_time }}</span>
 					</li>
 					<li class="list-group-item"> 
-						<i class="fa fa-warning text-danger"></i> Max. intensity at central pixel per DIT (object+sky)  <span class="badge">{{ signal_noise_req }}</span>
+						<i class="fa fa-warning text-danger"></i> Max. intensity at central pixel per DIT (object+sky)  <span class="badge">{{ max_signal_obj_sky_dit }}</span>
 					</li>
 					<li class="list-group-item"> 
-						<i class="fa fa-warning text-danger"></i> Detector linearity/flat-fielding limit (for this DIT) <span class="badge">{{ dit }}</span>
-					</li>
-					<li class="list-group-item"> 
-						<i class="fa fa-warning text-danger"></i> Detector saturation limit (e<sup>-</sup>) <span class="badge">{{ ndit }}</span>
+						<i class="fa fa-warning text-danger"></i> Detector saturation limit (e<sup>-</sup>) <span class="badge">{{ saturation_time }}</span>
 					</li>
 					<li class="list-group-item "> 
 						Aperture Radius (defining the S/N reference area) <span class="badge">{{ Aperture_radius|astro_unit_value:'mas'|floatformat:0 }} mas</span>
@@ -391,10 +388,10 @@
 						Number of pixels in Aperture <span class="badge">{{ AreaNpix|floatformat:0 }} pixels</span>
 					</li>
 					<li class="list-group-item"> 
-						<i class="fa fa-warning text-danger"></i> Total number of e<sup>-</sup> in Aperture (object only)<span class="badge">????</span>
+						<i class="fa fa-warning text-danger"></i> Total number of e<sup>-</sup> in Aperture (object only)<span class="badge">{{ signal_req }}</span>
 					</li>
 					<li class="list-group-item"> 
-						<i class="fa fa-warning text-danger"></i> Total number of e<sup>-</sup> in Aperture per DIT (object only, 1 DIT) <span class="badge">????</span>
+						<i class="fa fa-warning text-danger"></i> Total number of e<sup>-</sup> in Aperture per DIT (object only, 1 DIT) <span class="badge">{{ signal_req }}</span>
 					</li>
 					<li class="list-group-item"> 
 						<i class="fa fa-warning text-danger"></i> Background (1 DIT) <span class="badge">{{ signal_noise_req }}</span>
@@ -403,7 +400,7 @@
 						<i class="fa fa-warning text-danger"></i> Limiting magnitude (S/N=3) <span class="badge">{{ dit }}</span>
 					</li>
 					<li class="list-group-item"> 
-						<i class="fa fa-warning text-danger"></i> BLIP integration time <span class="badge">{{ ndit }}</span>
+						<i class="fa fa-warning text-danger"></i> BLIP integration time <span class="badge">{{ BLIP_time }}</span>
 					</li>
 					<li class="list-group-item"> 
 						Strehl Ratio (Target)  <span class="badge">{{ strehl_ratio.0|percentage|floatformat }}%</span>

@@ -269,7 +269,7 @@ class Calculator_Image:
 		static_response = instrument.compute_static_response(wave_img)
 		self.static_response = static_response
 		self.throughput = static_response["collimator"] * static_response['camera'] \
-            * static_response['qe'] * telescope.reflectivity
+            * static_response['qe'] * telescope.reflectivity * filter_trans
 		self.detector = instrument.detector
 		self.pixscale = instrument.pixscale
         
@@ -319,9 +319,14 @@ class Calculator_Image:
 		print("phi_sky/arcsec2/sec (simple  int-filter)",phi_sky_sqarc_simple,\
 			  self.phi_sky_sqarc)
         
-		print("pixscale ",instrument.pixscale)
+		phi_sky_pix = self.phi_sky_sqarc * self.pixscale**2
+		print("phi_sky_pix=",phi_sky_pix)
+		self.blip_time = (self.detector['ron']**2).to(u.electron**2).value / \
+             phi_sky_pix.to(u.electron/u.second).value * u.second 
+ 
 		self.instrument = instrument
 		self.source_type = target_info.source_type
+        
         	
 	def get_average_response(self):
 		'''
@@ -459,6 +464,7 @@ class Calculator_Image:
 		print ("noise2_read ",noise2_read)
 		print ("noise2_dark ",noise2_dark)
 		print ("===========================")
+        
 		return {'phot_obj':phi_obj_apert,'phot_sky':phi_sky_apert,\
             'noise2_obj':noise2_obj,'noise2_sky':noise2_sky,\
             'noise2_read':noise2_read,'noise2_dark':noise2_dark}
@@ -475,7 +481,7 @@ class Calculator_Image:
 		:param aperture:
 		:return:
 		"""
-		nexp = np.arange(Nexp_min,Nexp_max,Nexp_step)
+		nexp = np.arange(Nexp_min,Nexp_max+1,Nexp_step)
 		texp = nexp * dit
 		sn_apert_dit=self.signal_noise_dit(dit,aperture)
 		phi_obj_apert = sn_apert_dit['phot_obj']
@@ -626,6 +632,7 @@ class Calculator_Spect:
         
 		wave_array = grating_info.wave_array()
 		self.wave_array = wave_array
+		self.dwave_array = grating_info.delt_wave        
         
 		self.atm_trans = grating_info.interp_spect('AtmosTrans',wave_array)
 		self.sky_rad = grating_info.interp_spect('SkyRad',wave_array)
@@ -804,6 +811,52 @@ class Calculator_Spect:
 		snr = signal.to(unit_signal_spect).value / noise
 		return {'texp':texp,'SNR':snr,'noise':noise * unit_signal_spect,\
              'signal':signal.to(unit_signal_spect)}
+
+
+	def texp_signal_noise_spect(self,required_sn,dit,aperture,wave_ref,dwave_ref):
+		"""
+		Compute the exposure time needed to reach a S/N ratio at a
+		reference wavelength     
+		:param self:
+		:param required_sn:
+		:param dit:
+		:param aperture:
+		:return Nexp - texp=Nexp*dit: 
+		"""
+		mask = [(self.wave_array <= (wave_ref+dwave_ref)) & (self.wave_array >= (wave_ref-dwave_ref))]
+		sn_apert_dit=self.signal_noise_dit(dit,aperture)
+		# return phot_obj, phot_sky per aperture and dit        
+		phi_obj_apert_mask = sn_apert_dit['phot_obj'][mask]
+		phi_sky_apert_mask = sn_apert_dit['phot_sky'][mask]
+  
+		phi_obj_apert = phi_obj_apert_mask.mean()
+		phi_sky_apert = phi_sky_apert_mask.mean()
+
+		noise2_obj_mask = sn_apert_dit['noise2_obj'][mask]
+		noise2_sky_mask = sn_apert_dit['noise2_sky'][mask]
+		noise2_obj = noise2_obj_mask.mean()
+		noise2_sky = noise2_sky_mask.mean()
+		noise2_read = sn_apert_dit['noise2_read']
+		noise2_dark = sn_apert_dit['noise2_dark']
+
+		unit_signal_spect = u.electron/u.angstrom        
+		unit_signal = u.electron
+
+		print ("===========================")
+		print ('@texp_signal_noise_spect -> phi_obj_apert',phi_obj_apert)
+		print ('@texp_signal_noise_spect -> phi_sky_apert',phi_sky_apert)
+		print ('@texp_signal_noise_spect -> darkc',self.detector['darkc'])
+		print ('@texp_signal_noise_spect -> ron',self.detector['ron']**2)
+		print ("===========================")
+		noise2_val = noise2_obj.to(unit_signal_spect).value+\
+                        noise2_sky.to(unit_signal_spect).value+noise2_read.value+\
+                        noise2_dark.value
+		signal2 = phi_obj_apert**2
+		signal2_val = signal2.to(unit_signal_spect*unit_signal_spect).value
+
+		nexp = int(np.ceil(required_sn**2 * noise2_val / signal2_val))
+
+		return nexp
 
 
 path_absolute = os.path.realpath(__file__).split("/")

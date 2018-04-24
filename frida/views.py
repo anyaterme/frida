@@ -266,6 +266,15 @@ def calculate_ima(request):
 	## if extended it will as reference area 1 pixel, fcore will be the
 	aperture=aocor.compute_ee(psf,pixscale,fcore=fcore,\
                                source_type=target_info.source_type)
+	if (target_info.source_type == "Point source"):
+		fcore_seq = np.logspace(-1,2,num=20)
+		aperture_seq = aocor.compute_ee(psf,pixscale,fcore=fcore_seq,\
+		  source_type=target_info.source_type)
+    
+		for i in range(len(fcore_seq)):
+		    print("aperture_seq['Radius','EE']",aperture_seq['Radius'][i],\
+                 aperture_seq['EE'][i]*100) 
+    
 	a.debug_values['Radius='] = aperture['Radius'] 
 	a.debug_values['EE='] = aperture['EE'] 
 	a.debug_values['EE-core='] = aperture['EE-core'] 
@@ -274,17 +283,33 @@ def calculate_ima(request):
 
 	dit = float(request.POST.get('DIT_exp','1')) * u.second
 	Nexp = int(request.POST.get('N_exp','1'))
+	dit = float(request.POST.get('DIT_exp')) * u.second
+	signal_noise_dit = a.signal_noise_dit(dit,aperture)
 
 	calc_method = request.POST.get('type_results')
-	dit = float(request.POST.get('DIT_exp')) * u.second
-	Nexp = int(request.POST.get('N_exp'))
-	Nexp_min = min(1,Nexp-10)
-	Nexp_max = Nexp+20
-	Nexp_step = (Nexp_max-Nexp_min)/30
+	if (calc_method=="SN_ratio"):
+		signal_noise= float(request.POST.get('signal_noise'))
+		required_sn = signal_noise
+		ndit = a.texp_signal_noise_img(required_sn,dit,aperture)
+		Nexp = ndit
+	else:
+		Nexp = int(request.POST.get('N_exp'))
+
+	Nexp_min = max(1,Nexp-2)
+	Nexp_max = Nexp+2
+	Nexp_step = (Nexp_max-Nexp_min)/5
 	signal_noise_seq = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,aperture)
 	texp_seq = signal_noise_seq['texp']
 	snr_seq = signal_noise_seq['SNR']
-	signal_seq = signal_noise_seq['signal']
+	signal_required_sn = signal_noise_seq['signal'][np.where(texp_seq == Nexp * dit)]
+	required_sn = snr_seq[np.where(texp_seq == Nexp * dit)]
+
+	'''
+	Nexp = int(request.POST.get('N_exp'))
+	Nexp_min = max(1,Nexp-10)
+	Nexp_max = Nexp+20
+	Nexp_step = (Nexp_max-Nexp_min)/30
+	signal_noise_seq = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,aperture)
 
 
 	## JAP - FIXME no esta claro que sea necesario 
@@ -303,6 +328,7 @@ def calculate_ima(request):
 		print (exc_type, exc_obj, exc_tb.tb_frame.f_code.co_filename, exc_tb.tb_lineno)
 		msg_err["ERROR GENERIC"]=("%s" % e)
 		return render(request, "error.html", {'msg_err':msg_err})
+	'''
 
 	## compute image using PSF information 
 	limit_window = (128,128)
@@ -313,8 +339,20 @@ def calculate_ima(request):
 	else:
          print('no units im_psf2d ')
 	## now scale with the signal, psf is normalize to have area unity 
-	im_signal_obj = a.phi_obj_total*im_psf2d*aperture['Area_pixel']
+	if (target_info.source_type == "Point source"):
+		im_signal_obj = a.phi_obj_total*im_psf2d
+		max_signal_obj = np.amax(im_signal_obj)
+		max_signal_obj_sky = max_signal_obj + a.phi_sky_sqarc*aperture['Area_pixel']
+	elif (target_info.source_type == "Extended source"):        
+		max_signal_obj = a.phi_obj_total*aperture['Area_pixel']
+		max_signal_obj_sky = max_signal_obj + a.phi_sky_sqarc*aperture['Area_pixel']
 
+	max_signal_obj_sky_dit = dit * max_signal_obj_sky
+	saturation_time = a.instrument.detector["welldepth"] / max_signal_obj_sky       
+
+	print("max_signal_obj,obj_sky=",max_signal_obj.to(u.electron/u.second),\
+       max_signal_obj_sky.to(u.electron/u.second))  
+    
 	## create png
 	context = {}
 	name = None
@@ -347,7 +385,6 @@ def calculate_ima(request):
 	context['static_response'] = static_response
 	context['throughput'] = throughput
 	context['throughput_lambda'] = throughput[(np.abs(a.img_wave-obs_filter.wave_median)).argmin()]
-	a.debug_values['throughput_lambda_index'] =(np.abs(obs_filter.wave-obs_filter.wave_median)).argmin()
 	context['atrans'] = a.atmostrans
 	context['sky_rad'] = a.skyemission_photons
 	context['global_effic'] = a.throughput 
@@ -355,13 +392,19 @@ def calculate_ima(request):
 	context['texp_array'] = texp_seq
 	context['snr'] = snr_seq
 	context["obs_filter"] = obs_filter
-	a.debug_values['Filter Wave'] = a.img_wave.to(u.AA)
-	a.debug_values['Filter Trans Wave'] = a.img_filter_trans
-	context['debug_values'] = a.debug_values
+	context['signal_req'] = signal_required_sn
+	context['max_signal_obj_sky_dit'] = max_signal_obj_sky_dit 
 	context['signal_noise_req'] = required_sn
 	context['total_exposure_time'] = dit * Nexp
 	context['dit'] = dit
 	context['ndit'] = Nexp
+	context['saturation_time'] = saturation_time
+	context['BLIP_time'] = a.blip_time
+
+	a.debug_values['throughput_lambda_index'] =(np.abs(obs_filter.wave-obs_filter.wave_median)).argmin()
+	a.debug_values['Filter Wave'] = a.img_wave.to(u.AA)
+	a.debug_values['Filter Trans Wave'] = a.img_filter_trans
+	context['debug_values'] = a.debug_values
 
 	return render(request, 'calculate_ima.html', context)
 
@@ -411,20 +454,42 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	aperture=aocor.compute_ee(psf,pixscale,fcore=fcore,\
                 source_type=target_info.source_type,spaxel=True)
 
-	dit = float(request.POST.get('DIT_exp','1')) * u.second
-	Nexp = int(request.POST.get('N_exp','1'))
+	dit = float(request.POST.get('DIT_exp','10')) * u.second
+	wave_ref = float(request.POST.get('ifs_lambda_ref')) * u.angstrom
+	dwave_ref = 10. * u.angstrom  ## FIXME (should be obtained from WEB-interface)
+	calc_method = request.POST.get('type_results')
+	signal_noise= float(request.POST.get('signal_noise'))
+	if (calc_method=="SN_ratio"):
+		required_sn = signal_noise
+		ndit = a.texp_signal_noise_spect(required_sn,dit,aperture,wave_ref,dwave_ref)
+		print('ndit',ndit)
+		Nexp = ndit
+	else:
+		Nexp = int(request.POST.get('N_exp','1'))
 
+
+	'''
 	calc_method = request.POST.get('type_results')
 	signal_noise= float(request.POST.get('signal_noise'))
 	required_sn = signal_noise
 	dit = float(request.POST.get('DIT_exp','10')) * u.second
 	Nexp = int(request.POST.get('N_exp','1'))
 	signal_noise= float(request.POST.get('signal_noise'))
+	'''
+	## compute S/N at reference wavelength at different exposure times
 
-	signal_noise_seq = a.signal_noise_texp_spect(Nexp,dit,aperture)
-	texp_seq = signal_noise_seq['texp']
-	snr_seq = signal_noise_seq['SNR']
-	signal_seq = signal_noise_seq['signal']
+	Nexp_min = max(1,Nexp-2)
+	Nexp_max = Nexp+2
+	Nexp_step = (Nexp_max-Nexp_min)/5
+	#signal_noise_seq = a.signal_noise_texp_seq_spect(Nexp_min,Nexp_max,Nexp_step,\
+    #                        dit,aperture,wave_ref,dwave_ref)
+	#texp_seq = signal_noise_seq['texp']
+	#snr_seq = signal_noise_seq['SNR']
+	#signal_seq = signal_noise_seq['signal']
+	signal_noise_nexp = a.signal_noise_texp_spect(Nexp,dit,aperture)
+	texp_seq = signal_noise_nexp['texp']
+	snr_seq = signal_noise_nexp['SNR']
+	signal_seq = signal_noise_nexp['signal']
     
 	print("@calculate_ifs -> snr_seq",snr_seq)
 

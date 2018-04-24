@@ -59,7 +59,7 @@ def build_psf2d_2gauss(psf_2gauss,pixscale,Nx=2048,Ny=2048):
 
     psf2d  = halo2d+core2d
 
-    return psf2d
+    return psf2d * pixscale * pixscale
 
 
 
