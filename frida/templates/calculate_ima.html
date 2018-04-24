@@ -3,7 +3,6 @@
 {% block content %}
 	<script>
 		window.onload = function () {
-
 		var options = {
 			exportEnabled: true,
 			animationEnabled: false,
@@ -155,55 +154,6 @@
 		};
 		$("#atransContainer").CanvasJSChart(options_atrans);
 
-		{%comment%}
-		var options_global_effic= {
-			exportEnabled: true,
-			animationEnabled: false,
-			zoomEnabled:true,
-			theme:"light2",
-			title:{
-				text: "Global Effic"
-			},
-			subtitles: [{
-				text: "Click Legend to Hide or Unhide Data Series"
-			}],
-			axisX: {
-				title: "\u03BB [\u212B]"
-			},
-			axisY: {
-				title: "",
-				titleFontColor: "#4F81BC",
-				lineColor: "#4F81BC",
-				labelFontColor: "#4F81BC",
-				tickColor: "#4F81BC",
-				includeZero: false,
-				valueFormatString: "0.000"
-			},
-			toolTip: {
-				shared: true
-			},
-			legend: {
-				cursor: "pointer",
-				itemclick: toggleDataSeries
-			},
-			data: [{
-				type: "spline",
-				name: "Global Effic",
-				showInLegend: true,
-				xValueFormatString: "#####.## AA",
-				yValueFormatString: "0.### ",
-				dataPoints: [
-					{% for my_value in global_effic %}
-						{% with lambda=wave_array|list_value:forloop.counter0 %}
-						{ x: {{ lambda.value }}, y: {{my_value.value}} },
-						{% endwith %}
-					{% endfor %}
-				]
-			}
-			]
-		};
-		$("#global_efficContainer").CanvasJSChart(options_global_effic);
-		{%endcomment%}
 		var options_sky_rad= {
 			exportEnabled: true,
 			animationEnabled: false,
@@ -300,6 +250,55 @@
 			]
 		};
 		$("#snrContainer").CanvasJSChart(options_snr);
+		{% endif %}
+		{% if EE_graph and not target_info.extended %}
+		var options_EE= {
+			exportEnabled: true,
+			animationEnabled: false,
+			zoomEnabled:true,
+			theme:"light2",
+			title:{
+				text: "Encircle Energy vs Radius"
+			},
+			subtitles: [{
+				text: "Click Legend to Hide or Unhide Data Series"
+			}],
+			axisX: {
+				title: "Aperture Radius [{{Aperture_radius_seq.unit}}]" 
+			},
+			axisY: {
+				title: "Encircled Energy [%]",
+				titleFontColor: "#4F81BC",
+				lineColor: "#4F81BC",
+				labelFontColor: "#4F81BC",
+				tickColor: "#4F81BC",
+				includeZero: false,
+				valueFormatString: "#0.00"
+			},
+			toolTip: {
+				shared: true
+			},
+			legend: {
+				cursor: "pointer",
+				itemclick: toggleDataSeries
+			},
+			data: [{
+				type: "spline",
+				name: "Encircled Energy [%]",
+				showInLegend: true,
+				xValueFormatString: "##### {{Aperture_radius_seq.unit}}",
+				yValueFormatString: "#0.00",
+				dataPoints: [
+					{% for my_value in encircled_energy_seq %}
+						{% with lambda=Aperture_radius_seq|astro_unit_value|list_value:forloop.counter0 %}
+						{ x: {{ lambda }}, y: {{my_value}} * 100 },
+						{% endwith %}
+					{% endfor %}
+				]
+			}
+			]
+		};
+		$("#EEContainer").CanvasJSChart(options_EE);
 		{% endif %}
 
 		function toggleDataSeries(e) {
@@ -461,6 +460,16 @@
 				<div class="panel-heading">SNR</div>
 				<div class="panel-body">
 					<div id="snrContainer" style="height: 400px; max-width: 920px; width:100%; margin: 0px auto;"></div>
+				</div>
+			</div>
+		</div>
+		{% endif %}
+		{% if EE_graph and not target_info.extended %}
+		<div class="col-md-6 col-xs-12">
+			<div class="panel panel-primary">
+				<div class="panel-heading">Encircled Energy vs Radius</div>
+				<div class="panel-body">
+					<div id="EEContainer" style="height: 400px; max-width: 920px; width:100%; margin: 0px auto;"></div>
 				</div>
 			</div>
 		</div>

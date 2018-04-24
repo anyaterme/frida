@@ -393,6 +393,8 @@ def calculate_ima(request):
 	context['strehl_ratio'] = strehl['StrehlR']
 	context['encircled_energy'] = aperture["EE"]
 	context['Aperture_radius'] = aperture['Radius']
+	context['encircled_energy_seq'] = aperture_seq["EE"]
+	context['Aperture_radius_seq'] = aperture_seq['Radius']
 	context['pixscale'] = pixscale
 	context['AreaNpix'] = aperture['Npix']
 	context['static_response'] = static_response
@@ -419,6 +421,8 @@ def calculate_ima(request):
 	context['darkc'] = a.instrument.detector['darkc'] * dit
 	
 	context['snr_graph'] = (request.POST.get("sn_as_exp_time", "off") == "on")
+	context['EE_graph'] = (request.POST.get("enc_energy_aperture_radius", "off") == "on")
+
 
 	a.debug_values['throughput_lambda_index'] =(np.abs(obs_filter.wave-obs_filter.wave_median)).argmin()
 	a.debug_values['Filter Wave'] = a.img_wave.to(u.AA)
