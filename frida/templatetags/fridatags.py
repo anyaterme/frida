@@ -16,6 +16,26 @@ def percentage(value, decimals=0):
 		return -1
 
 @register.filter
+def astro_round(quantity, decimals=0):
+	try:
+		myfmt = "{0.value:0.0%df} {0.unit}" % decimals
+		return myfmt.format(quantity)
+	except:
+		myfmt = "{0.value:0.0%df} {0.unit}" % decimals
+		return myfmt.format(quantity[0])
+
+@register.simple_tag
+def astro_round_to(quantity, decimals=0, unit=None):
+	if unit is not None:
+		quantity = quantity.to(unit)
+	try:
+		myfmt = "{0.value:0.0%df} {0.unit}" % decimals
+		return myfmt.format(quantity)
+	except:
+		myfmt = "{0.value:0.0%df} {0.unit}" % decimals
+		return myfmt.format(quantity[0])
+
+@register.filter
 def list_value(dict, index):
 	return dict[index]
 

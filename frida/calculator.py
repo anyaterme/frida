@@ -132,6 +132,7 @@ class TargetInfo:
 		self.flux_scale = flux_scale
 		self.sed_wave = sed_wave[mask]
 		self.sed_flambda = sed_flambda[mask]
+		self.extended = extended
 		if (extended):
 		    self.sed_flambda /= u.arcsec**2 
 
@@ -180,7 +181,6 @@ class TargetInfo:
 		"""
 		phot_wave = self.flambda_wave(wave)/energy_photon(wave) #const.h/const.c*wave
 		return phot_wave
-
 
 #zeropoint=  {
 #					"I":[0.79, 7.91, 7.77],

@@ -284,7 +284,7 @@ def calculate_ima(request):
 		for i in range(len(fcore_seq)):
 		    print("aperture_seq['Radius','EE']",aperture_seq['Radius'][i],\
                  aperture_seq['EE'][i]*100) 
-    
+   
 	a.debug_values['Radius='] = aperture['Radius'] 
 	a.debug_values['EE='] = aperture['EE'] 
 	a.debug_values['EE-core='] = aperture['EE-core'] 
@@ -311,8 +311,9 @@ def calculate_ima(request):
 	signal_noise_seq = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,aperture)
 	texp_seq = signal_noise_seq['texp']
 	snr_seq = signal_noise_seq['SNR']
-	signal_required_sn = signal_noise_seq['signal'][np.where(texp_seq == Nexp * dit)]
-	required_sn = snr_seq[np.where(texp_seq == Nexp * dit)]
+	aux = np.abs(texp_seq - Nexp*dit)
+	signal_required_sn = signal_noise_seq['signal'][aux.argmin()]
+	required_sn = snr_seq[aux.argmin()]
 
 	'''
 	Nexp = int(request.POST.get('N_exp'))
@@ -377,9 +378,11 @@ def calculate_ima(request):
 		## now scale with the signal, psf is normalize to have area unity 
 	print('phi_sky_sqarc.unit',a.phi_sky_sqarc)
 	print('Unit aperture[Area_pixel]=',aperture['Area_pixel'].unit)
-     
+
+	dit_pattern = float(request.POST.get('dit_pattern', '1.0'))
     
 	context['Object_magnitude'] = target_info.Magnitude,
+	context['dit_pattern'] = dit_pattern
 	context['target_info'] = target_info
 	context['filter_trans_wave'] = a.img_wave.to(u.AA)
 	context['filter_trans'] = a.img_filter_trans 
@@ -403,13 +406,19 @@ def calculate_ima(request):
 	context['snr'] = snr_seq
 	context["obs_filter"] = obs_filter
 	context['signal_req'] = signal_required_sn
+	context['signal_req_per_dit'] = signal_required_sn / Nexp
 	context['max_signal_obj_sky_dit'] = max_signal_obj_sky_dit 
 	context['signal_noise_req'] = required_sn
 	context['total_exposure_time'] = dit * Nexp
 	context['dit'] = dit
 	context['ndit'] = Nexp
-	context['saturation_time'] = saturation_time
+	context['saturation_time'] = saturation_time.to(u.s)
 	context['BLIP_time'] = a.blip_time
+	context['background'] = a.phi_sky_sqarc*aperture['Area_pixel']*dit
+	context['fwhm_core'] = psf['FWHM_core'].to(u.mas)
+	context['darkc'] = a.instrument.detector['darkc'] * dit
+	
+	context['snr_graph'] = (request.POST.get("sn_as_exp_time", "off") == "on")
 
 	a.debug_values['throughput_lambda_index'] =(np.abs(obs_filter.wave-obs_filter.wave_median)).argmin()
 	a.debug_values['Filter Wave'] = a.img_wave.to(u.AA)
@@ -531,6 +540,7 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	debug('signal_seq', signal_seq)
 	context['AreaNpix'] = aperture['Npix']
 	context['dit_pattern'] = dit_pattern
+	context['darkc'] = a.instrument.detector['darkc'] * dit
 
 	debug_values = debug_values + target_info.debug()
 	context['debug_values'] = debug_values
