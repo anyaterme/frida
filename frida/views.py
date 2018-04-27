@@ -367,7 +367,7 @@ def calculate_ima(request):
 	## create png
 	context = {}
 	name = None
-	if request.POST.get("2d_psf", "off") == "on":
+	if (request.POST.get("2d_psf", "off") == "on") and (target_info.source_type == "Point source"):
 		plt.imshow(im_signal_obj.value, cmap='hot')
 		name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 		print('file name=',name)
@@ -393,8 +393,8 @@ def calculate_ima(request):
 	context['strehl_ratio'] = strehl['StrehlR']
 	context['encircled_energy'] = aperture["EE"]
 	context['Aperture_radius'] = aperture['Radius']
-	context['encircled_energy_seq'] = aperture_seq["EE"]
-	context['Aperture_radius_seq'] = aperture_seq['Radius']
+	#context['encircled_energy_seq'] = aperture_seq["EE"]
+	#context['Aperture_radius_seq'] = aperture_seq['Radius']
 	context['pixscale'] = pixscale
 	context['AreaNpix'] = aperture['Npix']
 	context['static_response'] = static_response
