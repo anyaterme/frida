@@ -4,13 +4,14 @@ from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 import datetime
+import numpy as np
 
 register = template.Library()
 
 @register.filter
 def percentage(value, decimals=0):
 	try:
-		value = round(value*100, decimals)
+		value = np.round(value*100, decimals)
 		return value
 	except:
 		return -1
