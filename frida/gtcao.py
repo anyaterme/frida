@@ -2,6 +2,9 @@ import numpy as np
 from scipy.interpolate import interp1d,interp2d
 import astropy.units as u
 from frida.aux_functions import interpol2newwave
+from scipy.special import jv
+from frida.genpsf import *
+
 
 doublepi = 2. * np.pi
 
@@ -28,40 +31,6 @@ def compute_r0(wave_in,seeing_ref,wave_ref=0.5 * u.micron):
 def compute_seeing_lambda(wave_in,seeing_wave_ref,wave_ref= 0.5*u.micron):
     seeing = seeing_wave_ref * (wave_ref/wave_in) **(1./5)
     return seeing.to('arcsec')
-
-def build_psf2d_2gauss(psf_2gauss,pixscale,Nx=2048,Ny=2048):
-    """
-    Produce a 2D image with a centred PSF, using 2048x2048 pixels with the 
-    a given pixel scale. 
-    It is modelled as the sum of 2 Gaussian functions: one for the core 
-    (width depends linearly on the wavelength) plus one for halo (~seeing)
-    :param strehl: Strehl ratio
-    :param sigma_core: Width of the core Gaussian (diffraction limit core)
-    :param sigma_halo: Width of the halo Gaussian (seeing)
-    :return:
-        
-    """
-    im_psf = np.array([np.zeros(Nx),np.zeros(Ny)])
-    
-    center = np.array([Nx/2.,Ny/2.])-0.5
-    x = (np.arange(Nx)-Nx/2+0.5)*pixscale
-    y = (np.arange(Ny)-Ny/2+0.5)*pixscale
-    xv, yv = np.meshgrid(x, y, sparse=False, indexing='xy')
-    rho = np.sqrt(xv*xv+yv*yv)
-    
-    amp_core = psf_2gauss["Amp_core"]
-    amp_halo = psf_2gauss["Amp_halo"]
-    sigma_core = psf_2gauss["FWHM_core"]/2.35
-    sigma_halo = psf_2gauss["FWHM_halo"]/2.35
-    
-    halo2d = amp_halo * np.exp(-rho**2/2/sigma_halo**2)
-    core2d = amp_core * np.exp(-rho**2/2/sigma_core**2)
-
-    psf2d  = halo2d+core2d
-
-    return psf2d * pixscale * pixscale
-
-
 
 class GTC_AO:
     """
@@ -107,9 +76,9 @@ class GTC_AO:
         mag_gs_tmin = 12.5
         c2_texp = 0.9
         if (self.mag_gs < mag_gs_tmin):
-            texp_ms = 2.
+            texp_ms = 0.5
         else:
-            texp_ms = 2. + (self.mag_gs - mag_gs_tmin) ** 2 * c2_texp
+            texp_ms = 0.5 + (self.mag_gs - mag_gs_tmin) ** 2 * c2_texp
         texp_ms *= u.ms     
 
         ## Parameters p0, p1 & p2 are extracted from table 1.3 RPT/OPTI/0252-R (GTCAO System Error Budgets) 3.A
@@ -174,13 +143,13 @@ class GTC_AO:
         sigma2_fitting *= airmass
 
         ####################################################
-        ## bandwidth errors (taken from Table 5 - Ref 1)
+        ## bandwidth errors (taken from Table 4 - Ref 1)
         ##  value for turbulent speed (\nu) = 10 m/s
         ##   r0 [cm]     |  20    |  15.6  | 6.7
         ##   Sigma [nm]  |   54.  |  67.   | 135
         r0_bandwidth_tab = [20., 15.6, 6.7]* u.cm
         v0_bandwidth_tab = [10.,15.] * u.m / u.s
-        sigma_bandwidth_tab = [[54., 67., 135.],[76,94,189.]] * u.nm
+        sigma_bandwidth_tab = [[26., 30., 64.],[36,44,89.]] * u.nm
 
         r0_interp = r0_0p5mic_cm
         v0_interp = self.v0.to('m/s')
@@ -256,7 +225,6 @@ class GTC_AO:
             'sigma2_anisop': sigma2_anisop,'nphot':nphot,'Texp_ms':texp_ms,\
             'wvnumber':wvnumber_in}
 
-
     def compute_ee(self, psf, pixscale, fcore=1.5, spaxel=False,\
                    source_type='Point source'):
         """
@@ -267,48 +235,14 @@ class GTC_AO:
         :param fcore:
         :return:
         """
-        if (source_type == "Point source"):
-           raper_ref = fcore * psf["FWHM_core"]
-        else:
-           raper_ref = fcore * pixscale
-            
-        # raper_core=raper_ref/sigma_core
+        if (psf["Model_PSF"] == 'Airy+Gaussian'):
+            ee_dict = compute_ee_AiryGauss(psf,pixscale,fcore=fcore,spaxel=spaxel)
+        if (psf["Model_PSF"] == '2-Gaussians'):
+            ee_dict = compute_ee_2Gauss(psf,pixscale,fcore=fcore,spaxel=spaxel)
 
-        raper2_ref = raper_ref**2
-        sigma2_halo = psf["sigma2_halo"]
-        sigma2_core = psf["sigma2_core"]
-        print("=========================")
-        print("raper2_ref=",raper2_ref) 
-        print("sigma2_halo=",sigma2_halo) 
-        print("sigma2_core=",sigma2_core) 
-        print("=========================") 
+        return ee_dict
 
-        #psf = compute_psf(strehl, sigma_core, sigma_halo)
 
-        if (source_type == "Point source"):
-            A_core = psf['Amp_core']
-            A_halo = psf['Amp_halo']
-            ee_core = doublepi * A_core * sigma2_core * \
-                 (1 - np.exp(-raper2_ref/2./sigma2_core))        
-            ee_halo = doublepi * A_halo * sigma2_halo * \
-                 (1 - np.exp(-raper2_ref/2./sigma2_halo))             
-            ee = ee_core + ee_halo 
-        else: 
-            ee_core = 1.              
-            ee_halo = 0.              
-            ee = ee_core + ee_halo 
-            ## extended source
-
-        area_per_pixel = pixscale*pixscale
-        ## check if spaxel is set, then assume a spaxel as 2x1 pixel, according to FRIDA specs.
-        if (spaxel): area_per_pixel *= 2.
-
-        area_apert=np.pi*raper_ref**2 ## in arcsec
-        npix_apert = area_apert / area_per_pixel
-
-        return {'EE': ee,'EE-core': ee_core,'EE-halo': ee_halo, 'Radius':raper_ref, \
-                'Npix':npix_apert, 'Area':area_apert,\
-                'Area_pixel':area_per_pixel}
 
     def compute_ee_box(self, psf,fcore=1.5,slit_width=2):
         """
@@ -343,7 +277,44 @@ class GTC_AO:
 
         return {'EE': ee,'EE1': ee1, 'ApertRad':raper_ref}
 
-    def compute_psf(self,wave,strehl):
+    def define_psf_AiryGauss(self,wave,strehl):
+        """
+        The PSF is normalized to have area equals unity.
+        :param strehl: Strehl ratio
+        :param sigma_core: Width of the core Gaussian (diffraction limit core)
+        :param sigma_halo: Width of the halo Gaussian (seeing)
+        :return:
+            
+        """
+        
+        fwhm_core = 0.0242 * u.arcsec * (wave/u.micron) * (10.4 * u.m/ self.diam_telescope)
+        ## seeing is assumed to be measured at 5000AA = 0.5 microns
+        fwhm_halo = compute_seeing_lambda(wave,self.seeing_input,self.wave_seeing_input)
+
+        # homogeneize units to arcsec 
+        fwhm_core = fwhm_core.to('arcsec')
+        fwhm_halo = fwhm_halo.to('arcsec')
+  
+        sigma2_halo = (fwhm_halo / 2.35)**2
+        sigma2_core = (fwhm_core / 2.35)**2
+        rad2arcsec = (1.*u.radian).to(u.arcsec)
+        # compute in arcsec^2 
+        print("rad2arcsec=",rad2arcsec)
+        print("denom0=",doublepi*sigma2_halo)
+        print("denom1=",4/np.pi*(wave/self.diam_telescope*rad2arcsec)**2)
+        denominator = (doublepi*sigma2_halo-4/np.pi*(wave/self.diam_telescope*rad2arcsec)**2)
+        print("denominator=",denominator)
+        amp_core_norm = (np.pi**2/2.*sigma2_halo.to(u.radian**2).value*strehl*(self.diam_telescope/wave)**2-1)/\
+              denominator
+        amp_halo_norm = (1-strehl)/denominator 
+
+        return {"Model_PSF":'Airy+Gaussian',\
+            "Diameter": self.diam_telescope,"Wave":wave, \
+            "Amp_core": amp_core_norm, "Amp_halo": amp_halo_norm, \
+            "sigma2_core":sigma2_core,"sigma2_halo":sigma2_halo,\
+            "FWHM_core":fwhm_core.to('arcsec'),"FWHM_halo":fwhm_halo.to('arcsec')}
+
+    def define_psf_2Gauss(self,wave,strehl):
         """
         The PSF is normalized to have area equals unity.
         :param strehl: Strehl ratio
@@ -375,6 +346,51 @@ class GTC_AO:
             "sigma2_core":sigma2_core,"sigma2_halo":sigma2_halo,\
             "FWHM_core":fwhm_core.to('arcsec'),"FWHM_halo":fwhm_halo.to('arcsec')}
 
+
+    def compute_psf(self,model,wave,strehl):
+        """
+        The PSF is normalized to have area equals unity.
+        :param strehl: Strehl ratio
+        :param sigma_core: Width of the core Gaussian (diffraction limit core)
+        :param sigma_halo: Width of the halo Gaussian (seeing)
+        :return:
+            
+        """
+        
+        if (model == 'Airy+Gaussian'):
+            psf=self.define_psf_AiryGauss(wave,strehl)
+        else:
+            psf=self.define_psf_2Gauss(wave,strehl)
+
+        return psf
+
+    """
+    def compute_psf(self,wave,strehl):
+        
+        fwhm_core = 0.0242 * u.arcsec * (wave/u.micron) * (10.4 * u.m/ self.diam_telescope)
+        ## seeing is assumed to be measured at 5000AA = 0.5 microns
+        fwhm_halo = compute_seeing_lambda(wave,self.seeing_input,self.wave_seeing_input)
+
+        # homogeneize units to arcsec 
+        fwhm_core = fwhm_core.to('arcsec')
+        fwhm_halo = fwhm_halo.to('arcsec')
+  
+        sigma2_halo = (fwhm_halo / 2.35)**2
+        sigma2_core = (fwhm_core / 2.35)**2
+
+        amp_core_norm = 1. / doublepi / (sigma2_halo - sigma2_core) * \
+            (strehl*sigma2_halo/sigma2_core -1.)
+
+        amp_halo_norm = 1. / doublepi / sigma2_halo * (1. - (strehl*sigma2_halo-sigma2_core)/\
+                                         (sigma2_halo - sigma2_core))
+
+        return {"Model_PSF":'2-Gaussians',\
+            "Amp_core": amp_core_norm, "Amp_halo": amp_halo_norm, \
+            "sigma2_core":sigma2_core,"sigma2_halo":sigma2_halo,\
+            "FWHM_core":fwhm_core.to('arcsec'),"FWHM_halo":fwhm_halo.to('arcsec')}
+    """
+
+    """
     def set_aperture_circular(self,pixscale,radius,spaxel=False):
 
         area_pixel = pixscale*pixscale
@@ -383,3 +399,4 @@ class GTC_AO:
         npix_apert = area_apert / area_pixel
 
         return {'radius':radius,'area_aperture':area_aperture,'Npix':npix_apert,'area_pixel':area_pixel}
+    """
