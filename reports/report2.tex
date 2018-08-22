@@ -1,0 +1,22 @@
+\documentclass{article}
+
+% Load the package
+\usepackage[acronym,automake]{glossaries}
+
+% Generate the glossary
+\makeglossaries
+
+\begin{document}
+
+%Term definitions
+\newglossaryentry{utc}{name=UTC, description={Coordinated Universal Time}}
+\newglossaryentry{adt}{name=ADT, description={Atlantic Daylight Time}}
+\newglossaryentry{est}{name=EST, description={Eastern Standard Time}}
+
+% Use the terms
+\gls{utc} is 3 hours behind \gls{adt} and 10 hours ahead of \gls{est}.
+
+%Print the glossary
+\printglossaries
+
+\end{document}
