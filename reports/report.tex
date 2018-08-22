@@ -38,10 +38,18 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{subcaption}
+\usepackage{utopia}
+\pagestyle{headings}
 
 \usepackage[colorinlistoftodos]{todonotes}
 \usepackage[acronym,automake]{glossaries}
 \usepackage{hyperref}
+\usepackage[font=small,labelfont=bf]{caption}
+
+\renewcommand{\baselinestretch}{1.5}
+
+
+\raggedbottom                            %Evita que LaTeX distribuya los espacios en blanco sobre la página, en lugar de eso los envía al fondo
 
 \makeglossaries
 \input{./acronimos.tex}
@@ -87,7 +95,7 @@ Jos\'e Acosta
 \end{flushright}
 \end{minipage}\\[2cm]
 
-% If you don't want a supervisor, uncomment the two lines below and remove the section above
+% If you don't want a supervisor, uncomment the two lines below and remove the subsection above
 %\Large \emph{Author:}\\
 %John \textsc{Smith}\\[3cm] % Your name
 
@@ -121,12 +129,12 @@ Jos\'e Acosta
 \end{titlepage}
 
 
-\begin{abstract}
-Este documento describe el ETC de FRIDA en modo imagen y en modo IFS. Este calculador sigue una metodolog\'ia similar a la de otros instrumentos que tambi\'en utilizan \'optica adaptativa. La calculadora ha sido desarrolla utilizando python, HTML5 y CSS3, estando disponible v\'ia web.
-\end{abstract}
+%\begin{abstract}
+%Este documento describe el ETC de FRIDA en modo imagen y en modo IFS. Este calculador sigue una metodolog\'ia similar a la de otros instrumentos que tambi\'en utilizan \'optica adaptativa. La calculadora ha sido desarrolla utilizando python, HTML5 y CSS3, estando disponible v\'ia web.
+%\end{abstract}
 \printacronyms
 \section{Requerimientos}
-El ETC est\'a disponible v\'ia web a trav\'es de la url \url{http://frida.shidix.es}, alojada en un servidor propio del Instituto de Astrof\'isica de Canarias. El código fuente está disponible a través de un repositorio git, sujeto a control de versiones. 
+El ETC est\'a disponible v\'ia web a trav\'es de la url \url{http://frida.shidix.es}, alojada en un servidor propio del Instituto de Astrof\'isica de Canarias. El código fuente está disponible a través de un repositorio git, sujeto a control de versiones.  
 
 La interfaz web ha sido implementada utilizando el framework Django, desarrollado en Python, junto con el framework Bootstrap, desarrollado en HTML5 y CSS3; estas herramientas son open source, y están disponibles para su descarga en \url{https://www.djangoproject.com/download/} y \url{https://getbootstrap.com/docs/3.3/getting-started#download}.
 
@@ -148,14 +156,49 @@ El ETC tiene dos modos independientes: modo imagen y modo IFS.
     \item Se puede utlizar como entrada un conjunto de modelos para la PSF.
     \item Se han incluido diferentes distribuciones espectrales: cuerpo negro, ley de potencia, plantillas de estrellas y plantillas de galaxias.
 \end{itemize}
+
+\section{Estructura de la Web}
+La interfaz web est\'a dividida en tres pesta\~nas desde la que el usuario puede introducir los datos.
+\subsection{Definici\'on de la fuente}
+En esta pesta\~na se inicar\'an los par\'ametros relacionados con la fuente astron\'omica.
+\begin{itemize}
+    \item \textbf{Distribuci\'on espectral}. Se podr\'a escoger entre las siguientes opciones:
+        \begin{itemize}
+            \item \textit{Cuerpo negro}. Habr\'a que definir la temperatura.
+            \item \textit{Ley de potencias}. La ley de potencia se expresa como $S_\lambda = \lambda^x$, y el usuario deber\'a indicar la $x$.
+            \item \textit{Espectro estelar}. Se da una serie de platillas entre las que se puede escoger.
+            \item \textit{Emisi\'on de l\'inea}. Se deben definir los par\'ametros de longitud de onda, flujo de l\'inea, unidade del flujo, velocidad, continuo y unidades del continuo.
+            \item \textit{Espectro definido por el usuario}. El usuario deber\'a subir un fichero en el que vendr\'a definido el espectro.
+            \item \textit{Espectros de objetos no estelares}. Se puede escoger entre varias plantillas.
+        \end{itemize}
+   \item \textbf{Brillo}. Habr\'a que definir los siguientes par\'ametros:
+        \begin{itemize}
+            \item \textit{Brillo Total}. Hay que indicar el brillo en magnitud y la banda de referencia.
+            \item \textit{Extinci\'on}. 
+            \item \textit{Redshift / Velocidad radial}. 
+        \end{itemize}
+   \item \textbf{Perfil espacial}. Habr\'a que escoger entre fuente puntual y fuente extendida uniforme.
+\end{itemize}
+
+\subsection{Condiciones de la observaci\'on y configuraci\'on del GTCAO}
+En este caso son tres los par\'ametros a definir.
+    \begin{itemize}
+        \item \textbf{Masa de aire}.
+        \item \textbf{Seeing}.
+        \item \textbf{Separaci\'on de estrella gu\'ia}. Estos valores se podr\'an indicar en segundos de arco.
+        \item \textbf{Brillo de la estrella gu\'ia}. La banda de referencia es la R.
+    \end{itemize}
+
+\section{Screenshots}
+
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.3]{figs/spatial-profile}
+    \includegraphics[scale=0.25]{figs/spatial-profile}
     \label{fig:spatial}
 \end{figure}
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.3]{figs/brightness}
+    \includegraphics[scale=0.25]{figs/brightness}
     \label{fig:brightness}
 \end{figure}
 \begin{figure}[h]
@@ -170,25 +213,6 @@ El ETC tiene dos modos independientes: modo imagen y modo IFS.
     \caption{Modo Imagen}
     \label{fig:image-mode}
 \end{figure}
-
-\section{Estructura de la Web}
-La interfaz web est\'a dividida en tres pesta\~nas desde la que el usuario puede introducir los datos.
-\subsection{Astronomical source definition}
-En esta pesta\~na se inicar\'an los par\'ametros relacionados con la fuente astron\'omica.
-\begin{itemize}
-    \item \textbf{Distribuci\'on espectral}. Se podr\'a escoger entre las siguientes opciones:
-        \begin{itemize}
-            \item \textit{Cuerpo negro}. Habr\'a que definir la temperatura.
-            \item \textit{Ley de potencias}. La ley de potencia se expresa como $S_\lambda = \lambda^x$, y el usuario deber\'a indicar la $x$.
-            \item \textit{Espectro estelar}. Se da una serie de platillas entre las que se puede escoger.
-            \item \textit{Emisi\'on de l\'inea}. Se deben definir los par\'ametros de longitud de onda, flujo de l\'inea, unidade del flujo, velocidad, continuo y unidades del continuo.
-            \item \textit{Espectro definido por el usuario}. El usuario deber\'a subir un fichero en el que vendr\'a definido el espectro.
-            \item \textit{Espectros de objetos no estelares}. Se puede escoger entre varias plantillas.
-        \end{itemize}
-   \item \textbf{Brillo}. 
-
-
-\end{itemize}
 
 
 
