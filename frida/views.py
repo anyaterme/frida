@@ -262,7 +262,7 @@ def calculate_ima(request):
 
 	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
 	strehl= aocor.compute_strehl(lambda_eff,sky_conditions['airmass'])
-	psf = aocor.compute_psf(lambda_eff,strehl['StrehlR'])
+	psf = aocor.compute_psf(settings.PSF_MODEL,lambda_eff,strehl['StrehlR'])
 	#fcore = 1.5 # radius of aperture as a factor of FWHM of the PSF core		FIX ME Where is the parameter?
 	a.debug_values['Strehl='] = strehl['StrehlR'] 
 	a.debug_values['FWHM_core='] = psf['FWHM_core'] 
@@ -344,7 +344,7 @@ def calculate_ima(request):
 	## compute image using PSF information 
 	limit_window = (128,128)
 	print ("######", limit_window)
-	im_psf2d =build_psf2d_2gauss(psf,a.pixscale,Nx=limit_window[0],Ny=limit_window[1])
+	im_psf2d =buildim_psf2d_2gauss(psf,a.pixscale,Nx=limit_window[0],Ny=limit_window[1])
 	if hasattr(im_psf2d,'unit'):
          print('units im_psf2d ',im_psf2d.unit)
 	else:
@@ -373,7 +373,7 @@ def calculate_ima(request):
 		plt.ylabel('Arcsec')
 		name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 		print('file name=',name)
-		f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'w')
+		f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'wb')
 		plt.savefig(f, dit=2000)
 		f.close()
 		context['img_name'] = '%s.png' % name
@@ -472,7 +472,7 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
     ## call GTC_AO to compute Strehl ratio and Encircled Energy
 	aocor = GTC_AO(sky_conditions,guide_star,telescope_params.aperture)
 	strehl = aocor.compute_strehl(central_wave_grating,sky_conditions['airmass'])
-	psf = aocor.compute_psf(central_wave_grating,strehl['StrehlR'])
+	psf = aocor.compute_psf(settings.PSF_MODEL,central_wave_grating,strehl['StrehlR'])
 
 	## Calculating output for Point source Extended source'
 	fcore = float(request.POST.get('fcore', '1.5'))

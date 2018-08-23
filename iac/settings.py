@@ -22,6 +22,8 @@ SKYCALC_GRATINGS = os.path.join (BASE_DIR, "frida/skycalc")
 SED_LIBRARY = os.path.join (BASE_DIR,"frida/sed_library")
 TELESCOPE = "GTC"
 INSTRUMENT = "FRIDA"
+#PSF_MODEL = "Airy+Gaussian"
+PSF_MODEL = "2-Gaussians"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -110,6 +112,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 MEDIA_ROOT= os.path.join(BASE_DIR, "frida","images")
+#MEDIA_ROOT= os.path.join(BASE_DIR,"images")
+#MEDIA_ROOT= 'images/'
 MEDIA_URL = '/media/'
 
 
