@@ -369,6 +369,8 @@ def calculate_ima(request):
 	name = None
 	if (request.POST.get("2d_psf", "off") == "on") and (target_info.source_type == "Point source"):
 		plt.imshow(im_signal_obj.value, cmap='hot')
+		plt.xlabel('Arcsec')
+		plt.ylabel('Arcsec')
 		name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 		print('file name=',name)
 		f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'w')
@@ -422,6 +424,8 @@ def calculate_ima(request):
 	
 	context['snr_graph'] = (request.POST.get("sn_as_exp_time", "off") == "on")
 	context['EE_graph'] = (request.POST.get("enc_energy_aperture_radius", "off") == "on")
+	context['phot_obj'] = signal_noise_dit['phot_obj']
+	print(signal_noise_dit['phot_obj'])
 
 
 	a.debug_values['throughput_lambda_index'] =(np.abs(obs_filter.wave-obs_filter.wave_median)).argmin()
