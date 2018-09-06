@@ -50,12 +50,18 @@ def index(request):
 	fp1 = open(os.path.join(settings.INCLUDES, 'filters.dat'))
 	list_filters = csv.DictReader(filter(lambda row: row[0] != '#', fp1))
 	list_filters_dict = []
+	telescope = "GTC"
+	telescope_params = Telescope(telescope)
 	for each_filter in list_filters:
 		if (os.path.exists(os.path.join(settings.FILTERS, each_filter["Transmission"]))):
 			my_filter = {}
 			my_filter["Code"] = each_filter["Code"]
 			my_filter["Name"] = each_filter["Name"]
+			my_filter["Lambda"] = each_filter["lambda_center"] * u.micron 
+			my_filter["Difr_limit"] = ((my_filter["Lambda"] / telescope_params.aperture) * u.rad).to(u.marcsec)
+			print (my_filter["Difr_limit"])
 			list_filters_dict.append(my_filter)
+
 
 	#fp1.close()
 
@@ -68,6 +74,7 @@ def index(request):
 		my_grating["Name"] = each_grating["Name"]
 		my_grating["Central_Wave"] = each_grating["Central_Wave"]
 		my_grating["Efficiency"] = each_grating["Efficiency"]
+		my_grating["Difr_limit"] = ((my_grating["Central_Wave"] * u.AA / telescope_params.aperture) * u.rad).to(u.marcsec)
 		list_gratings_dict.append(my_grating)
 	#fp2.close()
 	fp3 = open(os.path.join(settings.SED_LIBRARY, 'pickles','pickles_options.csv'))
@@ -559,3 +566,11 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 def docs_p1(request):
 	context = {}
 	return render (request, "doc-params1.html", context)
+
+def docs_p2(request):
+	context = {}
+	return render (request, "doc-params2.html", context)
+
+def docs_p3(request):
+	context = {}
+	return render (request, "doc-params3.html", context)
