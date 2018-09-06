@@ -556,3 +556,6 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	return render (request, "calculate_ifs.html", context)
 
 
+def docs_p1(request):
+	context = {}
+	return render (request, "doc-params1.html", context)
