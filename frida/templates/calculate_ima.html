@@ -415,7 +415,15 @@
 				<div class="panel panel-info">
 					<div class="panel-heading">Image</div>
 					<div class="panel-body">
-						<img class="img-fluid" width="100%" src="/media/{{img_name}}">
+						<div class="row">
+							<div class="col-xs-12"> <img class="img-fluid" width="100%" src="/media/{{img_name}}.png"></div>
+						</div>
+						<div class="row">
+							{% comment %}
+							<div class="col-xs-12 text-center"> <a class="btn btn-primary btn-sm" target="_blank" href="{% url 'download-fits' pngfile=img_name %}"><i class="fa fa-download"></i> Download FITS</a></div>
+							{% endcomment %}
+							<div class="col-xs-12 text-center"> <a class="btn btn-primary btn-sm" href="/media/{{img_name}}.fits"><i class="fa fa-download"></i> Download FITS</a></div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -438,7 +446,7 @@
 						Total exposure time <span class="badge">{{ total_exposure_time|astro_round:0 }} </span>
 					</li>
 					<li class="list-group-item"> 
-						<i class="fa fa-warning text-danger"></i> Max. intensity at central pixel per DIT (object+sky)  <span class="badge">{{ max_signal_obj_sky_dit }}</span>
+						<i class="fa fa-warning text-danger"></i> Max. intensity at central pixel per DIT (object+sky)  <span class="badge">{{ max_signal_obj_sky_dit|astro_round:1 }}</span>
 					</li>
 					<li class="list-group-item"> 
 						Detector saturation limit (e<sup>-</sup>) <span class="badge">{% astro_round_to saturation_time 0 's' %} </span>
