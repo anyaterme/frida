@@ -1,3 +1,10 @@
+"""
+Modified on Fri 15 18:27:53 2018
+ @author: JoseAcosta
+ Include emission line and review treatment of templates with redshift 
+
+"""
+
 from math import exp, pow, sqrt
 import numpy as np
 import random, os, glob
@@ -19,6 +26,9 @@ from frida.compute_flux import *
 from frida.set_config import *
 from frida.aux_functions import *
 
+import extinction
+
+
 phot_zp = define_photzp()
 
 
@@ -37,7 +47,8 @@ class GuideStar:
 
 
 class TargetInfo:
-	""" Class containing information about Science Target
+	""" Class containing information about Science Target.  Computes sed_flambda
+         as function of wavelength for the range given by the instrument configuration
     :param mag_target: Magnitude of guide Star 
     :type mag_target: float. 
     :param band: Band in which the brightness is specified. 
@@ -51,7 +62,7 @@ class TargetInfo:
 	"""
 	def __init__ (self,mag_target,band,mag_system,sed,waveshift=('radial_velocity', 0.), \
                wave_ini=8500*u.angstrom,wave_end=25000.*u.angstrom,dwave=2.*u.angstrom,\
-               extended=False):
+               extended=False,A_V=0.):
 		self.Magnitude = mag_target
 		self.Band = band
 		self.MagSystem = mag_system
@@ -67,7 +78,8 @@ class TargetInfo:
 			redshift = redshift*u.Unit('km/s')/const.c.to('km/s')
 		lambda_band_rest = self.lambda_band/(1.+redshift)
 			
-        
+		sed_wave = None
+		sed_flux = None
 		##REFACTOR --- define functions 
 		if (sed[0] == "black_body"):
 			temp_bb = float(sed[1])*u.K
@@ -75,26 +87,26 @@ class TargetInfo:
 			#input_normflux=bbody(lambda_band_rest,temp_bb)
 			omega=1.e-16*u.sr
 			input_normflux=blackbody_lambda(lambda_band_rest,temp_bb)*omega
-			flux_scale=scale_to_vega(band,mag_target,input_normflux)
-			wave_array_rest = np.arange(wave_ini.to('angstrom').value,\
+			#flux_scale=scale_to_vega(band,mag_target,input_normflux)
+			print(' normflux=',input_normflux,' value=',input_normflux.value)  
+			wave_array = np.arange(wave_ini.to('angstrom').value,\
 			   wave_end.to('angstrom').value,dwave.to('angstrom').value)\
                * u.angstrom
-			print(' normflux=',input_normflux,' value=',input_normflux.value)  
-			print(' flux_scale=',flux_scale,' value=',flux_scale.value,float(flux_scale))   
+			wave_array_rest = wave_array/(1+redshift)
 			#sed_flambda = flux_scale * bbody(wave_array_rest,temp_bb)
-			sed_wave = wave_array_rest*(1+redshift)
-			sed_flambda = flux_scale * blackbody_lambda(wave_array_rest,temp_bb)*omega
+			sed_wave = wave_array
+			sed_flambda = blackbody_lambda(wave_array_rest,temp_bb)*omega
 		elif (sed[0] == "power_law"):
 			index_pwl = sed[1]
 			input_normflux=powl(self.lambda_band,index_pwl)
-			flux_scale=scale_to_vega(band,mag_target,input_normflux)
+			#flux_scale=scale_to_vega(band,mag_target,input_normflux)
 			print(' normflux=',input_normflux,' value=',input_normflux.value)  
-			print(' flux_scale=',flux_scale,' value=',flux_scale.value,float(flux_scale))   
-			wave_array_rest = np.arange(wave_ini.to('angstrom').value,\
+			wave_array = np.arange(wave_ini.to('angstrom').value,\
 			   wave_end.to('angstrom').value,dwave.to('angstrom').value)\
                * u.angstrom
-			sed_wave = wave_array_rest*(1+redshift)
-			sed_flambda = flux_scale * powl(sed_wave,index_pwl)
+			wave_array_rest = wave_array/(1+redshift)
+			sed_wave = wave_array
+			sed_flambda = powl(sed_wave,index_pwl)
 		elif (sed[0] == "pickles"):
 		    template = sed[1]
 		    #sed_pickles=read_sed_pickles_files(template,\
@@ -108,9 +120,7 @@ class TargetInfo:
 		    input_normflux=np.interp(lambda_band_rest_sameunit,sed_pickles['wave'].value,\
 		          sed_pickles['flambda'].value) * sed_pickles['flambda'].unit
 		    print("input_normflux=",input_normflux)
-		    flux_scale = scale_to_vega(band,mag_target,input_normflux) 
-		    print("flux_scale=",flux_scale)
-		    sed_flambda = flux_scale * sed_pickles['flambda']
+		    sed_flambda = sed_pickles['flambda']
 		    sed_wave = sed_pickles['wave']*(1+redshift)
 		elif (sed[0] == "nonstellar"):
 		    template = sed[1]
@@ -122,16 +132,59 @@ class TargetInfo:
 		    lambda_band_rest_sameunit = lambda_band_rest.to(sed_nonstellar['wave'].unit).value
 		    input_normflux=np.interp(lambda_band_rest_sameunit,sed_nonstellar['wave'].value,\
 		          sed_nonstellar['flambda'].value) * sed_nonstellar['flambda'].unit
-		    flux_scale = scale_to_vega(band,mag_target,input_normflux) 
-		    sed_flambda = flux_scale * sed_nonstellar['flambda']
+		    #flux_scale = scale_to_vega(band,mag_target,input_normflux) 
+		    sed_flambda = sed_nonstellar['flambda']
 		    sed_wave = sed_nonstellar['wave']*(1+redshift)
-		## END Refactor
 
-		print(" min - max sed_wave",min(sed_wave),max(sed_wave))
-		mask = (sed_wave >= wave_ini) & (sed_wave <= wave_end) 
+		if (mag_system == 'Vega'):
+		   flux_scale = scale_to_vega(band,mag_target,input_normflux)
+		elif (mag_system == 'AB'):            
+		   flux_scale = scale_to_magAB(band,mag_target,input_normflux)
+
+		## END Refactor
+		print(' flux_scale=',flux_scale,' value=',flux_scale.value,float(flux_scale))   
+		sed_flambda = flux_scale * sed_flambda 
+
+		if (sed[0] == "emission_line"):
+		    #sed = ('emission_line',line_central_wave,line_flux,line_velocity)
+		    line_centwave = sed[1]
+		    line_centwave_rest = line_centwave/(1+redshift)
+		    line_flux = sed[2] 
+             ## scale the flux with redshift [\propto 1/(1+z)] 
+		    line_flux /= (1+redshift)                
+             ## transform line width [km/s] to wavelength [\propto 1/(1+z)] 
+		    line_width = sed[3] / const.c * line_centwave        
+		    print("line_centwave=",line_centwave)
+		    print("line_flux=",line_flux)
+		    print("line_width=",line_width)
+		    if (sed_wave != None):
+		       sed_wave = np.arange(wave_ini.to('angstrom').value,\
+			    wave_end.to('angstrom').value,dwave.to('angstrom').value)\
+                  * u.angstrom
+		    wave_array_rest = sed_wave/(1+redshift)
+		    sed_flambda_line = emission_line(wave_array_rest,line_centwave_rest,\
+                        line_width,line_flux)
+		    #flux_scale = scale_to_vega(band,mag_target,input_normflux) 
+		    if (sed_flambda == None):     
+		        sed_flambda = sed_flambda_line
+		    else:   
+		        sed_flambda += sed_flambda_line
+
+
+		#print(" min - max sed_wave",min(sed_wave),max(sed_wave))
+		#mask = (sed_wave >= wave_ini) & (sed_wave <= wave_end)
+		#sed_wave = sed_wave[mask]
+		#sed_flambda = sed_flambda[mask]
+         
+		## correct for interstellar extinction
+		if (A_V > 0.):
+		    print('Applying extinction FM07, Av=',Av)
+		    ext_wave = extinction.fm07(sed_wave,Av,unit=sed_wave.unit)  
+		    sed_flambda = sed_flambda*10.**(0.4*ext_wave)  
+
 		self.flux_scale = flux_scale
-		self.sed_wave = sed_wave[mask]
-		self.sed_flambda = sed_flambda[mask]
+		self.sed_wave = sed_wave
+		self.sed_flambda = sed_flambda
 		self.extended = extended
 		if (extended):
 		    self.sed_flambda /= u.arcsec**2 
@@ -299,6 +352,7 @@ class Calculator_Image:
                 avg_response["effic_static"])
 
 		self.flambda_wave = target_info.flambda_wave(wave_img)
+		self.objphot_wave = target_info.photons_wave(wave_img)
 		self.phi_obj_total = self.compute_target_photonrate_filter(target_info.flambda_wave(wave_img))
 
 		units_phi = u.electron / u.second

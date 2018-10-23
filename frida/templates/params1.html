@@ -59,8 +59,9 @@
 							<div class="row">
 								<div class="col-md-5 text-left"><label for="st_units">Flux Units</label></div>
 								<div class="col-md-7 text-left">
-									<select class="form-control" name="st_units" id="st_units">
-										<option value="">W/m^2</option>
+									<select class="form-control" name="st_flux_units" id="st_flux_units">
+										<option value="si">W/m^2</option>
+										<option value="cgs">erg/cm^2/s</option>
 										<option value="mJy">mJansky</option>
 									</select>
 								</div>
@@ -131,8 +132,14 @@
 									</div>
 									<div class="panel-body">
 										<div class="row">
-											<div class="col-xs-8">
-												<input type="number" step="0.5" min="5" max="30" class="form-control" id="spatial_integrated_brightness" name="spatial_integrated_brightness" placeholder="17.0" value="17.0" required errorMsg=" (Tab 'Astronomical Source Definition') "> <span id="mag-units">mag</span>
+											<div class="col-xs-3">
+												<input type="number" step="0.2" min="5" max="30" class="form-control" id="spatial_integrated_brightness" name="spatial_integrated_brightness" placeholder="17.0" value="17.0" required errorMsg=" (Tab 'Astronomical Source Definition') ">
+											</div>
+											<div class="col-xs-5">
+												<select class="form-control" name="mag_system" id="mag_system">
+													<option value="Vega" selected>Vega</option>
+													<option value="AB">AB</option>
+												</select><span id="mag-units"> mag </span>
 											</div>
 											<div class="col-xs-4">
 												<select class="form-control" name="band_flux" id="band_flux">
@@ -145,11 +152,12 @@
 													<option value="K">Band K</option>
 												</select>
 											</div>
-											<input type="hidden" name="units_sib" value="mag">
+											<input type="hidden" name="units_sib" value="Vega">
 												{% comment %}
 												<select class="form-control" name="units_sib" id="units_sib">
-													<option value="mag">mag</option>
-													<option value="wm2um">W/m<sup>2</sup>/&mu;m</option>
+													<option value="Vega">Vega mag</option>
+													<option value="AB">AB mag</option>
+													{% <option value="wm2um">W/m<sup>2</sup>/&mu;m</option> %}
 												</select>
 												{% endcomment %}
 										</div>
@@ -195,7 +203,7 @@
 								<div class="panel panel-info panel-velocity-radio">
 									<div class="panel-heading"> <input type="radio" class="form-radio-control" name="velocity_type" id="redshift" value="redshift" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" checked> <strong> Redshift (z) </strong></div>
 									<div class="panel-body">
-										<input type="number" step="0.01" class="form-control" id="redshift_value" name="redshift_value" placeholder="0.0">
+										<input type="number" step="0.1" class="form-control" id="redshift_value" name="redshift_value" placeholder="0.0">
 									</div>
 								</div>
 							</div>
@@ -203,7 +211,7 @@
 								<div class="panel panel-default panel-velocity-radio">
 									<div class="panel-heading"> <input type="radio" name="velocity_type" id="radial_vel" value="radial_vel" onclick="check_collapse_from_heading_class_v2(this, 'panel-info', 'panel-velocity-radio');" > <strong> Radial Vel (Km/s) </strong></div>
 									<div class="panel-body">
-										<input type="number" step="0.01" class="form-control" id="radial_value" name="radial_value" placeholder="0.0" style="width:95%;"> 
+										<input type="number" step="1" class="form-control" id="radial_value" name="radial_value" placeholder="0.0" style="width:95%;"> 
 									</div>
 								</div>
 							</div>

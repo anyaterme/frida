@@ -120,7 +120,7 @@ def compute_ee_AiryGauss(psf, pixscale, fcore=1.5, spaxel=False,\
                 'Area_pixel':area_per_pixel}
 
 
-def buildim_psf2d_2gauss(psf_2gauss,pixscale,Nx=250,Ny=250):
+def buildim_psf_2gauss(psf_2gauss,pixscale,Nx=250,Ny=250):
     """
     Produce a 2D image with a centred PSF, using 250x250 pixels with the 
     a given pixel scale. 
@@ -132,9 +132,6 @@ def buildim_psf2d_2gauss(psf_2gauss,pixscale,Nx=250,Ny=250):
     :return:
         
     """
-    im_psf = np.array([np.zeros(Nx),np.zeros(Ny)])
-    
-    center = np.array([Nx/2.,Ny/2.])-0.5
     x = (np.arange(Nx)-Nx/2+0.5)*pixscale
     y = (np.arange(Ny)-Ny/2+0.5)*pixscale
     xv, yv = np.meshgrid(x, y, sparse=False, indexing='xy')
@@ -145,15 +142,56 @@ def buildim_psf2d_2gauss(psf_2gauss,pixscale,Nx=250,Ny=250):
     sigma_core = psf_2gauss["FWHM_core"]/2.35
     sigma_halo = psf_2gauss["FWHM_halo"]/2.35
     
+    print("Amp halo",amp_halo)
+    print("Amp core",amp_core)
     halo2d = amp_halo * np.exp(-rho**2/2/sigma_halo**2)
     core2d = amp_core * np.exp(-rho**2/2/sigma_core**2)
 
     psf2d  = halo2d+core2d
 
-    return psf2d * pixscale * pixscale
+    return psf2d * pixscale * pixscale,x,y
 
 
-def buildim_psf2d_AiryGauss(psf,pixscale,Nx=250,Ny=250):
+def buildcube_psf_2gauss(psf_wave,pixscale,Nx=250,Ny=250):
+    """
+    Produce a 2D image with a centred PSF, using 250x250 pixels with the 
+    a given pixel scale. 
+    It is modelled as the sum of 2 Gaussian functions: one for the core 
+    (width depends linearly on the wavelength) plus one for halo (~seeing)
+    :param strehl: Strehl ratio
+    :param sigma_core: Width of the core Gaussian (diffraction limit core)
+    :param sigma_halo: Width of the halo Gaussian (seeing)
+    :return:
+        
+    """
+    Nwave = len(psf_wave['Amp_core'])
+    
+    psf_cube = np.ndarray(shape=(Nwave,Nx,Ny),dtype='float')
+    
+    x = (np.arange(Nx)-Nx/2+0.5)*pixscale
+    y = (np.arange(Ny)-Ny/2+0.5)*pixscale
+    xv, yv = np.meshgrid(x, y, sparse=False, indexing='xy')
+    rho = np.sqrt(xv*xv+yv*yv)
+    
+    for i in range(Nwave):
+        amp_core = psf_wave["Amp_core"][i]
+        amp_halo = psf_wave["Amp_halo"][i]
+        sigma_core = psf_wave["FWHM_core"][i]/2.35
+        sigma_halo = psf_wave["FWHM_halo"][i]/2.35
+    
+        halo2d = amp_halo * np.exp(-rho**2/2/sigma_halo**2)
+        core2d = amp_core * np.exp(-rho**2/2/sigma_core**2)
+
+        psf_cube[i,:,:]  = halo2d+core2d
+
+    print('psf_cube[wave]',psf_cube[900:1000,int(Nx/2),int(Ny/2)]*pixscale**2)
+    print('plano suma',psf_cube[950,:,:].sum()*pixscale**2)
+    print('psf_cube[row]',psf_cube[950,:,int(Ny/2)]*pixscale**2)
+
+    return psf_cube * pixscale * pixscale,x,y
+
+
+def buildim_psf_AiryGauss(psf,pixscale,Nx=250,Ny=250):
     """
     Produce a 2D image with a centred PSF, using Nx x Ny pixels with the 
     a given pixel scale. 
@@ -166,9 +204,6 @@ def buildim_psf2d_AiryGauss(psf,pixscale,Nx=250,Ny=250):
         
     """
     
-    im_psf = np.array([np.zeros(Nx),np.zeros(Ny)])
-    
-    center = np.array([Nx/2.,Ny/2.])-0.5
     x = (np.arange(Nx)-Nx/2+0.5)*pixscale
     y = (np.arange(Ny)-Ny/2+0.5)*pixscale
     xv, yv = np.meshgrid(x, y, sparse=False, indexing='xy')
@@ -179,17 +214,64 @@ def buildim_psf2d_AiryGauss(psf,pixscale,Nx=250,Ny=250):
     sigma_halo = psf["FWHM_halo"]/2.35
     
     halo2d = amp_halo * np.exp(-rho**2/2/sigma_halo**2)
-    print("Diameter",psf["Diameter"])
-    print("Wave",psf["Wave"])
+    #print("Diameter",psf["Diameter"])
+    #print("Wave",psf["Wave"])
     xscale = 2 * np.pi * psf["Diameter"].to(u.meter) / psf["Wave"].to(u.meter)
-    print("xscale ",xscale)
-    print("rho ",rho)
+    #print("xscale ",xscale)
+    #print("rho ",rho)
     x = (xscale * rho.to(u.radian)).value
-    print("check units of x ")
-    print("x1 ",x)
+    #print("check units of x ")
+    #print("x ",x)
     core2d = amp_core * (2*jv(1,x)/x)**2
 
     psf2d  = halo2d+core2d
 
-    return psf2d * pixscale * pixscale
+    return psf2d * pixscale * pixscale,x,y
+
+
+def buildcube_psf_AiryGauss(psf_wave,pixscale,Nx=250,Ny=250):
+    """
+    Produce a 2D image with a centred PSF, using Nx x Ny pixels with the 
+    a given pixel scale. 
+    It is modelled as the sum of 2 Gaussian functions: one for the core 
+    (width depends linearly on the wavelength) plus one for halo (~seeing)
+    :param psf: Definition of psf with par
+    :param pixscale: Pixel scale of the output image 
+    :
+    :return:
+        
+    """
+    Nwave = len(psf_wave['Wave'])
+    
+    psf_cube = np.ndarray(shape=(Nwave,Nx,Ny),dtype='float')
+    
+    x = (np.arange(Nx)-Nx/2+0.5)*pixscale
+    y = (np.arange(Ny)-Ny/2+0.5)*pixscale
+    xv, yv = np.meshgrid(x, y, sparse=False, indexing='xy')
+    rho = np.sqrt(xv*xv+yv*yv)
+    
+    for i in range(Nwave):
+        amp_core = psf_wave["Amp_core"][i]
+        amp_halo = psf_wave["Amp_halo"][i]
+        sigma_halo = psf_wave["FWHM_halo"][i]/2.35
+    
+        halo2d = amp_halo * np.exp(-rho**2/2/sigma_halo**2)
+        #print("Diameter",psf_wave["Diameter"])
+        #print("Wave",psf_wave["Wave"][i])
+        xscale = 2 * np.pi * psf_wave["Diameter"].to(u.meter) / \
+             psf_wave["Wave"][i].to(u.meter)
+        #print("xscale ",xscale)
+        #print("rho ",rho)
+        x = (xscale * rho.to(u.radian)).value
+        #print("check units of x ")
+        #print("x ",x)
+        core2d = amp_core * (2*jv(1,x)/x)**2
+
+        psf_cube[i,:,:]  = halo2d+core2d
+        
+    print('psf_cube[wave]',psf_cube[900:1000,int(Nx/2),int(Ny/2)]*pixscale**2)
+    print('plano suma',psf_cube[950,:,:].sum()*pixscale**2)
+    print('psf_cube[row]',psf_cube[950,:,int(Ny/2)]*pixscale**2)
+
+    return psf_cube * pixscale * pixscale,x,y
 
