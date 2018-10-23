@@ -11,8 +11,9 @@ from django.shortcuts import render
 from django.conf import settings
 from django.core.files import File
 from django.http import HttpResponse
+import glob
 import os
-import datetime, random, string
+import datetime, random, string, time
 import sys
 
 import numpy as np
@@ -51,6 +52,7 @@ def index(request):
 
 	#fp.close()
 	#list_filters = {}
+
 
 	fp1 = open(os.path.join(settings.INCLUDES, 'filters.dat'))
 	list_filters = csv.DictReader(filter(lambda row: row[0] != '#', fp1))
@@ -100,6 +102,23 @@ def index(request):
 
 
 	context = {'list_filters':list_filters_dict, 'list_gratings':list_gratings_dict, 'list_pickles':list_pickles_dict, 'list_nonstellar':list_nonstellar_dict}
+	print (os.path.abspath(os.path.dirname(__file__)))
+	files = glob.glob("%s/*.png" % os.path.abspath(settings.MEDIA_ROOT))
+	files.sort(key=os.path.getmtime)
+	for f in files:
+		try:
+			if (time.time() - os.path.getmtime(f) >= 24*3600):
+				os.remove(f)
+		except Exception as e:
+			print ("ERROR!!! File [%s] don't remove. :> %s" % (f, e))
+	files = glob.glob("%s/*.fits" % os.path.abspath(settings.MEDIA_ROOT))
+	files.sort(key=os.path.getmtime)
+	for f in files:
+		try:
+			if (time.time() - os.path.getmtime(f) >= 24*3600):
+				os.remove(f)
+		except Exception as e:
+			print ("ERROR!!! File [%s] don't remove. :> %s" % (f, e))
 	return render(request, 'index.html', context)
 
 def calculate_draw(request):
@@ -441,7 +460,9 @@ def calculate_ima(request):
 		f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'wb')
 		plt.savefig(f, dit=2000)
 		f.close()
-		context['img_name'] = '%s.png' % name
+		np.save(os.path.join(settings.MEDIA_ROOT,'%s.npy' % name), im_signal_obj.value)
+		createfits(name)
+		context['img_name'] = '%s' % name
 		## now scale with the signal, psf is normalize to have area unity 
 	print('phi_sky_sqarc.unit',a.phi_sky_sqarc)
 	print('Unit aperture[Area_pixel]=',aperture['Area_pixel'].unit)
@@ -502,6 +523,29 @@ def calculate_ima(request):
 	context['debug_values'] = a.debug_values
 
 	return render(request, 'calculate_ima.html', context)
+
+def createfits(filename):
+	from astropy.io import fits
+	from django.utils.encoding import smart_str
+	data = np.load(os.path.join(settings.MEDIA_ROOT,'%s.npy' % (filename)))
+	hdul = fits.HDUList()
+	hdul.append(fits.PrimaryHDU())
+	hdul.append(fits.ImageHDU(data=data))
+	hdul.writeto(os.path.join(settings.MEDIA_ROOT,'%s.fits' % (filename)))
+	return None
+
+def downloadfits(request, pngfile):
+	from astropy.io import fits
+	from django.utils.encoding import smart_str
+	data = np.load(os.path.join(settings.MEDIA_ROOT,'%s' % (pngfile.replace('png','npy'))))
+	hdul = fits.HDUList()
+	hdul.append(fits.PrimaryHDU())
+	hdul.append(fits.ImageHDU(data=data))
+	hdul.writeto(os.path.join(settings.MEDIA_ROOT,'%s' % (pngfile.replace('png','fits'))))
+	response= HttpResponse(mimetype='application/force-download')
+	response['Content-Disposition'] = 'attachment; filename=%s' % pngfile.replace('png','fits')
+	response['X-Sendfile'] = os.path.join(settings.MEDIA_ROOT,'%s' % (pngfile.replace('png','fits')))
+	return response
 
 
 
