@@ -1,3 +1,11 @@
+"""
+Revision History
+Modified on 2018 3 Sep 16:55
+ @author: JoseAcosta
+ Include scaling by AB magnitude  
+
+"""
+
 import numpy as np
 import astropy.constants as const
 import astropy.units as u
@@ -38,6 +46,21 @@ def powl(lamb,alpha,band_norm='J'):
     norm_J = phot_zp[band_norm]['l10_flamb'].physical ## normalization to have mag_Vega=15 at J with T=9600. which is Teff of A0
     flamb = norm_J * (lamb/lamb_norm)**(alpha-2)
     return flamb
+
+def emission_line(wave,center,fwhm,flux):
+    """ Compute f_lambda for a given emission line, uses a Gaussian profile.
+        input parameters:
+          wave - wavelength array 
+          center - center wavelength of the line
+          fwhm in wave units F_nu ~ nu^-alpha  ==> F_lamb ~ lambda ^ (alpha-2)
+        returns units of flux / wave 
+    """
+    #flux_scale = scale_to_vega(band,mag_target,input_normflux) 
+    sigma = fwhm / 2.35 
+    peak = flux / np.sqrt(np.pi/2.) / sigma 
+    flambda = peak * np.exp(-(wave-center)**2/2/sigma**2)
+    return flambda
+
 
 def stellar_template(lamb,spectype):
     flamb = lamb
@@ -129,6 +152,20 @@ def define_photzp():
 ##    "K":[2.19, 0.41, -9.4179, 1.85]
 ##
 ##}
+
+def scale_to_magAB(band_ref,mag_ref,normflux_ref):
+  """
+      INPUTS: the AB magnitude at a reference band
+  """
+  print(band_ref)
+  print(phot_zp[band_ref]['l10_flamb'])
+  print(0.4*mag_ref)
+  
+  flux_AB_ref = phot_zp[band_ref]['l10_flamb'].physical * \
+    10.**(0.4*phot_zp[band_ref]['mAB_to_Vega']) * 10.**(-0.4*mag_ref)
+  scale_factor = flux_AB_ref / normflux_ref
+  return scale_factor
+
 
 def scale_to_vega(band_ref,mag_ref,normflux_ref):
   """

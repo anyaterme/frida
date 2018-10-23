@@ -2,7 +2,9 @@
 A view function, or view for short, is simply a Python function that takes a Web request and returns a Web response.
 This response can be the HTML contents of a Web page, or a redirect, or a 404 error, or an XML document, or
 an image . . . or anything, really.
-This module reads information from web  (params1,2 and 3) and redirects to
+This module reads information from the web interface [params1.html-information from the target, 
+params2.html-atmospheric conditions and guide star, and params3.html-instrument setup) and redirects the output to calculate_ima.html and
+calculate_ifs.html
 
 """
 from django.shortcuts import render
@@ -19,7 +21,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import traceback
-from PIL import Image
+import astropy.units as u
+
+from mpl_toolkits.mplot3d import Axes3D
 
 #from math import sqrt, pi, log10
 
@@ -64,7 +68,6 @@ def index(request):
 			my_filter["Difr_limit"] = ((my_filter["Lambda"] / telescope_params.aperture) * u.rad).to(u.marcsec)
 			print (my_filter["Difr_limit"])
 			list_filters_dict.append(my_filter)
-
 
 	#fp1.close()
 
@@ -161,8 +164,11 @@ def get_TargetInfo(request):
 	# Request parameters relative to astronomical target
 	mag_target = float(request.POST.get('spatial_integrated_brightness'))
 	band = request.POST.get("band_flux")
-	mag_system = request.POST.get('units_sib')
+	#mag_system = request.POST.get('units_sib')
+	mag_system = request.POST.get('mag_system')
 	energy_type = request.POST.get('spectral_type')
+	A_V = request.POST.get('extinction')
+    
 	error = False
 
 	## Select morphology of source
@@ -205,12 +211,28 @@ def get_TargetInfo(request):
 		except:
 			error_values['Spectral Distribution'] = label_energy_type
 			error = True
-
 	elif (energy_type == 'non-stellar-lib'):
 		try:
 			templatename = request.POST.get('st_non_stellar')
 			sed = ('nonstellar', templatename)
 			label_energy_type = 'Non-Stellar, template: %s' % templatename
+			debug_values['Spectral Distribution'] = label_energy_type
+		except:
+			error_values['Spectral Distribution'] = label_energy_type
+			error = True
+	elif (energy_type == 'single_emission'):
+		try:
+			line_central_wave = request.POST.get('st_wavelength')
+			line_flux = request.POST.get('st_flux')
+			line_flux_units = request.POST.get('st_flux_units')
+			if (line_flux_units == 'cgs'):
+			    line_flux = line_flux * u.erg / u.cm**2 / u.s
+			elif (line_flux_units == 'si'):
+			    line_flux = line_flux * u.watt / u.m**2 / u.s
+                  
+			line_velocity = request.POST.get('st_velocity') * u.km / u.s
+			sed = ('emission_line',line_central_wave,line_flux,line_velocity)
+			label_energy_type = 'Emission Line at ' % templatename
 			debug_values['Spectral Distribution'] = label_energy_type
 		except:
 			error_values['Spectral Distribution'] = label_energy_type
@@ -256,6 +278,11 @@ def get_TargetInfo(request):
 	return target_info
 
 def calculate_ima(request):
+	"""
+	Compute an object with the information to  about target from html templates. It returns an object of class TargetInfo
+	:param request: input from html
+	:return: object TargetInfo
+	"""
 	debug_values = {}
 	telescope = "GTC"
 	telescope_params = Telescope(telescope)
@@ -277,7 +304,7 @@ def calculate_ima(request):
 	try:
 		target_info = get_TargetInfo(request)
 	except Exception as e:
-		msg_err['ERROR GENERIC'] = "Please. review your parameters. %s" % e
+		msg_err['ERROR GENERIC'] = "Please. review your TargetInfo parameters. %s" % e
 		return render(request, "error.html", {'msg_err':msg_err})
 	if (target_info.error):
 		return render(request, "error.html", {'msg_err':target_info.error_messages})
@@ -303,8 +330,10 @@ def calculate_ima(request):
 	## if extended it will as reference area 1 pixel, fcore will be the
 	aperture=aocor.compute_ee(psf,pixscale,fcore=fcore,\
                                source_type=target_info.source_type)
+
 	if (target_info.source_type == "Point source"):
-		fcore_seq = np.logspace(-1,2,num=20)
+		fcore_seq = np.logspace(-0.1,2.,num=10)
+		#fcore_seq = np.linspace(0.2,10,num=30)
 		aperture_seq = aocor.compute_ee(psf,pixscale,fcore=fcore_seq,\
 		  source_type=target_info.source_type)
     
@@ -369,13 +398,18 @@ def calculate_ima(request):
 	'''
 
 	## compute image using PSF information 
-	limit_window = (128,128)
+	limit_window = (settings.IMSIZE_IMG,settings.IMSIZE_IMG)
 	print ("######", limit_window)
-	im_psf2d =buildim_psf2d_2gauss(psf,a.pixscale,Nx=limit_window[0],Ny=limit_window[1])
+	if (settings.PSF_MODEL == "Airy+Gaussian"): 
+	   im_psf2d,im_xaxis,im_yaxis =buildim_psf_AiryGauss(psf,a.pixscale,Nx=limit_window[0],Ny=limit_window[1])
+	elif (settings.PSF_MODEL == "2-Gaussians"):  
+	   im_psf2d,im_xaxis,im_yaxis =buildim_psf_2gauss(psf,a.pixscale,Nx=limit_window[0],Ny=limit_window[1])
+
 	if hasattr(im_psf2d,'unit'):
          print('units im_psf2d ',im_psf2d.unit)
 	else:
          print('no units im_psf2d ')
+
 	## now scale with the signal, psf is normalize to have area unity 
 	if (target_info.source_type == "Point source"):
 		im_signal_obj = a.phi_obj_total*im_psf2d
@@ -395,9 +429,32 @@ def calculate_ima(request):
 	context = {}
 	name = None
 	if (request.POST.get("2d_psf", "off") == "on") and (target_info.source_type == "Point source"):
-		plt.imshow(im_signal_obj.value, cmap='hot')
-		plt.xlabel('Arcsec')
-		plt.ylabel('Arcsec')
+		im_value = im_signal_obj.value
+		lim_value = np.log10(im_value)
+		print("Median Min max image",np.percentile(im_value,50),np.min(im_value),np.max(im_value))
+		im_value /= np.max(im_value)        
+		vmin = np.percentile(lim_value,15)
+		vmax = np.percentile(lim_value,85)
+		print("VMin Vmax image",vmin,vmax)
+		print("Median Min max image",np.percentile(im_value,50),np.min(im_value),np.max(im_value))
+		fig = plt.figure()
+		ax = Axes3D(fig,elev=settings.IM3D_ELEV,azim=settings.IM3D_AZIM)
+		# make the panes transparent
+		ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+		ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+		ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+		# make the grid lines transparent
+		ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+		ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+		ax.zaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+		xx, yy = np.meshgrid(im_xaxis,im_yaxis)        
+		ax.plot_surface(xx,yy,im_value,rstride=1,cstride=1,cmap='hot')
+		ax.set_zlim(-2,1)
+		ax.contourf(xx,yy,im_value,zdir='z',offset=-2,cmap='hot',vmax=0.8,vmin=0) #, vmin=vmin,vmax=vmax)        
+		#plt.imshow(im_value, vmin=vmin,vmax=vmax, cmap='hot')
+		##plt.imshow(lim_value), vmin=vmin,vmax=vmax, cmap='hot')
+         ###ax.set_xlabel('Arcsec')
+		###ax.set_ylabel('Arcsec')
 		name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 		print('file name=',name)
 		f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'wb')
@@ -424,8 +481,8 @@ def calculate_ima(request):
 	context['strehl_ratio'] = strehl['StrehlR']
 	context['encircled_energy'] = aperture["EE"]
 	context['Aperture_radius'] = aperture['Radius']
-	#context['encircled_energy_seq'] = aperture_seq["EE"]
-	#context['Aperture_radius_seq'] = aperture_seq['Radius']
+	context['encircled_energy_seq'] = aperture_seq["EE"]
+	context['Aperture_radius_seq'] = aperture_seq['Radius']
 	context['pixscale'] = pixscale
 	context['AreaNpix'] = aperture['Npix']
 	context['static_response'] = static_response
@@ -453,8 +510,11 @@ def calculate_ima(request):
 	
 	context['snr_graph'] = (request.POST.get("sn_as_exp_time", "off") == "on")
 	context['EE_graph'] = (request.POST.get("enc_energy_aperture_radius", "off") == "on")
-	context['phot_obj'] = signal_noise_dit['phot_obj']
-	print(signal_noise_dit['phot_obj'])
+	context['phot_obj_trans'] = a.objphot_wave*a.atmostrans
+	context['phot_obj'] = a.objphot_wave
+	context['flambda_obj'] = a.flambda_wave
+	print('signal_noise_dit:',signal_noise_dit['phot_obj'])
+	print('a.phi_obj',a.objphot_wave)
 
 
 	a.debug_values['throughput_lambda_index'] =(np.abs(obs_filter.wave-obs_filter.wave_median)).argmin()
@@ -572,6 +632,56 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 	signal_seq = signal_noise_nexp['signal']
     
 	print("@calculate_ifs -> snr_seq",snr_seq)
+
+	## compute AO correction for the wave_array
+	strehl_wave_array= aocor.compute_strehl(wave_array,sky_conditions['airmass'])
+	psf_wave_array = aocor.compute_psf(settings.PSF_MODEL,wave_array,strehl['StrehlR'])
+
+	## compute image using PSF information 
+	limit_window = (settings.IMSIZE_IFS,settings.IMSIZE_IFS)
+	print ("######", limit_window)
+	if (settings.PSF_MODEL == "Airy+Gaussian"): 
+	   im_psf_wave =buildcube_psf_AiryGauss(psf_wave_array,a.pixscale,
+                    Nx=limit_window[0],Ny=limit_window[1])
+	elif (settings.PSF_MODEL == "2-Gaussians"):  
+	   im_psf_wave =buildcube_psf_2gauss(psf_wave_array,a.pixscale,\
+                    Nx=limit_window[0],Ny=limit_window[1])
+
+	## now scale with the signal, psf is normalize to have area unity 
+	if (target_info.source_type == "Point source"):
+		cube_signal_obj = a.phi_obj_total*im_psf_wave
+		max_signal_obj = np.amax(cube_signal_obj)
+		max_signal_obj_sky = max_signal_obj + a.phi_sky_sqarc*aperture['Area_pixel']
+	elif (target_info.source_type == "Extended source"):        
+		max_signal_obj = a.phi_obj_total*aperture['Area_pixel']
+		max_signal_obj_sky = max_signal_obj + a.phi_sky_sqarc*aperture['Area_pixel']
+
+	## create png
+	context = {}
+	name = None
+	if (request.POST.get("2d_psf", "off") == "on") and (target_info.source_type == "Point source"):
+		indwave = 1000
+		im_value = cube_signal_obj[indwave,:,:].value   
+		vmin = np.percentile(im_value,25)
+		vmax = np.percentile(im_value,85)
+		fig = plt.figure()
+		ax = Axes3D(fig,elev=settings.IM3D_ELEV,azim=settings.IM3D_AZIM)
+		xx, yy = np.meshgrid(im_xaxis,im_yaxis)        
+		ax.plot_surface(xx,yy,im_value,rstride=1,cstride=1,cmap='hot')
+		ax.set_zlim(-3,2)
+		ax.contourf(xx,yy,im_value,zdir='z',offset=-3,cmap='hot',vmin=vmin,vmax=vmax)        
+		#plt.imshow(im_signal_obj.value, vmin=vmin,vmax=vmax, cmap='hot')
+		ax.set_xlabel('Arcsec')
+		ax.set_ylabel('Arcsec')
+		name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+		print('file name=',name)
+		f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'wb')
+		#plt.savefig(f, dit=2000)
+		fig.savefig(f,dit=2000)        
+		f.close()
+		context['img_name'] = '%s.png' % name
+		## now scale with the signal, psf is normalize to have area unity 
+
 
 	context= {'debug_values':debug_values, "static_response":a.static_response, \
            "throughput":a.throughput, "wave_array":wave_array, 'atrans': atrans, \

@@ -19,16 +19,23 @@ def extrap(x, xp, yp):
 def compute_r0(wave_in,seeing_ref,wave_ref=0.5 * u.micron):
     """
     Compute Fried parameter at any wavelength, given seeing at a reference wavelength
-    :param in_lambda: Input wavelength
-    :param seeing_ref_lambda: Seeing at the reference wavelength
-    :param ref_lambda: Reference wavelength
-    :return:
+    :param wave_in: Input wavelength (with units)
+    :param seeing_ref_lambda: Seeing at the reference wavelength (with units)
+    :param ref_lambda: Reference wavelength (default=0.5 micron)
+    :return: r0 at input wavelength 
     """
     r0_ref = 0.98*wave_ref/seeing_ref.to('radian')*u.radian ## r_0 computed from seeing at reference lambda [in cm]
     r0 = r0_ref * (wave_in/wave_ref)**(6./5)
     return r0
 
 def compute_seeing_lambda(wave_in,seeing_wave_ref,wave_ref= 0.5*u.micron):
+    """
+    Compute seeing at any wavelength, given seeing at a reference wavelength
+    :param wave_in: Input wavelength (with units)
+    :param seeing_ref_lambda: Seeing at the reference wavelength (with units)
+    :param ref_lambda: Reference wavelength (default=0.5 micron)
+    :return: seeing at input wavelength 
+    """
     seeing = seeing_wave_ref * (wave_ref/wave_in) **(1./5)
     return seeing.to('arcsec')
 
