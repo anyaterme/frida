@@ -371,32 +371,6 @@ def calculate_ima(request):
     signal_required_sn = signal_noise_seq['signal'][aux.argmin()]
     required_sn = snr_seq[aux.argmin()]
 
-    '''
-    Nexp = int(request.POST.get('N_exp'))
-    Nexp_min = max(1,Nexp-10)
-    Nexp_max = Nexp+20
-    Nexp_step = (Nexp_max-Nexp_min)/30
-    signal_noise_seq = a.signal_noise_texp_img(Nexp_min,Nexp_max,Nexp_step,dit,aperture)
-
-
-    ## JAP - FIXME no esta claro que sea necesario 
-    signal_noise= float(request.POST.get('signal_noise'))
-    if (calc_method=="SN_ratio"):
-        required_sn = signal_noise
-    else:
-        required_sn = snr_seq[np.where(texp_seq == Nexp * dit)]
-    try:
-        ndit = a.texp_signal_noise_img(required_sn,dit,aperture)
-        if (calc_method == "SN_ratio"):
-            Nexp = ndit[0]
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        print (traceback.print_exc())
-        print (exc_type, exc_obj, exc_tb.tb_frame.f_code.co_filename, exc_tb.tb_lineno)
-        msg_err["ERROR GENERIC"]=("%s" % e)
-        return render(request, "error.html", {'msg_err':msg_err})
-    '''
-
     ## compute image using PSF information 
     limit_window = (settings.IMSIZE_IMG,settings.IMSIZE_IMG)
     print ("######", limit_window)
@@ -412,12 +386,8 @@ def calculate_ima(request):
 
     ## now scale with the signal, psf is normalize to have area unity 
     if (target_info.source_type == "Point source"):
-        print ("#########################################################################")
-        im_signal_obj = a.phi_obj_total*im_psf2d * aperture['Area_pixel']
+        im_signal_obj = a.phi_obj_total*im_psf2d
         max_signal_obj = np.max(im_signal_obj)
-        print (im_signal_obj.unit)
-        print (max_signal_obj.unit)
-        print ( (a.phi_sky_sqarc*aperture['Area_pixel']).unit)
         max_signal_obj_sky = max_signal_obj + a.phi_sky_sqarc*aperture['Area_pixel']
     elif (target_info.source_type == "Extended source"):        
         max_signal_obj = a.phi_obj_total*aperture['Area_pixel']
@@ -579,6 +549,7 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
             telescope_name=telescope)
 
     wave_array = a.wave_array
+    delta_wave_array = wave_array[1] - wave_array[0]
     atrans = a.atm_trans
     grating_effic = a.grating_effic
     sky_rad = a.sky_rad
@@ -611,25 +582,11 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
     else:
         Nexp = int(request.POST.get('N_exp','1'))
 
-
-    '''
-    calc_method = request.POST.get('type_results')
-    signal_noise= float(request.POST.get('signal_noise'))
-    required_sn = signal_noise
-    dit = float(request.POST.get('DIT_exp','10')) * u.second
-    Nexp = int(request.POST.get('N_exp','1'))
-    signal_noise= float(request.POST.get('signal_noise'))
-    '''
     ## compute S/N at reference wavelength at different exposure times
 
     Nexp_min = max(1,Nexp-2)
     Nexp_max = Nexp+2
     Nexp_step = (Nexp_max-Nexp_min)/5
-    #signal_noise_seq = a.signal_noise_texp_seq_spect(Nexp_min,Nexp_max,Nexp_step,\
-    #                        dit,aperture,wave_ref,dwave_ref)
-    #texp_seq = signal_noise_seq['texp']
-    #snr_seq = signal_noise_seq['SNR']
-    #signal_seq = signal_noise_seq['signal']
     signal_noise_nexp = a.signal_noise_texp_spect(Nexp,dit,aperture)
     texp_seq = signal_noise_nexp['texp']
     snr_seq = signal_noise_nexp['SNR']
@@ -653,31 +610,36 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
 
     ## now scale with the signal, psf is normalize to have area unity 
     cube_signal_obj = np.zeros_like(im_psf_wave) * a.phi_obj_spect[0].unit
-    print ("*********************************************************************************************")
-    print (im_psf_wave.unit)
-    print (a.phi_obj_spect[0].unit)
+    cube_signal_obj_sky = np.zeros_like(im_psf_wave) * a.phi_obj_spect[0].unit
     if (target_info.source_type == "Point source"):
         for iwave in range(len(wave_array)):
             cube_signal_obj[iwave,:,:] = a.phi_obj_spect[iwave]*im_psf_wave[iwave,:,:]
-        max_signal_obj = np.amax(cube_signal_obj)  
-        print (max_signal_obj.unit)
-        print((a.phi_sky_spect_sqarc*aperture['Area_pixel']).unit)
-        max_signal_obj_sky = max_signal_obj + a.phi_sky_spect_sqarc*aperture['Area_pixel']
-    elif (target_info.source_type == "Extended source"):        
-        max_signal_obj = a.phi_obj_spect*aperture['Area_pixel']
-        max_signal_obj_sky = max_signal_obj + a.phi_sky_spect_sqarc*aperture['Area_pixel']
+            cube_signal_obj_sky[iwave,:,:] = cube_signal_obj[iwave,:,:] + a.phi_sky_spect_sqarc[iwave]*aperture['Area_pixel']
 
+        #max_signal_obj = np.amax(cube_signal_obj)  
+        max_signal_obj = np.max(cube_signal_obj)  
+        max_signal_obj_sky = np.max(cube_signal_obj_sky)  
+    elif (target_info.source_type == "Extended source"):        
+        max_signal_obj = np.max(a.phi_obj_spect*aperture['Area_pixel'])
+        max_signal_obj_sky = np.max((a.phi_obj_spect + a.phi_sky_spect_sqarc))*aperture['Area_pixel']
+
+    max_signal_obj *= delta_wave_array
+    max_signal_obj_sky *= delta_wave_array
+
+    max_signal_obj_sky_dit = dit * max_signal_obj_sky
+    saturation_time = a.instrument.detector["welldepth"] / max_signal_obj_sky 
     ## create png
     context = {}
     name = None
     if (request.POST.get("2d_psf", "off") == "on") and (target_info.source_type == "Point source"):
+        print ("################ ENTRO ###############")
         indwave = 1000
         im_value = cube_signal_obj[indwave,:,:].value   
         vmin = np.percentile(im_value,25)
         vmax = np.percentile(im_value,85)
         fig = plt.figure()
         ax = Axes3D(fig,elev=settings.IM3D_ELEV,azim=settings.IM3D_AZIM)
-        xx, yy = np.meshgrid(im_xaxis,im_yaxis)        
+        xx, yy = np.meshgrid(cube_xaxis,cube_yaxis)        
         ax.plot_surface(xx,yy,im_value,rstride=1,cstride=1,cmap='hot')
         ax.set_zlim(-3,2)
         ax.contourf(xx,yy,im_value,zdir='z',offset=-3,cmap='hot',vmin=vmin,vmax=vmax)        
@@ -708,6 +670,7 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
     context['sky_conditions'] = sky_conditions
     context['signal_noise_req'] = signal_noise
     context['total_exposure_time'] = dit * Nexp
+    context['max_signal_obj_sky_dit'] = max_signal_obj_sky_dit
     context['Aperture_radius'] = aperture['Radius']
     context['encircled_energy'] = aperture["EE"]
     context['lambda_eff'] = lambda_ref
