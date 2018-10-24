@@ -149,7 +149,7 @@ def buildim_psf_2gauss(psf_2gauss,pixscale,Nx=250,Ny=250):
 
     psf2d  = halo2d+core2d
 
-    return psf2d / pixscale / pixscale,x,y
+    return psf2d * pixscale * pixscale,x,y
 
 
 def buildcube_psf_2gauss(psf_wave,pixscale,Nx=250,Ny=250):
@@ -188,7 +188,7 @@ def buildcube_psf_2gauss(psf_wave,pixscale,Nx=250,Ny=250):
     print('plano suma',psf_cube[950,:,:].sum()*pixscale**2)
     print('psf_cube[row]',psf_cube[950,:,int(Ny/2)]*pixscale**2)
 
-    return psf_cube / pixscale / pixscale,x,y
+    return psf_cube * pixscale * pixscale,x,y
 
 
 def buildim_psf_AiryGauss(psf,pixscale,Nx=250,Ny=250):
@@ -226,7 +226,7 @@ def buildim_psf_AiryGauss(psf,pixscale,Nx=250,Ny=250):
 
     psf2d  = halo2d+core2d
 
-    return psf2d / pixscale / pixscale,x,y
+    return psf2d * pixscale * pixscale,x,y
 
 
 def buildcube_psf_AiryGauss(psf_wave,pixscale,Nx=250,Ny=250):
@@ -273,5 +273,5 @@ def buildcube_psf_AiryGauss(psf_wave,pixscale,Nx=250,Ny=250):
     print('plano suma',psf_cube[950,:,:].sum()*pixscale**2)
     print('psf_cube[row]',psf_cube[950,:,int(Ny/2)]*pixscale**2)
 
-    return psf_cube / pixscale / pixscale,x,y
+    return psf_cube * pixscale * pixscale,x,y
 
