@@ -13,7 +13,7 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
-from django.conf.urls import include, url
+from django.urls import include, path
 from django.contrib import admin
 from django.views.generic.base import RedirectView
 from frida import urls as frida_urls
@@ -21,9 +21,9 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
-	url(r'^$', RedirectView.as_view(url='/frida')),
-    url(r'^admin/', include(admin.site.urls)),
-	url(r'^frida/', include(frida_urls))
+	path('', RedirectView.as_view(url='frida/')),
+	path('frida/', include('frida.urls')),
+    path('admin/', admin.site.urls),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

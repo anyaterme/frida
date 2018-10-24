@@ -1,16 +1,22 @@
+# Table with the list of available filters for FRIDA.
+#   Name can be used in the Web pages to select grating.
+#   Transmission contains the filter transmission curve
+#   Lambda_center is in microns; 
+#   Dit is the Detector integration time which will be used as default
+#   Diffraction limit is in milli-arcsec 
 #Units in micras
-Name,Code,Transmission,cut-on,cut-off,lambda_center
-"Y","Y","filterY_cold.dat",0.960,1.086,1.020,20
-"J","J","filterJ_cold.dat",1.170,1.330,1.25,20
-"H","H","filterH_cold.dat",1.490,1.780,1.635,5
-"Ks","Ks","filterKs_cold.dat",1.990,2.310,2.145,5
-"[FeII] [1.26 micron]","NB1.26","filterNB1p26_cold.dat",1.250,1.264,1.257,60
-"Pa-beta [1.28 micron]","NB1.28","filterNB1p28_cold.dat",1.272,1.292,1.282,60
-"[FeII] [1.64 micron]","NB1.64","filterNB1p64_cold.dat",1.631,1.656,60
-"H_cont  [1.71 micron]","NB1.71","filterNB1p71_cold.dat",1.697,1.723,1.71,60
-"Ks cont  [2.09 micron]","NB2.09","filterNB2p09_cold.dat",2.078,2.108,2.09,20
-"H2 1-0 S(1) [2.12 micron]","NB2.12","filterNB2p12_cold.dat",2.106,2.138,2.12,20
-"Br-gamma [2.17 micron]","NB2.17","filterNB2p17_cold.dat",2.150,2.182,2.166,20
-"Km cont [2.27 mic]","NB2.27","filterNB2p27_cold.dat",2.253,2.280,2.267,20
-"Kl cont [2.42 mic]","NB2.42","filterNB2p42_cold.dat",2.390,2.450,2.420,20
-"[Si VII] [2.48 mic]","NB2.48","filterNB2p48_cold.dat",2.450,2.510, 2.480,30
+Name,Code,Transmission,cut-on,cut-off,lambda_center,dit,diff_lim
+"Y","Y","filterY_cold.dat",0.960,1.086,1.020,20,24.7
+"J","J","filterJ_cold.dat",1.170,1.330,1.25,20,30.3
+"H","H","filterH_cold.dat",1.490,1.780,1.635,5,39.6
+"Ks","Ks","filterKs_cold.dat",1.990,2.310,2.145,5,51.9
+"[FeII] [1.26 micron]","NB1.26","filterNB1p26_cold.dat",1.250,1.264,1.257,60,30.4
+"Pa-beta [1.28 micron]","NB1.28","filterNB1p28_cold.dat",1.272,1.292,1.282,60,31.0
+"[FeII] [1.64 micron]","NB1.64","filterNB1p64_cold.dat",1.631,1.656,60,40.1
+"H_cont  [1.71 micron]","NB1.71","filterNB1p71_cold.dat",1.697,1.723,1.71,60,41.4
+"Ks cont  [2.09 micron]","NB2.09","filterNB2p09_cold.dat",2.078,2.108,2.09,20,50.6
+"H2 1-0 S(1) [2.12 micron]","NB2.12","filterNB2p12_cold.dat",2.106,2.138,2.12,20,51.3
+"Br-gamma [2.17 micron]","NB2.17","filterNB2p17_cold.dat",2.150,2.182,2.166,20,52.4
+"Km cont [2.27 mic]","NB2.27","filterNB2p27_cold.dat",2.253,2.280,2.267,20,54.9
+"Kl cont [2.42 mic]","NB2.42","filterNB2p42_cold.dat",2.390,2.450,2.420,20,58.6
+"[Si VII] [2.48 mic]","NB2.48","filterNB2p48_cold.dat",2.450,2.510, 2.480,30,60.0

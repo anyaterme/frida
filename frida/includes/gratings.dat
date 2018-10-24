@@ -2,13 +2,14 @@
 #   Name can be used in the Web pages to select grating.
 #   Description can be used as a short explanation of grating characteristics
 #   Master is the manufacturer's code
-#   Lambda_center is in Angstroms; Rcenter is Resolution at Lambda_center, Dispersion in Angstroms/pixel; 
-Name,Description,Master,Efficiency,Central_Wave,Rcenter,Dispersion,Wave_ini,Wave_end
-zJ Low,z+J R~1400 - 1.15 micron,*-186R,Effic_ZJLow.csv,11250,1371,4.10,7048,15450
-HK Low,H+K R~1250 - 1.97 micron,*-186R,Effic_HKLow.csv,19750,1261,7.83,11700,27800
-z Med,z R~3600 - 1.025 micron,*-596R,Effic_zMed.csv,10250,3597,1.42,8700,11708
-J Med,J R~6700 - 1.25 micron,*-640R,Effic_JMed.csv,12500,6701,0.93,11500,13500
-H Med,H R~4300 - 1.64 micron,*-760R,Effic_HMed.csv,16350,4326,1.89,14400,18300
-K Med,K R~3900 - 2.22 micron,*-833R,Effic_KMed.csv,22250,3916,2.84,19340,25160
-H High,H R~26500 - 1.64 micron,*-111R,Effic_HHigh.csv,16350,26546,0.31,15500,17000
-K High,K R~32100 - 2.14 micron,*-024R,Effic_KHigh.csv,21425,32172,0.33,21000,22000
+#   Lambda_center is in Angstroms; Rcenter is Resolution at Lambda_center, Dispersion in Angstroms/pixel;
+#   Diffraction limit is in milli-arcsec 
+Name,Description,Master,Efficiency,Central_Wave,Rcenter,Dispersion,Wave_ini,Wave_end,diff_limit
+zJ Low,z+J R~1400 - 1.15 micron,*-186R,Effic_ZJLow.csv,11250,1371,4.10,7048,15450,27.2
+HK Low,H+K R~1250 - 1.97 micron,*-186R,Effic_HKLow.csv,19750,1261,7.83,11700,27800,47.8
+z Med,z R~3600 - 1.025 micron,*-596R,Effic_zMed.csv,10250,3597,1.42,8700,11708,24.8
+J Med,J R~6700 - 1.25 micron,*-640R,Effic_JMed.csv,12500,6701,0.93,11500,13500,30.3
+H Med,H R~4300 - 1.64 micron,*-760R,Effic_HMed.csv,16350,4326,1.89,14400,18300,39.6
+K Med,K R~3900 - 2.22 micron,*-833R,Effic_KMed.csv,22250,3916,2.84,19340,25160,53.8
+H High,H R~26500 - 1.64 micron,*-111R,Effic_HHigh.csv,16350,26546,0.31,15500,17000,39.6
+K High,K R~32100 - 2.14 micron,*-024R,Effic_KHigh.csv,21425,32172,0.33,21000,22000,51.8

@@ -24,6 +24,12 @@ TELESCOPE = "GTC"
 INSTRUMENT = "FRIDA"
 #PSF_MODEL = "Airy+Gaussian"
 PSF_MODEL = "2-Gaussians"
+## size of windows to compute 
+IMSIZE_IFS = 40
+IMSIZE_IMG = 120
+IM3D_ELEV = 30
+IM3D_AZIM = -60
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
