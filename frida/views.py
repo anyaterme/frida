@@ -23,18 +23,15 @@ import matplotlib.pyplot as plt
 import traceback
 import astropy.units as u
 
+from django.core.files.storage import FileSystemStorage
+
+
 from mpl_toolkits.mplot3d import Axes3D
 
-#from math import sqrt, pi, log10
-
-#import frida.calculator
-#import frida.gtcao
-#import frida.set_config
 from frida.set_config import *
 from frida.compute_flux import define_photzp
 from frida.calculator import SkyConditions, GuideStar, TargetInfo, Calculator_Image, Calculator_Spect
 from frida.gtcao import *
-#from django.http import JsonResponse
 
 # Create your views here.
 def debug(msg=None, variable=None):
@@ -46,6 +43,11 @@ def debug(msg=None, variable=None):
         print ("%s @ %s"  % (sys._getframe(1).f_code.co_name, variable))
     else:
         print ("%s @ %s : %s"  % (sys._getframe(1).f_code.co_name, msg, variable))
+
+def show_exec():
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print(exc_type, fname, exc_tb.tb_lineno)
 
 def index(request):
     import csv
@@ -112,6 +114,14 @@ def index(request):
         except Exception as e:
             print ("ERROR!!! File [%s] don't remove. :> %s" % (f, e))
     files = glob.glob("%s/*.fits" % os.path.abspath(settings.MEDIA_ROOT))
+    files.sort(key=os.path.getmtime)
+    for f in files:
+        try:
+            if (time.time() - os.path.getmtime(f) >= 24*3600):
+                os.remove(f)
+        except Exception as e:
+            print ("ERROR!!! File [%s] don't remove. :> %s" % (f, e))
+    files = glob.glob("%s/*.dat" % os.path.abspath(settings.MEDIA_ROOT))
     files.sort(key=os.path.getmtime)
     for f in files:
         try:
@@ -220,7 +230,20 @@ def get_TargetInfo(request):
         except:
             error_values['Spectral Distribution'] = label_energy_type
             error = True
-    elif (energy_type == 'single_emission'):
+    elif (energy_type == 'user'):
+        try:
+            user_file= request.FILES['user_file']
+            name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            filename = fs.save("%s_%s" % (name,user_file.name), user_file)
+            sed = ('user-defined', "%s_%s" % (name,user_file.name))
+            label_energy_type = 'User-defined, file: %s' % user_file
+            debug_values['Spectral Distribution'] = label_energy_type
+        except Exception as e:
+            debug(e)
+            show_exec()
+
+    if (request.POST.get('single_emmission_line', 'off') != 'off'):
         try:
             line_central_wave = request.POST.get('st_wavelength')
             line_flux = request.POST.get('st_flux')
@@ -268,12 +291,14 @@ def get_TargetInfo(request):
         pass
 
     # creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
+    print("###################################################################################################")
     target_info = TargetInfo(mag_target,band,mag_system,sed,waveshift,extended=extended)
     target_info.error = error
     target_info.messages = debug_values
     target_info.error_messages = error_values
     target_info.energy_type = label_energy_type
     target_info.source_type= label_source_morpho
+    print("###################################################################################################")
     
     return target_info
 
@@ -304,6 +329,7 @@ def calculate_ima(request):
     try:
         target_info = get_TargetInfo(request)
     except Exception as e:
+        debug(e)
         msg_err['ERROR GENERIC'] = "Please. review your TargetInfo parameters. %s" % e
         return render(request, "error.html", {'msg_err':msg_err})
     if (target_info.error):
@@ -471,7 +497,7 @@ def calculate_ima(request):
     context["obs_filter"] = obs_filter
     context['signal_req'] = signal_required_sn
     context['signal_req_per_dit'] = signal_required_sn / Nexp
-    context['max_signal_obj_sky_dit'] = max_signal_obj_sky_dit 
+    context['max_signal_obj_sky_dit'] = max_signal_obj_sky_dit.to(u.electron)
     context['signal_noise_req'] = required_sn
     context['total_exposure_time'] = dit * Nexp
     context['dit'] = dit

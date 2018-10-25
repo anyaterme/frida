@@ -5,7 +5,7 @@
 		 <li><a data-toggle="tab" href="#sectionB"><span class="hidden-xs">Observing conditions and GTCAO configuration</span><span class="hidden-sm hidden-md hidden-lg hidden-xl">Observ & GTCAO</span></a></li>
        <li><a data-toggle="tab" href="#sectionC">FRIDA configuration</a></li>
     </ul>
-	<form class="" method="POST" action="{% url "calculate" %}" id="calculate_form" target="_blank">
+	<form class="" method="POST" action="{% url "calculate" %}" id="calculate_form" target="_blank" enctype="multipart/form-data">
 	 	<ul class="errorMessages list-group"></ul>
 		{% csrf_token %}
 		<div class="tab-content">

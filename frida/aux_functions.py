@@ -4,6 +4,7 @@ import os,re
 import csv
 import astropy.units as u
 import scipy.integrate
+from django.conf import settings
 
 
 def read_sed_pickles_files(fname_sed,path_sed='sed_library/pickles'):
@@ -37,6 +38,27 @@ def read_sed_nonstellar_files(fname_sed,path_sed='sed_library/nonstellar'):
 	sed = {'wave':np.array(sed_wave)*unitx,'flambda':flambda*unity}
 	fp.close()
 	return sed
+
+def read_sed_userdefined_files(fname_sed,path_sed=settings.MEDIA_ROOT):
+	fp = open(os.path.join(path_sed, fname_sed))
+	lines_sed = csv.DictReader(filter(lambda row: row[0] != '#', fp),delimiter=" ",\
+	  skipinitialspace=True)
+	print(lines_sed.fieldnames[1])
+	unitx=u.Unit(re.search('\[(.+?)\]',lines_sed.fieldnames[0]).group(1))
+	unity=u.Unit(re.search('\[(.+?)\]',lines_sed.fieldnames[1]).group(1))
+	print("unitx,y",unitx,unity)
+	sed_wave = []
+	sed_value = []
+	for line in lines_sed:
+		sed_wave.append(float(line[lines_sed.fieldnames[0]]))
+		sed_value.append(float(line[lines_sed.fieldnames[1]]))
+	## original SED are normalized to flux at 5500AA, here we arbitrarily scale to about 
+	##  V~15, flambda=3.5e-15 erg/cm2/s/A
+	flambda= np.array(sed_value) * 3.5e-15 	
+	sed = {'wave':np.array(sed_wave)*unitx,'flambda':flambda*unity}
+	fp.close()
+	return sed
+
 
 
 def read_grating_files(fname_gratings,path_gratings='gratings'):

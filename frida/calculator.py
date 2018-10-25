@@ -135,6 +135,18 @@ class TargetInfo:
 		    #flux_scale = scale_to_vega(band,mag_target,input_normflux) 
 		    sed_flambda = sed_nonstellar['flambda']
 		    sed_wave = sed_nonstellar['wave']*(1+redshift)
+		elif (sed[0] == "user-defined"):
+		    template = sed[1]
+		    sed_userdefined=read_sed_userdefined_files(template)
+		    print("sed_user-defined_wave=",sed_userdefined['wave'])
+		    print("sed_user-defined_flambda=",sed_userdefined['flambda'])
+		    print("lambda_band_rest=",lambda_band_rest)
+		    lambda_band_rest_sameunit = lambda_band_rest.to(sed_userdefined['wave'].unit).value
+		    input_normflux=np.interp(lambda_band_rest_sameunit,sed_userdefined['wave'].value,\
+		          sed_userdefined['flambda'].value) * sed_userdefined['flambda'].unit
+		    #flux_scale = scale_to_vega(band,mag_target,input_normflux) 
+		    sed_flambda = sed_userdefined['flambda']
+		    sed_wave = sed_userdefined['wave']*(1+redshift)
 
 		if (mag_system == 'Vega'):
 		   flux_scale = scale_to_vega(band,mag_target,input_normflux)
