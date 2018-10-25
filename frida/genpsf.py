@@ -96,11 +96,14 @@ def compute_ee_AiryGauss(psf, pixscale, fcore=1.5, spaxel=False,\
             A_core = psf['Amp_core']
             A_halo = psf['Amp_halo']
             xscale = 2 * np.pi * psf["Diameter"].to(u.meter) / psf["Wave"].to(u.meter)
-            x = (xscale * raper_ref(u.radian)).value
+            x = (xscale * raper_ref.to(u.radian)).value
+        ## FIXME. There is a lost sigma scale
             ee_core = A_core * \
                  (1 - jv(0,x)**2 - jv(1,x)**2)        
             ee_halo = doublepi * A_halo * sigma2_halo * \
                  (1 - np.exp(-raper2_ref/2./sigma2_halo))             
+            print (ee_halo.unit)
+            print (ee_core.unit)
             ee = ee_core + ee_halo 
         else: 
             ee_core = 1.              

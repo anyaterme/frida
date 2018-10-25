@@ -184,7 +184,7 @@ class TargetInfo:
 
 		self.flux_scale = flux_scale
 		self.sed_wave = sed_wave
-		self.sed_flambda = sed_flambda
+		self.sed_flambda = sed_flambda      #Intensidad
 		self.extended = extended
 		if (extended):
 		    self.sed_flambda /= u.arcsec**2 

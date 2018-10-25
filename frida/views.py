@@ -629,20 +629,30 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
     max_signal_obj_sky_dit = dit * max_signal_obj_sky
     saturation_time = a.instrument.detector["welldepth"] / max_signal_obj_sky 
     ## create png
-    context = {}
+    context= {'debug_values':debug_values, "static_response":a.static_response, \
+           "throughput":a.throughput, "wave_array":wave_array, 'atrans': atrans, \
+           'grating_effic':grating_effic, 'sky_rad':sky_rad}
     name = None
     if (request.POST.get("2d_psf", "off") == "on") and (target_info.source_type == "Point source"):
-        print ("################ ENTRO ###############")
         indwave = 1000
         im_value = cube_signal_obj[indwave,:,:].value   
+        im_value /= np.max(im_value)
         vmin = np.percentile(im_value,25)
         vmax = np.percentile(im_value,85)
         fig = plt.figure()
         ax = Axes3D(fig,elev=settings.IM3D_ELEV,azim=settings.IM3D_AZIM)
+        # make the panes transparent
+        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        # make the grid lines transparent
+        ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+        ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+        ax.zaxis._axinfo["grid"]['color'] =  (1,1,1,0)
         xx, yy = np.meshgrid(cube_xaxis,cube_yaxis)        
         ax.plot_surface(xx,yy,im_value,rstride=1,cstride=1,cmap='hot')
-        ax.set_zlim(-3,2)
-        ax.contourf(xx,yy,im_value,zdir='z',offset=-3,cmap='hot',vmin=vmin,vmax=vmax)        
+        ax.set_zlim(-2,1)
+        ax.contourf(xx,yy,im_value,zdir='z',offset=-2,cmap='hot',vmin=0.,vmax=0.8)        
         #plt.imshow(im_signal_obj.value, vmin=vmin,vmax=vmax, cmap='hot')
         ax.set_xlabel('Arcsec')
         ax.set_ylabel('Arcsec')
@@ -652,13 +662,10 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
         #plt.savefig(f, dit=2000)
         fig.savefig(f,dit=2000)        
         f.close()
-        context['img_name'] = '%s.png' % name
+        context['img_name'] = '%s' % name
         ## now scale with the signal, psf is normalize to have area unity 
 
 
-    context= {'debug_values':debug_values, "static_response":a.static_response, \
-           "throughput":a.throughput, "wave_array":wave_array, 'atrans': atrans, \
-           'grating_effic':grating_effic, 'sky_rad':sky_rad}
 
     photunit = u.electron/u.second/u.Angstrom
 
