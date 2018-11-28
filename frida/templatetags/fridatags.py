@@ -26,16 +26,11 @@ def astro_round(quantity, decimals=0):
 		return myfmt.format(quantity[0])
 
 @register.filter
-<<<<<<< HEAD
 def astro_scien(quantity, decimals=4):
-=======
-def astro_science(quantity, decimals=0):
->>>>>>> 90399cfa42bfbbff185288bee6fb2737a0a14ecc
 	try:
 		myfmt = "{0.value:0.0%de} {0.unit}" % decimals
 		return myfmt.format(quantity)
 	except:
-<<<<<<< HEAD
 		try:
 			myfmt = "{0.value:0.0%E} {0.unit}" 
 			return myfmt.format(quantity[0])
@@ -56,10 +51,8 @@ def astro_scien_to(quantity, decimals=4, unit=None):
 		except Exception as e:
 			print (e)
 			return "0"
-=======
 		myfmt = "{0.value:0.0%de} {0.unit}" % decimals
 		return myfmt.format(quantity[0])
->>>>>>> 90399cfa42bfbbff185288bee6fb2737a0a14ecc
 
 @register.simple_tag
 def astro_round_to(quantity, decimals=0, unit=None):
