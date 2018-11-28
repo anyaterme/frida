@@ -37,7 +37,35 @@
 				</div>
 				<div class="panel panel-default">
 					<div class="panel-heading">
-						<input type="radio" name="spectral_type" id="spectral_type" value="single_emission"  onclick="check_collapse_from_heading_class(this,'panel-info');">
+						<input type="radio" name="spectral_type" id="spectral_type" value="user"  onclick="check_collapse_from_heading_class(this,'panel-info');">
+						User-defined spectrum read from file 
+					</div>
+					<div class="panel-body collapse">
+						<input type="file" class="form-control" id="user_file" name="user_file" aria-describedby="user_file_help">
+						<br/>
+						<small id="user_file_help" class="form-text text-muted">Size &lt; 1MB</small>
+					</div>
+				</div>
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<input type="radio" name="spectral_type" id="spectral_type" value="non-stellar-lib" onclick="check_collapse_from_heading_class(this,'panel-info');"> Library spectrum of a non-stellar object
+					</div>
+					<div class="panel-body collapse form-inline">
+						<select class="form-control" name="st_non_stellar" id="st_non_stellar">
+							{% for nonstellar in list_nonstellar %}
+							<option class="small" value='{{ nonstellar.sed_file}}' >{{ nonstellar.Label|ellipsis_text:17 }}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+            </div>
+        </div>
+		<div class="panel panel-primary">
+			<div class="panel-heading"> <strong>Single emission line: <a href="{% url 'docs-p1' %}#spectral-distribution" class="badge"> more info </a></strong></div>
+			<div class="panel-body">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<input type="checkbox" name="single_emission_line" value="single_emission"  onclick="check_collapse_from_heading_class(this,'panel-info');">
 						Single emission line 
 					</div>
 					<div class="panel-body collapse">
@@ -72,6 +100,7 @@
 								<div class="col-md-7 text-left"><input type="text" class="form-control" id="st_velocity" name="st_velocity" placeholder="500.0"></div>
 							</div>
 						</div>
+                        {% comment %}
 						<div class="col-xs-12">
 							<div class="row">
 								<div class="col-md-5"><label for="st_flux_density">Continuum</label></div>
@@ -88,29 +117,7 @@
 								</div>
 							</div>
 						</div>
-					</div>
-				</div>
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<input type="radio" name="spectral_type" id="spectral_type" value="user"  onclick="check_collapse_from_heading_class(this,'panel-info');">
-						User-defined spectrum read from file 
-					</div>
-					<div class="panel-body collapse">
-						<input type="file" class="form-control" id="user_file" name="user_file" aria-describedby="user_file_help">
-						<br/>
-						<small id="user_file_help" class="form-text text-muted">Size &lt; 1MB</small>
-					</div>
-				</div>
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<input type="radio" name="spectral_type" id="spectral_type" value="non-stellar-lib" onclick="check_collapse_from_heading_class(this,'panel-info');"> Library spectrum of a non-stellar object
-					</div>
-					<div class="panel-body collapse form-inline">
-						<select class="form-control" name="st_non_stellar" id="st_non_stellar">
-							{% for nonstellar in list_nonstellar %}
-							<option class="small" value='{{ nonstellar.sed_file}}' >{{ nonstellar.Label|ellipsis_text:17 }}</option>
-							{% endfor %}
-						</select>
+                        {% endcomment %}
 					</div>
 				</div>
 			</div>
@@ -296,5 +303,4 @@
 </div>
 <script>
 	check_extended_source();
-	//$( ":required" ).on( "invalid", function() { $('a[href="#sectionA"]').css('backgroundColor','red').css('color','white')});
 </script>

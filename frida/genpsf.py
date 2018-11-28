@@ -96,11 +96,14 @@ def compute_ee_AiryGauss(psf, pixscale, fcore=1.5, spaxel=False,\
             A_core = psf['Amp_core']
             A_halo = psf['Amp_halo']
             xscale = 2 * np.pi * psf["Diameter"].to(u.meter) / psf["Wave"].to(u.meter)
-            x = (xscale * raper_ref(u.radian)).value
+            x = (xscale * raper_ref.to(u.radian)).value
+        ## FIXME. There is a lost sigma scale
             ee_core = A_core * \
                  (1 - jv(0,x)**2 - jv(1,x)**2)        
             ee_halo = doublepi * A_halo * sigma2_halo * \
                  (1 - np.exp(-raper2_ref/2./sigma2_halo))             
+            print (ee_halo.unit)
+            print (ee_core.unit)
             ee = ee_core + ee_halo 
         else: 
             ee_core = 1.              
@@ -166,7 +169,7 @@ def buildcube_psf_2gauss(psf_wave,pixscale,Nx=250,Ny=250):
     """
     Nwave = len(psf_wave['Amp_core'])
     
-    psf_cube = np.ndarray(shape=(Nwave,Nx,Ny),dtype='float')
+    psf_cube = np.ndarray(shape=(Nwave,Nx,Ny),dtype='float') * psf_wave["Amp_core"].unit
     
     x = (np.arange(Nx)-Nx/2+0.5)*pixscale
     y = (np.arange(Ny)-Ny/2+0.5)*pixscale
@@ -184,9 +187,9 @@ def buildcube_psf_2gauss(psf_wave,pixscale,Nx=250,Ny=250):
 
         psf_cube[i,:,:]  = halo2d+core2d
 
-    print('psf_cube[wave]',psf_cube[900:1000,int(Nx/2),int(Ny/2)]*pixscale**2)
-    print('plano suma',psf_cube[950,:,:].sum()*pixscale**2)
-    print('psf_cube[row]',psf_cube[950,:,int(Ny/2)]*pixscale**2)
+    print('psf_cube[wave]',psf_cube[900:1000,int(Nx/2),int(Ny/2)])
+    print('plano suma',psf_cube[950,:,:].sum())
+    print('psf_cube[row]',psf_cube[950,:,int(Ny/2)])
 
     return psf_cube * pixscale * pixscale,x,y
 
