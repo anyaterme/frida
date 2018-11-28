@@ -104,7 +104,6 @@ def index(request):
 
 
     context = {'list_filters':list_filters_dict, 'list_gratings':list_gratings_dict, 'list_pickles':list_pickles_dict, 'list_nonstellar':list_nonstellar_dict}
-    print (os.path.abspath(os.path.dirname(__file__)))
     files = glob.glob("%s/*.png" % os.path.abspath(settings.MEDIA_ROOT))
     files.sort(key=os.path.getmtime)
     for f in files:

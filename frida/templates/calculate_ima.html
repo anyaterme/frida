@@ -445,7 +445,7 @@
 						Total exposure time <span class="badge">{{ total_exposure_time|astro_round:0 }} </span>
 					</li>
 					<li class="list-group-item"> 
-						Max. intensity at central pixel per DIT (object+sky)  <span class="badge">{{ max_signal_obj_sky_dit|astro_science:4 }}</span>
+						Max. intensity at central pixel per DIT (object+sky)  <span class="badge">{% astro_scien_to max_signal_obj_sky_dit 2 'electron' %}</span>
 					</li>
 					<li class="list-group-item"> 
 						Detector saturation limit (e<sup>-</sup>) <span class="badge">{% astro_round_to saturation_time 0 's' %} </span>
@@ -457,10 +457,10 @@
 						Number of pixels in Aperture <span class="badge">{{ AreaNpix|floatformat:0 }} pixels</span>
 					</li>
 					<li class="list-group-item"> 
-						Total number of e<sup>-</sup> in Aperture (object only)<span class="badge">{{ signal_req|astro_science:4 }}</span>
+						Total number of e<sup>-</sup> in Aperture (object only)<span class="badge">{% astro_scien_to  signal_req 2 'electron' %}</span>
 					</li>
 					<li class="list-group-item"> 
-						Total number of e<sup>-</sup> in Aperture per DIT (object only, 1 DIT) <span class="badge">{{ signal_req_per_dit|astro_science:1 }}</span>
+						Total number of e<sup>-</sup> in Aperture per DIT (object only, 1 DIT) <span class="badge">{% astro_scien_to  signal_req_per_dit 2 'electron' %} </span>
 					</li>
 					<li class="list-group-item"> 
 						Background (1 DIT per pix) <span class="badge">{{ background|astro_round:1 }}</span>

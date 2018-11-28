@@ -31,13 +31,16 @@
 %	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
 %----------------------------------------------------------------------------------------
 
-\documentclass[12pt, spanish]{article}
+\documentclass[11pt, spanish]{article}
 \usepackage[spanish]{babel}
 \selectlanguage{spanish}
 \usepackage[utf8x]{inputenc}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{subcaption}
+\usepackage{verbatim}
+\usepackage{fancyvrb}
+
 \usepackage{utopia}
 \pagestyle{headings}
 
@@ -65,17 +68,17 @@
 %	HEADING SECTIONS
 %----------------------------------------------------------------------------------------
 
-\textsc{\LARGE Shidix Technologies}\\[1.5cm] % Name of your university/college
-\textsc{\Large Calculadora de tiempos de exposici\'on}\\[0.5cm] % Major heading such as course name
-\textsc{\large Especificaciones}\\[0.5cm] % Minor heading such as course title
+\textsc{\LARGE Shidix Technologies}\\[1.2cm] % Name of your university/college
+\textsc{\Large Calculadora de tiempos de exposici\'on}\\[0.4cm] % Major heading such as course name
+\textsc{\large Especificaciones}\\[0.4cm] % Minor heading such as course title
 
 %----------------------------------------------------------------------------------------
 %	TITLE SECTION
 %----------------------------------------------------------------------------------------
 
-\HRule \\[0.4cm]
+\HRule \\[0.3cm]
 { \huge \bfseries FRIDA}\\[0.4cm] % Title of your document
-\HRule \\[1.5cm]
+\HRule \\[1.2cm]
  
 %----------------------------------------------------------------------------------------
 %	AUTHOR SECTION
@@ -85,7 +88,7 @@
 \begin{flushleft} \large
 \emph{Preparado por:}\\
 Daniel Jacobo D\'iaz Gonz\'alez
-\end{flushleft}
+\end{flushle2t}
 \end{minipage}
 ~
 \begin{minipage}{0.4\textwidth}
@@ -142,11 +145,11 @@ El ETC tiene dos modos independientes: modo imagen y modo IFS.
 
 \subsection{Requerimientos primarios}
 \begin{itemize}
-    \item El ETC ofrece dos opciones b\'asicas para la morfolog\'ia de la fuente: fuente puntual y fuente extendida. \ref{fig:spatial}
-    \item El brillo de la fuente se especifica como la magnitud en una banda concreta. \ref{fig:brightness}
-    \item Se contemplanlos dos modos de operaci\'on del instrumento, el modo imagen y el modo IFS. \ref{fig:ifs-mode}  \ref{fig:image-mode}
+    \item El ETC ofrece dos opciones b\'asicas para la morfolog\'ia de la fuente: fuente puntual y fuente extendida. 
+    \item El brillo de la fuente se especifica como la magnitud en una banda concreta. 
+    \item Se contemplan los dos modos de operaci\'on del instrumento, el modo imagen y el modo IFS.
     \item Existen ficheros de configuraci\'on a partir de los que se define la transmisi\'on y emisi\'on de la atm\'osfera terrestre.
-    \item Hay tres escalas espaciales para cada uno de los modos (imagen e IFS). \ref{fig:ifs-mode}  \ref{fig:image-mode}
+    \item Hay tres escalas espaciales para cada uno de los modos (imagen e IFS).
     \item El ETC muestra una tabla con los valores de salida, as\'i como varias gr\'aficas con la representaci\'on de los mismos.
 
 \end{itemize}
@@ -196,6 +199,7 @@ En este caso son tres los par\'ametros a definir.
     \includegraphics[scale=0.25]{figs/spatial-profile}
     \label{fig:spatial}
 \end{figure}
+
 \begin{figure}[h]
     \centering
     \includegraphics[scale=0.25]{figs/brightness}
@@ -213,6 +217,95 @@ En este caso son tres los par\'ametros a definir.
     \caption{Modo Imagen}
     \label{fig:image-mode}
 \end{figure}
+
+\newpage
+\section{Estructura de archivos}
+    \subsection{Modelo-Vista-Controlador}
+    \begin{itemize}
+        \item \textbf{frida/views.py}. Fichero con la definición de las acciones que gobierna la web.
+        \item \textbf{frida/calculator.py}. Contine las funciones para el c\'alculo de los tiempos de exposici\'on, as\'i como la definici\'on del instrumento y los modos de observaci\'on.
+        \item \textbf{frida/compute\_flux.py}.
+    \end{itemize}
+
+    \subsection{Filtros}
+    En el directorio frida/includes podemos encontramos el archivo \'indice de los filtros que van a estar disponibles, denominado \textbf{\textit{filters.dat}}. Es un fichero ascii, m\'as concretametne un CSV (commar-separate values) en el que vamos a definir los filtros, uno por l\'inea, especificando los siguientes campos:
+    \begin{itemize}
+        \item \textbf{Name}. Etiqueta con la que se va a mostrar el filtro en el selector de la web. Es de tipo cadena, y debe ser indicado entre comillas dobles.
+        \item \textbf{Code}. C\'odigo de referencia. Es de tipo cadena, y debe ser indicado entre comillas dobles. 
+        \item \textbf{Transmission}. El nombre del fichero con los datos de transmisi\'on para este filtro (veremos despu\'es su formato). Se encontrar\'a en \textit{frida/filters}. Es de tipo cadena, y debe ser indicado entre comillas dobles.
+        \item \textbf{cut-on}. L\'imite inferior del filtro (en micras). Es de tipo float.
+        \item \textbf{cut-off}. L\'imite superior del filtro (en micras). Es de tipo float.
+        \item \textbf{lambda-center}. Longitud de onda de referencia para este filtro (en micras). Es de tipo float.
+        \item \textbf{dit}. Tiempo de integraci\'on que el detector usar\'a por defecto. Es de tipo float.
+        \item \textbf{diff\_limit}. L\'imite de difracci\'on en mili arcsec. Es de tipo float.
+    \end{itemize}
+
+\begin{Verbatim}[fontsize=\scriptsize]
+Name,Code,Transmission,cut-on,cut-off,lambda_center,dit,diff_lim
+"Y","Y","filterY_cold.dat",0.960,1.086,1.020,20,24.7
+"J","J","filterJ_cold.dat",1.170,1.330,1.25,20,30.3
+"H","H","filterH_cold.dat",1.490,1.780,1.635,5,39.6
+"Ks","Ks","filterKs_cold.dat",1.990,2.310,2.145,5,51.9
+"[FeII] [1.26 micron]","NB1.26","filterNB1p26_cold.dat",1.250,1.264,1.257,60,30.4
+\end{Verbatim}
+    Este fichero contiene una l\'inea de cabera en la que se listan los nombres de campo; adem\'as, admite l\'ineas de comentarios, para lo cual la l\'inea debe comenzar por \#.
+
+    Los ficheros de transmisi\'on los podemos encontrar en el directorio \textit{frida/filters}. Tambi\'en son ficheros ascii (csv); son ficheros de dos columnas, en los que la primera columna indica la longitud de onda en micras y la segunda columna la transmisi\'on para esa longitud de onda. No contienen fila de cabecera.
+\begin{Verbatim}[fontsize=\scriptsize]
+1.60130    0.0102336
+1.60226    0.0103185
+1.60322    0.0104181
+1.60419    0.0103159
+1.60515    0.0102234
+1.60611    0.0104208
+1.60707    0.0104571
+1.60804    0.0106585
+\end{Verbatim}
+
+    \subsection{Rendijas}
+    En el directorio frida/includes podemos encontramos el archivo \'indice de las rendijas que van a estar disponibles, denominado \textbf{\textit{gratings.dat}}. Es un fichero ascii, m\'as concretametne un CSV (commar-separate values) en el que vamos a definir las rendijas, una por l\'inea, especificando los siguientes campos:
+
+    \begin{itemize}
+        \item \textbf{Name}. Etiqueta con la que se va a mostrar el filtro en el selector de la web. Es de tipo cadena.
+        \item \textbf{Description}. C\'odigo de referencia. Es de tipo cadena.
+        \item \textbf{Master}. C\'odigo de fabricante.
+        \item \textbf{Efficiency}. El nombre del fichero con los datos de eficiencia de la rendija (veremos despu\'es su formato). Se encontrar\'a en \textit{frida/gratings}. Es de tipo cadena.
+        \item \textbf{Central\_wave}. Longitud de onda central en esta rendija (en Angstroms). Es de tipo float.
+        \item \textbf{Rcenter}. Resolución en la longitud de onda central. Es de tipo float.
+        \item \textbf{Dispersion}. Dispersi\'on de la rendija (en Angstroms/pixel). Es de tipo float.
+        \item \textbf{Wave\_ini}. L\'imite inferior de la rendija (en Angstroms). Es de tipo float.
+        \item \textbf{Wave\_end}. L\'imite superior de la rendina (en Angstroms). Es de tipo float.
+        \item \textbf{diff\_limit}. L\'imite de difracci\'on en mili arcsec. Es de tipo float.
+    \end{itemize}
+
+    Este fichero contiene una l\'inea de cabera en la que se listan los nombres de campo; adem\'as, admite l\'ineas de comentarios, para lo cual la l\'inea debe comenzar por \#.
+
+\begin{Verbatim}[fontsize=\scriptsize]
+Name,Description,Master,Efficiency,Central_Wave,Rcenter,Dispersion,Wave_ini,Wave_end,diff_limit
+zJ Low,z+J R~1400 - 1.15 micron,*-186R,Effic_ZJLow.csv,11250,1371,4.10,7048,15450,27.2
+HK Low,H+K R~1250 - 1.97 micron,*-186R,Effic_HKLow.csv,19750,1261,7.83,11700,27800,47.8
+z Med,z R~3600 - 1.025 micron,*-596R,Effic_zMed.csv,10250,3597,1.42,8700,11708,24.8
+J Med,J R~6700 - 1.25 micron,*-640R,Effic_JMed.csv,12500,6701,0.93,11500,13500,30.3
+H Med,H R~4300 - 1.64 micron,*-760R,Effic_HMed.csv,16350,4326,1.89,14400,18300,39.6
+\end{Verbatim}
+
+    Los ficheros de eficiencia los podemos encontrar en el directorio \textit{frida/gratings}. Tambi\'en son ficheros ascii (csv); son ficheros de dos columnas, en los que la primera columna indica la longitud de onda en micras y la segunda columna, la eficiencia para esa longitud de onda. En este caso, la primera l\'inea es una cabecera en la que podemos definir la unidad a utilizar. Veamos un ejemplo.
+\begin{Verbatim}[fontsize=\scriptsize]
+# schema: astropy-2.0
+Wave[nm],Effic[%]
+1004.11,49.3485
+1027.62,53.628
+1045.59,55.9055
+1102.34,60.2415
+1104.24,60.3395
+1130.33,60.5
+1158.87,61.524
+1177.07,61.584
+1216.43,61.3695
+1223.92,61.8275
+1270.72,65.852
+\end{Verbatim}
+
 
 
 
