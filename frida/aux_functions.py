@@ -160,7 +160,7 @@ def normal_mean(center,sigma,events):
     
 
 def build_im_signal_with_noise(ph_im_obj,ph_sky_pixel,\
-                ron,darkc,dit,Nexp=1,SubtractBck=True):
+                ron,darkc,dit,Nexp=1,SubtractSky=True,SubtractDark=True):
     """
     It computes an image with noise given:
         -the distribution of object signal in electrons per pixel;
@@ -201,13 +201,67 @@ def build_im_signal_with_noise(ph_im_obj,ph_sky_pixel,\
     print("noise_ron_2d=",noise_ron_2d)       
     print("noise_darkc_2d.shape=",noise_darkc_2d.shape)       
     print("noise_ron_2d.shape=",noise_ron_2d.shape)       
-    noise2d_mean = noise_object_1d.reshape(Nx,Ny) + noise_darkc_2d + \
-        noise_ron_2d 
-    if (SubtractBck): 
+    noise2d_mean = (noise_object_1d.reshape(Nx,Ny) + noise_darkc_2d + \
+        noise_ron_2d)*u.electron 
+    if (SubtractSky): 
         noise2d_mean -= dit*ph_sky_pixel 
+    if (SubtractDark): 
         noise2d_mean -= dit*darkc 
     
     return noise2d_mean
+
+
+def build_cube_signal_with_noise(phi_cube_obj,phi_spect_sky_pixel,\
+                ron,darkc,dit,Nexp=1,SubtractSky=True,SubtractDark=True):
+    """
+    It computes an image with noise given:
+        -the distribution of object signal in electrons per pixel for each wavelength bin;
+        -the value of sky in electrons per pixel for each wavelength bin;
+        -the dark signal 
+        -the readout noise 
+    The dimension of the output is determined from im_obj. All noise contributions
+    are assumed to be Poisson, except read-out noise which is 
+    assumed to be normal.
+    :param im_obj: Image with the spatial distribution of the object light 
+        [electron/sec/pixel]
+    :param sky_pixel: Sky value per pixel [electron/sec/pixel]
+    :param ron: Read-out noise [electron/pixel]
+    :param darkc: Dark current per unit time [electron/sec/pixel]
+    :param dit:
+    :param Nexp: Number of exposures
+    :param SubtractBck: Subtract the background (sky+dark) [Boolean parameter] 
+    :return:
+        
+    """
+    #im_obj_unit = 
+    print("build_im_signal_with_noise@im_obj.unit",phi_cube_obj.unit)
+    print("build_im_signal_with_noise@sky_pixel.unit",phi_spect_sky_pixel.unit)
+    #sky_pixel_unit = sky_pixel.unit
+    #sky_pixel = sky_pixel.value
+    #im_obj = im_obj.value
+
+    noise3d_mean = np.zeros_like(phi_cube_obj*dit)
+    (Nwave,Nx,Ny) = phi_cube_obj.shape
+    dark_pixel = (dit*darkc).to(u.electron)
+    noise_darkc_2d = (np.random.poisson(lam=dark_pixel.value,size=(1,Nx*Ny))).reshape(Nx,Ny)
+    ron_pixel = np.sqrt(2.)*ron.to(u.electron)
+    noise_ron_2d = (np.random.normal(0.,ron_pixel.value,size=(Nx*Ny))).reshape(Nx,Ny)
+    print("noise_darkc_2d=",noise_darkc_2d)       
+    print("noise_ron_2d=",noise_ron_2d)       
+    #print("noise_darkc_2d.shape=",noise_darkc_2d.shape)       
+    #print("noise_ron_2d.shape=",noise_ron_2d.shape)       
+    for iwave in range(Nwave):
+        psf_object_sky = ((phi_cube_obj[iwave,:,:] + phi_spect_sky_pixel[iwave])*dit).to(u.electron)
+        noise_object_1d = np.random.poisson(lam=(psf_object_sky.value).reshape(Nx*Ny),size=(1,Nx*Ny))
+        print('noise_object_1d=',noise_object_1d[0:3])
+        noise3d_mean[iwave,:,:] = (noise_object_1d.reshape(Nx,Ny) + noise_darkc_2d + \
+            noise_ron_2d)*u.electron 
+        if (SubtractSky): 
+            noise3d_mean[iwave,:,:] -= dit*phi_spect_sky_pixel[iwave] 
+        if (SubtractDark): 
+            noise3d_mean[iwave,:,:] -= dit*darkc 
+    
+    return noise3d_mean
 
 
 

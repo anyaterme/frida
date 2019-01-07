@@ -25,13 +25,14 @@ import astropy.units as u
 
 from django.core.files.storage import FileSystemStorage
 
-
 from mpl_toolkits.mplot3d import Axes3D
 
 from frida.set_config import *
 from frida.compute_flux import define_photzp
 from frida.calculator import SkyConditions, GuideStar, TargetInfo, Calculator_Image, Calculator_Spect
 from frida.gtcao import *
+from frida.fits_tools import *
+from frida.aux_functions import build_im_signal_with_noise, build_cube_signal_with_noise
 
 # Create your views here.
 def debug(msg=None, variable=None):
@@ -290,14 +291,12 @@ def get_TargetInfo(request):
         pass
 
     # creates an object of type TargetInfo, it provides method to compute scaled f-lambda at any wavelength
-    print("###################################################################################################")
     target_info = TargetInfo(mag_target,band,mag_system,sed,waveshift,extended=extended)
     target_info.error = error
     target_info.messages = debug_values
     target_info.error_messages = error_values
     target_info.energy_type = label_energy_type
     target_info.source_type= label_source_morpho
-    print("###################################################################################################")
     
     return target_info
 
@@ -428,14 +427,31 @@ def calculate_ima(request):
     context = {}
     name = None
     if (request.POST.get("2d_psf", "off") == "on") and (target_info.source_type == "Point source"):
-        im_value = im_signal_obj.value
+        if(request.POST.get("addnoise_psf","off") == "on"):
+            print(' Computing image with noise')
+            ph_sky_pixel=a.phi_sky_sqarc*aperture['Area_pixel']
+            im_signal_obj_noise = build_im_signal_with_noise(im_signal_obj,ph_sky_pixel,a.detector['ron'],\
+                a.detector['darkc'],dit,Nexp=Nexp,SubtractSky=True,SubtractDark=True)
+            im_value = im_signal_obj_noise.value
+        else:
+            im_value = im_signal_obj.value
+        print('im_value[0:10,0:10]',im_value[0:10,0:10])
+        # generate name of output (PNG, NPY & FITS)
+        name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+        print('file name=',name)
+        # save data (npy format) and generate FITS file
+        ####JAP np.save(os.path.join(settings.MEDIA_ROOT,'%s.npy' % name), im_value)
+        ##createfits(name)
+        fitsname = os.path.join(settings.MEDIA_ROOT,'%s.fits' % name) 
+        write_fits_image(fitsname,im_value,target_info,sky_conditions,guide_star,a.instrument,obs_filter)
+        # generate PNG image
         lim_value = np.log10(im_value)
-        print("Median Min max image",np.percentile(im_value,50),np.min(im_value),np.max(im_value))
+        print("  Median Min max image",np.percentile(im_value,50),np.min(im_value),np.max(im_value))
         im_value /= np.max(im_value)        
         vmin = np.percentile(lim_value,15)
         vmax = np.percentile(lim_value,85)
-        print("VMin Vmax image",vmin,vmax)
-        print("Median Min max image",np.percentile(im_value,50),np.min(im_value),np.max(im_value))
+        print("  VMin Vmax image",vmin,vmax)
+        print("  Median Min max image",np.percentile(im_value,50),np.min(im_value),np.max(im_value))
         fig = plt.figure()
         ax = Axes3D(fig,elev=settings.IM3D_ELEV,azim=settings.IM3D_AZIM)
         # make the panes transparent
@@ -454,13 +470,9 @@ def calculate_ima(request):
         ##plt.imshow(lim_value), vmin=vmin,vmax=vmax, cmap='hot')
          ###ax.set_xlabel('Arcsec')
         ###ax.set_ylabel('Arcsec')
-        name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-        print('file name=',name)
         f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'wb')
         plt.savefig(f, dit=2000)
         f.close()
-        np.save(os.path.join(settings.MEDIA_ROOT,'%s.npy' % name), im_signal_obj.value)
-        createfits(name)
         context['img_name'] = '%s' % name
         ## now scale with the signal, psf is normalize to have area unity 
     print('phi_sky_sqarc.unit',a.phi_sky_sqarc)
@@ -522,7 +534,7 @@ def calculate_ima(request):
     context['debug_values'] = a.debug_values
 
     return render(request, 'calculate_ima.html', context)
-
+'''
 def createfits(filename):
     from astropy.io import fits
     from django.utils.encoding import smart_str
@@ -532,7 +544,8 @@ def createfits(filename):
     hdul.append(fits.ImageHDU(data=data))
     hdul.writeto(os.path.join(settings.MEDIA_ROOT,'%s.fits' % (filename)))
     return None
-
+'''
+'''
 def downloadfits(request, pngfile):
     from astropy.io import fits
     from django.utils.encoding import smart_str
@@ -545,8 +558,26 @@ def downloadfits(request, pngfile):
     response['Content-Disposition'] = 'attachment; filename=%s' % pngfile.replace('png','fits')
     response['X-Sendfile'] = os.path.join(settings.MEDIA_ROOT,'%s' % (pngfile.replace('png','fits')))
     return response
-
-
+'''
+'''
+def downloadfits(request, pngfile,obs_mode='imaging'):
+    from astropy.io import fits
+    from django.utils.encoding import smart_str
+    if (obs_mode == 'imaging'):
+        write_fits_image(filename,data,target_info,sky_conditions,guide_star,instrument_setup,obs_filter)
+    elif (obs_mode =='ifs'):
+        write_fits_cube(filename,data,target_info,sky_conditions,guide_star,instrument_setup,obs_grating)
+        
+    data = np.load(os.path.join(settings.MEDIA_ROOT,'%s' % (pngfile.replace('png','npy'))))
+    hdul = fits.HDUList()
+    hdul.append(fits.PrimaryHDU())
+    hdul.append(fits.ImageHDU(data=data))
+    hdul.writeto(os.path.join(settings.MEDIA_ROOT,'%s' % (pngfile.replace('png','fits'))))
+    response= HttpResponse(mimetype='application/force-download')
+    response['Content-Disposition'] = 'attachment; filename=%s' % pngfile.replace('png','fits')
+    response['X-Sendfile'] = os.path.join(settings.MEDIA_ROOT,'%s' % (pngfile.replace('png','fits')))
+    return response
+'''
 
 def calculate_ifs(request,telescope=settings.TELESCOPE):
     debug_values = ["test ==> test_content"]
@@ -660,7 +691,26 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
     name = None
     if (request.POST.get("2d_psf", "off") == "on") and (target_info.source_type == "Point source"):
         indwave = 1000
-        im_value = cube_signal_obj[indwave,:,:].value   
+        if(request.POST.get("addnoise_psf","off") == "on"):
+            print(' Computing image with noise')
+            phi_sky_spect_pixel=a.phi_sky_spect_sqarc*aperture['Area_pixel']
+            cube_signal_obj_noise = build_cube_signal_with_noise(cube_signal_obj*delta_wave_array,\
+                phi_sky_spect_pixel*delta_wave_array,a.detector['ron'],\
+                a.detector['darkc'],dit,Nexp=Nexp,SubtractSky=True,SubtractDark=True)
+            cube_value = cube_signal_obj_noise.value
+        else:
+            cube_value = cube_signal_obj.value
+        im_value = cube_value[indwave,:,:]
+        # generate name of output (PNG, NPY & FITS)
+        name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+        print('file name=',name)
+        fitsname = os.path.join(settings.MEDIA_ROOT,'%s.fits' % name) 
+        write_fits_cube(fitsname,cube_value,target_info,sky_conditions,guide_star,a.instrument,spectrograph_setup,\
+            wave_array[0],delta_wave_array)
+        # save data (npy format) and generate FITS file
+        np.save(os.path.join(settings.MEDIA_ROOT,'%s.npy' % name), im_value)
+        ### create_cube_fits(name)
+        # generate PNG image
         im_value /= np.max(im_value)
         vmin = np.percentile(im_value,25)
         vmax = np.percentile(im_value,85)
@@ -681,8 +731,6 @@ def calculate_ifs(request,telescope=settings.TELESCOPE):
         #plt.imshow(im_signal_obj.value, vmin=vmin,vmax=vmax, cmap='hot')
         ax.set_xlabel('Arcsec')
         ax.set_ylabel('Arcsec')
-        name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-        print('file name=',name)
         f=open(os.path.join(settings.MEDIA_ROOT,'%s.png' % name), 'wb')
         #plt.savefig(f, dit=2000)
         fig.savefig(f,dit=2000)        
